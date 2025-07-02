@@ -1,0 +1,48 @@
+# Build sonuçları
+bin/
+obj/
+
+# User-specific dosyalar
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider / VSCode / VS for Mac
+.idea/
+.vscode/
+*.code-workspace
+
+# Publish klasörü
+wwwroot/dist/
+dist/
+build/
+
+# .NET secrets / config dosyaları
+appsettings.json
+appsettings.Development.json
+secrets.json
+.env
+
+# Npm / yarn / node_modules (Blazor WebAssembly için)
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Logs
+*.log
+Logs/
+
+# OS dosyaları
+.DS_Store
+Thumbs.db
+
+# Git için
+.git/
+
+# Test sonuçları
+TestResults/
+coverage/
