@@ -2,20 +2,52 @@ using RateTheWork.Domain.Entities.Common;
 
 namespace RateTheWork.Domain.Entities;
 
-// Şikayet: Bir yorum hakkındaki şikayetleri temsil eder.
+/// <summary>
+/// Şikayet entity'si - Bir yorum hakkındaki şikayetleri temsil eder
+/// </summary>
 public class Report : BaseEntity
 {
-    public string CommentId { get; set; } // Şikayet edilen yorumun ID'si
-    public string ReporterUserId { get; set; } // Şikayet eden kullanıcı ID'si
-    public string ReportReason { get; set; } // Şikayet nedeni (örn: "Ahlaksız İçerik", "Yanlış Bilgi")
-    public string? ReportDetails { get; set; } // Şikayet detayları (isteğe bağlı)
+    /// <summary>
+    /// Şikayet edilen yorumun ID'si
+    /// </summary>
+    public string ReviewId { get; set; }
+    
+    /// <summary>
+    /// Şikayet eden kullanıcının ID'si
+    /// </summary>
+    public string ReporterUserId { get; set; }
+    
+    /// <summary>
+    /// Şikayet nedeni (örn: "Ahlaksız İçerik", "Yanlış Bilgi", "Spam")
+    /// </summary>
+    public string ReportReason { get; set; }
+    
+    /// <summary>
+    /// Şikayet detayları (opsiyonel)
+    /// </summary>
+    public string? ReportDetails { get; set; }
+    
+    /// <summary>
+    /// Şikayet tarihi
+    /// </summary>
     public DateTime ReportedAt { get; set; }
-    public string Status { get; set; } // "Pending", "Reviewed", "ActionTaken"
-    public string? AdminNotes { get; set; } // Adminin şikayetle ilgili notları
+    
+    /// <summary>
+    /// Şikayet durumu: "Pending", "Reviewed", "ActionTaken", "Dismissed"
+    /// </summary>
+    public string Status { get; set; }
+    
+    /// <summary>
+    /// Admin'in şikayetle ilgili notları
+    /// </summary>
+    public string? AdminNotes { get; set; }
 
-    public Report(string commentId, string reporterUserId, string reportReason)
+    /// <summary>
+    /// Report constructor
+    /// </summary>
+    public Report(string reviewId, string reporterUserId, string reportReason)
     {
-        CommentId = commentId; 
+        ReviewId = reviewId;
         ReporterUserId = reporterUserId;
         ReportReason = reportReason;
         ReportedAt = DateTime.UtcNow;

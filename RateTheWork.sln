@@ -2,6 +2,12 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Domain", "RateTheWork.Domain\RateTheWork.Domain.csproj", "{481DF7BD-95C0-4AC2-9376-5A14F1D01266}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Application", "RateTheWork.Application\RateTheWork.Application.csproj", "{A464503E-ECF0-4A70-A665-85BCC28511B8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Infrastructure", "RateTheWork.Infrastructure\RateTheWork.Infrastructure.csproj", "{89E656C1-26E7-4AFC-911E-6FAD4DDBEE92}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.WebAPI", "RateTheWork.WebAPI\RateTheWork.WebAPI.csproj", "{8D08E6B7-C275-4FB6-A574-4D8F5374B07A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,6 +18,18 @@ Global
 		{481DF7BD-95C0-4AC2-9376-5A14F1D01266}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{481DF7BD-95C0-4AC2-9376-5A14F1D01266}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{481DF7BD-95C0-4AC2-9376-5A14F1D01266}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A464503E-ECF0-4A70-A665-85BCC28511B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A464503E-ECF0-4A70-A665-85BCC28511B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A464503E-ECF0-4A70-A665-85BCC28511B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A464503E-ECF0-4A70-A665-85BCC28511B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89E656C1-26E7-4AFC-911E-6FAD4DDBEE92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89E656C1-26E7-4AFC-911E-6FAD4DDBEE92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89E656C1-26E7-4AFC-911E-6FAD4DDBEE92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89E656C1-26E7-4AFC-911E-6FAD4DDBEE92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D08E6B7-C275-4FB6-A574-4D8F5374B07A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D08E6B7-C275-4FB6-A574-4D8F5374B07A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D08E6B7-C275-4FB6-A574-4D8F5374B07A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D08E6B7-C275-4FB6-A574-4D8F5374B07A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection

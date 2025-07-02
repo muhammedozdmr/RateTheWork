@@ -1,4 +1,4 @@
-using RateTheWork.Domain.Entities.Base;
+using RateTheWork.Domain.Entities.Common;
 
 namespace RateTheWork.Domain.Entities;
 

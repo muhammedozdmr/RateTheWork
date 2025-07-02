@@ -1,13 +1,42 @@
 namespace RateTheWork.Domain.Enums;
 
-public enum CommentType
+/// <summary>
+/// Yorum türleri
+/// </summary>
+public static class CommentTypes
 {
-    SalaryAndBenefits,     // Maaş & Yan Haklar
-    WorkEnvironment,       // Çalışma Ortamı
-    Management,            // Yönetim
-    CareerDevelopment,     // Kariyer Gelişimi
-    WorkLifeBalance,       // İş-Yaşam Dengesi
-    CompanyCulture,        // Şirket Kültürü
-    Interview,             // Mülakat Süreci
-    Other                  // Diğer
+    public const string SalaryAndBenefits = "Maaş & Yan Haklar";
+    public const string WorkEnvironment = "Çalışma Ortamı";
+    public const string Management = "Yönetim";
+    public const string CareerDevelopment = "Kariyer Gelişimi";
+    public const string WorkLifeBalance = "İş-Yaşam Dengesi";
+    public const string CompanyCulture = "Şirket Kültürü";
+    public const string Interview = "Mülakat Süreci";
+    public const string Other = "Diğer";
+    
+    /// <summary>
+    /// Tüm yorum türlerini liste olarak döner
+    /// </summary>
+    public static List<string> GetAll()
+    {
+        return new List<string>
+        {
+            SalaryAndBenefits,
+            WorkEnvironment,
+            Management,
+            CareerDevelopment,
+            WorkLifeBalance,
+            CompanyCulture,
+            Interview,
+            Other
+        };
+    }
+    
+    /// <summary>
+    /// Geçerli bir yorum türü mü kontrol eder
+    /// </summary>
+    public static bool IsValid(string commentType)
+    {
+        return GetAll().Contains(commentType);
+    }
 }
