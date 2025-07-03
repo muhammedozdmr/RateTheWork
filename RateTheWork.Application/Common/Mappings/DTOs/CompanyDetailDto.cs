@@ -59,4 +59,34 @@ public record CompanyDetailDto : CompanyDto
     /// Doğrulama tarihi
     /// </summary>
     public DateTime? VerificationDate { get; init; }
+    
+    /// <summary>
+    /// Toplam yorum sayısı (override edilecek)
+    /// </summary>
+    public int TotalReviews { get; init; }
+    
+    /// <summary>
+    /// Puan dağılımı (1-5 yıldız için ayrı ayrı sayılar)
+    /// </summary>
+    public Dictionary<int, int> RatingBreakdown { get; init; } = new();
+    
+    /// <summary>
+    /// Yorum türü dağılımı
+    /// </summary>
+    public Dictionary<string, int> CommentTypeBreakdown { get; init; } = new();
+    
+    /// <summary>
+    /// Son 3 aydaki yorum sayısı
+    /// </summary>
+    public int RecentReviewsCount { get; init; }
+    
+    /// <summary>
+    /// Doğrulanmış yorum yüzdesi
+    /// </summary>
+    public double VerifiedReviewsPercentage { get; init; }
+    
+    /// <summary>
+    /// Kullanıcının bu şirkete yaptığı yorum türleri (giriş yapmışsa)
+    /// </summary>
+    public List<string> UserReviewedTypes { get; init; } = new();
 }

@@ -27,7 +27,7 @@ public class ValidationException : Exception
     /// FluentValidation failure'larından exception oluşturur
     /// </summary>
     /// <param name="failures">Validation hataları</param>
-    public ValidationException(IEnumerable<ValidationFailure> failures)
+    public ValidationException(string failures)
         : this()
     {
         Errors = failures
