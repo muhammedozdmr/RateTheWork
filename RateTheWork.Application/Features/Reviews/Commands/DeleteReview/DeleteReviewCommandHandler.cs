@@ -179,12 +179,13 @@ public class DeleteReviewCommandHandler : IRequestHandler<DeleteReviewCommand, D
                     
                     var ban = new Domain.Entities.Ban(
                         userId: user.Id,
-                        reason: "3 uyarı limiti aşıldı (otomatik ban)",
-                        bannedBy: _currentUserService.UserId,
-                        isPermanent: false,
-                        expiryDate: DateTime.UtcNow.AddDays(30) // 30 gün ban
+                        adminId: _currentUserService.UserId,
+                        reason: "3 uyarı limiti aşıldı (otomatik ban)"
                     );
-                    
+
+                    // Ban süresini ayrı olarak ayarla
+                    ban.UnbanDate = DateTime.UtcNow.AddDays(30); // 30 gün ban
+
                     await _unitOfWork.Bans.AddAsync(ban);
                 }
                 

@@ -24,10 +24,23 @@ public class ValidationException : Exception
     }
 
     /// <summary>
+    /// Tek bir hata mesajı ile exception oluşturur
+    /// </summary>
+    /// <param name="message">Hata mesajı</param>
+    public ValidationException(string message)
+        : base(message)
+    {
+        Errors = new Dictionary<string, string[]>
+        {
+            [""] = new[] { message }
+        };
+    }
+
+    /// <summary>
     /// FluentValidation failure'larından exception oluşturur
     /// </summary>
     /// <param name="failures">Validation hataları</param>
-    public ValidationException(string failures)
+    public ValidationException(IEnumerable<ValidationFailure> failures)
         : this()
     {
         Errors = failures

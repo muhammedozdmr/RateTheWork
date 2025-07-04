@@ -55,5 +55,5 @@ public record ReviewDetailDto : ReviewDto
     /// <summary>
     /// Admin bilgileri (sadece admin görür)
     /// </summary>
-    public ReviewAdminInfo? AdminInfo { get; set; }
+    public ReviewAdminInfo? AdminInfo { get; init; }
 }

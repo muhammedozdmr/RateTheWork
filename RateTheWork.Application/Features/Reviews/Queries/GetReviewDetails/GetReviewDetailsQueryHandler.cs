@@ -64,6 +64,21 @@ public class GetReviewDetailsQueryHandler : IRequestHandler<GetReviewDetailsQuer
         var author = await _unitOfWork.Users.GetByIdAsync(review.UserId);
         if (author != null)
         {
+            // Önce kullanıcı rozetlerini al
+            var badgeList = new List<BadgeInfo>();
+            var userBadges = await _unitOfWork.UserBadges.GetAsync(ub => ub.UserId == author.Id);
+            if (userBadges.Any())
+            {
+                var badgeIds = userBadges.Select(ub => ub.BadgeId).ToList();
+                var badges = await _unitOfWork.Badges.GetAsync(b => badgeIds.Contains(b.Id));
+                badgeList = badges.Select(b => new BadgeInfo
+                {
+                    Name = b.Name,
+                    IconUrl = b.IconUrl
+                }).ToList();
+            }
+
+            // Tek seferde tüm author bilgilerini ata
             reviewDetail = reviewDetail with 
             { 
                 AuthorUsername = author.AnonymousUsername,
@@ -73,26 +88,10 @@ public class GetReviewDetailsQueryHandler : IRequestHandler<GetReviewDetailsQuer
                     Profession = author.Profession,
                     ReviewCount = await _unitOfWork.Reviews.GetCountAsync(r => r.UserId == author.Id && r.IsActive),
                     JoinDate = author.CreatedAt,
-                    IsVerified = author.IsEmailVerified && author.IsPhoneVerified && author.IsTcIdentityVerified
+                    IsVerified = author.IsEmailVerified && author.IsPhoneVerified && author.IsTcIdentityVerified,
+                    Badges = badgeList
                 }
             };
-
-            // Kullanıcının rozetlerini getir
-            var userBadges = await _unitOfWork.UserBadges.GetAsync(ub => ub.UserId == author.Id);
-            if (userBadges.Any())
-            {
-                var badgeIds = userBadges.Select(ub => ub.BadgeId).ToList();
-                var badges = await _unitOfWork.Badges.GetAsync(b => badgeIds.Contains(b.Id));
-                
-                reviewDetail.AuthorInfo = reviewDetail.AuthorInfo with
-                {
-                    Badges = badges.Select(b => new BadgeInfo
-                    {
-                        Name = b.Name,
-                        IconUrl = b.IconUrl
-                    }).ToList()
-                };
-            }
         }
 
         // 5. Şirket bilgilerini getir
@@ -157,6 +156,24 @@ public class GetReviewDetailsQueryHandler : IRequestHandler<GetReviewDetailsQuer
         // 8. Admin ise ekstra bilgileri ekle
         if (isAdmin)
         {
+            // 1. Önce boş liste oluştur
+            var reportDetailList = new List<ReportDetail>();
+    
+            // 2. Eğer şikayet varsa, detayları doldur
+            if (review.ReportCount > 0)
+            {
+                var reports = await _unitOfWork.Reviews.GetReviewReportsAsync(review.Id);
+                reportDetailList = reports.Select(r => new ReportDetail
+                {
+                    ReportId = r.Id, 
+                    Reason = r.ReportReason, 
+                    Details = r.ReportDetails, 
+                    ReportedAt = r.ReportedAt,
+                    Status = r.Status
+                }).ToList();
+            }
+    
+            // 3. Tek seferde tüm AdminInfo'yu ata (with expression ile)
             reviewDetail = reviewDetail with
             {
                 AdminInfo = new ReviewAdminInfo
@@ -166,26 +183,10 @@ public class GetReviewDetailsQueryHandler : IRequestHandler<GetReviewDetailsQuer
                     CreatedBy = review.CreatedBy,
                     ModifiedBy = review.ModifiedBy,
                     ModifiedAt = review.ModifiedAt,
-                    UserEmail = author?.Email ?? "Unknown"
+                    UserEmail = author?.Email ?? "Unknown",
+                    ReportDetails = reportDetailList  // Önceden hazırladığım liste
                 }
             };
-
-            // Şikayet detaylarını getir
-            if (review.ReportCount > 0)
-            {
-                var reports = await _unitOfWork.Reviews.GetReviewReportsAsync(review.Id);
-                reviewDetail.AdminInfo = reviewDetail.AdminInfo with
-                {
-                    ReportDetails = reports.Select(r => new ReportDetail
-                    {
-                        ReportId = r.Id,
-                        Reason = r.ReportReason,
-                        Details = r.ReportDetails,
-                        ReportedAt = r.ReportedAt,
-                        Status = r.Status
-                    }).ToList()
-                };
-            }
         }
 
         return reviewDetail;
