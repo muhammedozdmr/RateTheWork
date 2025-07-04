@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using RateTheWork.Domain.Entities.Common;
+using RateTheWork.Domain.Common;
 
 namespace RateTheWork.Domain.Interfaces;
 

@@ -1,13 +1,17 @@
 using System.Security.Cryptography;
 using System.Text;
-using RateTheWork.Domain.Entities.Common;
+using RateTheWork.Domain.Common;
+using RateTheWork.Domain.Events;
 
 namespace RateTheWork.Domain.Entities;
 
-// Kullanıcı: Platformdaki anonim kullanıcıyı temsil eder.
+/// <summary>
+/// Kullanıcı entity'si - Platformdaki anonim kullanıcıyı temsil eder.
+/// AuditableBaseEntity'den türer ve soft delete destekler.
+/// </summary>
 public class User : AuditableBaseEntity
 {
-   // ✅ Plain - Anonim veriler
+    // ✅ Plain - Anonim veriler
     public string AnonymousUsername { get; set; }
     public string Email { get; set; } // Giriş için plain gerekli
     public string HashedPassword { get; set; } // BCrypt hash
@@ -45,21 +49,25 @@ public class User : AuditableBaseEntity
     public string? EmailHash { get; set; } // SHA-256 hash (arama için)
     public string? TcIdentityHash { get; set; } // Duplicate kontrolü için
 
-    public User(
-        string anonymousUsername,
-        string hashedPassword,
-        string email,
-        string encryptedFirstName,
-        string encryptedLastName,
-        string profession,
-        string encryptedTcIdentityNumber,
-        string encryptedAddress,
-        string encryptedCity,
-        string encryptedDistrict,
-        string encryptedPhoneNumber,
-        string gender
+    /// <summary>
+    /// Yeni kullanıcı oluşturur
+    /// </summary>
+    public User
+    (
+        string anonymousUsername
+        , string hashedPassword
+        , string email
+        , string encryptedFirstName
+        , string encryptedLastName
+        , string profession
+        , string encryptedTcIdentityNumber
+        , string encryptedAddress
+        , string encryptedCity
+        , string encryptedDistrict
+        , string encryptedPhoneNumber
+        , string gender
         , string encryptedBirthDate
-    )
+    ) : base()
     {
         AnonymousUsername = anonymousUsername;
         HashedPassword = hashedPassword;
@@ -78,8 +86,78 @@ public class User : AuditableBaseEntity
         // Hash'leri oluştur (performans için)
         EmailHash = GenerateHash(email);
         TcIdentityHash = GenerateHash(encryptedTcIdentityNumber);
+
+        // Domain Event ekle
+        AddDomainEvent(new UserRegisteredEvent(
+            Id,
+            Email,
+            AnonymousUsername,
+            DateTime.UtcNow
+        ));
     }
 
+    /// <summary>
+    /// Email doğrulamasını tamamlar
+    /// </summary>
+    public void VerifyEmail()
+    {
+        IsEmailVerified = true;
+        EmailVerificationToken = null;
+        EmailVerificationTokenExpiry = null;
+        SetModifiedDate();
+    }
+
+    /// <summary>
+    /// Telefon doğrulamasını tamamlar
+    /// </summary>
+    public void VerifyPhone()
+    {
+        IsPhoneVerified = true;
+        PhoneVerificationCode = null;
+        PhoneVerificationCodeExpiry = null;
+        SetModifiedDate();
+    }
+
+    /// <summary>
+    /// TC kimlik doğrulamasını tamamlar
+    /// </summary>
+    public void VerifyTcIdentity(string documentUrl)
+    {
+        IsTcIdentityVerified = true;
+        TcIdentityVerificationDocumentUrl = documentUrl;
+        SetModifiedDate();
+    }
+
+    /// <summary>
+    /// Kullanıcıya uyarı ekler
+    /// </summary>
+    public void AddWarning()
+    {
+        WarningCount++;
+        SetModifiedDate();
+    }
+
+    /// <summary>
+    /// Kullanıcıyı banlar
+    /// </summary>
+    public void Ban()
+    {
+        IsBanned = true;
+        SetModifiedDate();
+    }
+
+    /// <summary>
+    /// Kullanıcının banını kaldırır
+    /// </summary>
+    public void Unban()
+    {
+        IsBanned = false;
+        SetModifiedDate();
+    }
+
+    /// <summary>
+    /// SHA-256 hash oluşturur
+    /// </summary>
     private static string GenerateHash(string input)
     {
         using var sha256 = SHA256.Create();
