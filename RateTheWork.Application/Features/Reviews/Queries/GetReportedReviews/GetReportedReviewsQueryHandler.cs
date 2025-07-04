@@ -343,6 +343,11 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
                 })
                 .ToList();
 
+            // Kullanıcı istatistiklerini al
+            var hasStats = userReviewStats.TryGetValue(user.Id, out var stats);
+            var totalReviews = hasStats ? stats.TotalReviews : 0;
+            var reportedReviews = hasStats ? stats.ReportedReviews : 0;
+
             var dto = new ReportedReviewDto
             {
                 ReviewId = review.Id,
@@ -356,8 +361,8 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
                     UserId = user.Id,
                     Username = user.AnonymousUsername,
                     Email = user.Email, // Admin görebilir
-                    TotalReviews = userReviewStats.GetValueOrDefault(user.Id, (0, 0)).TotalReviews,
-                    ReportedReviews = userReviewStats.GetValueOrDefault(user.Id, (0, 0)).ReportedReviews
+                    TotalReviews = totalReviews,
+                    ReportedReviews = reportedReviews
                 },
                 Content = new ReviewContent
                 {
@@ -398,7 +403,7 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
         List<string> userIds, 
         CancellationToken cancellationToken)
     {
-        var stats = new Dictionary<string, (int, int)>();
+        var stats = new Dictionary<string, (int TotalReviews, int ReportedReviews)>();
 
         var userReviewCounts = await _unitOfWork.Reviews.GetQueryable()
             .Where(r => userIds.Contains(r.UserId))
@@ -413,7 +418,7 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
 
         foreach (var stat in userReviewCounts)
         {
-            stats[stat.UserId] = (stat.TotalCount, stat.ReportedCount);
+            stats[stat.UserId] = (TotalReviews: stat.TotalCount, ReportedReviews: stat.ReportedCount);
         }
 
         return stats;
