@@ -82,7 +82,13 @@ public class Notification : BaseEntity
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private Notification() : base() { }
+    private Notification(string userId, string type, string title, string message) : base()
+    {
+        UserId = userId;
+        Type = type;
+        Title = title;
+        Message = message;
+    }
 
     /// <summary>
     /// Yeni bildirim oluşturur

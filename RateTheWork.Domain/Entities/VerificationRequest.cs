@@ -53,7 +53,16 @@ public class VerificationRequest : ApprovableBaseEntity
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private VerificationRequest() : base() { }
+    private VerificationRequest(string reviewId, string userId, string documentUrl, string documentName, string documentType, string status) : base()
+    {
+        ReviewId = reviewId;
+        UserId = userId;
+        DocumentUrl = documentUrl;
+        DocumentName = documentName;
+        DocumentType = documentType;
+        Status = status;
+    }
+    
 
     /// <summary>
     /// Yeni doğrulama talebi oluşturur

@@ -49,7 +49,12 @@ public class Warning : BaseEntity
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private Warning() : base() { }
+    private Warning(string userId, string adminId, string reason) : base()
+    {
+        UserId = userId;
+        AdminId = adminId;
+        Reason = reason;
+    }
 
     /// <summary>
     /// Yeni uyarı oluşturur

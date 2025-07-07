@@ -38,7 +38,13 @@ public class Review : AuditableBaseEntity
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private Review() : base() { }
+    private Review(string companyId, string userId, string commentType, string commentText) : base()
+    {
+        CompanyId = companyId;
+        UserId = userId;
+        CommentType = commentType;
+        CommentText = commentText;
+    }
 
     /// <summary>
     /// Yeni yorum oluşturur (Factory method)

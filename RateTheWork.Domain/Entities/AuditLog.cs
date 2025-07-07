@@ -76,7 +76,13 @@ public class AuditLog : BaseEntity
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private AuditLog() : base() { }
+    private AuditLog(string adminUserId, string actionType, string entityType, string entityId) : base()
+    {
+        AdminUserId = adminUserId;
+        ActionType = actionType;
+        EntityType = entityType;
+        EntityId = entityId;
+    }
 
     /// <summary>
     /// Yeni audit log oluşturur

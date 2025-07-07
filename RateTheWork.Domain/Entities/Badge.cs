@@ -49,7 +49,13 @@ public class Badge : BaseEntity
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private Badge() : base() { }
+    private Badge(string name, string description, string ıconUrl, string criteria) : base()
+    {
+        Name = name;
+        Description = description;
+        IconUrl = ıconUrl;
+        Criteria = criteria;
+    }
 
     /// <summary>
     /// Yeni rozet oluşturur
