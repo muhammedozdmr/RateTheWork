@@ -16,10 +16,10 @@ public class AdminUser : AuditableBaseEntity
     private const int AccountLockMinutes = 30;
 
     // Properties
-    public string Username { get; private set; }
-    public string HashedPassword { get; private set; }
-    public string Email { get; private set; }
-    public string Role { get; private set; } // SuperAdmin, Moderator, ContentManager
+    public string? Username { get; private set; }
+    public string? HashedPassword { get; private set; }
+    public string? Email { get; private set; }
+    public string? Role { get; private set; } // SuperAdmin, Moderator, ContentManager
     public bool IsActive { get; private set; }
     public int FailedLoginAttempts { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
@@ -32,7 +32,14 @@ public class AdminUser : AuditableBaseEntity
     public DateTime? PasswordResetTokenExpiry { get; private set; }
 
     /// <summary>
-    /// EF Core için private constructor
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private AdminUser() : base()
+    {
+    }
+    
+    /// <summary>
+    /// Factory method için private constructor (mevcut)
     /// </summary>
     private AdminUser(string username, string hashedPassword, string email, string role) : base()
     {
@@ -47,9 +54,9 @@ public class AdminUser : AuditableBaseEntity
     /// </summary>
     public static AdminUser Create(
         string username,
-        string email,
+        string? email,
         string hashedPassword,
-        string role,
+        string? role,
         string createdByAdminId)
     {
         ValidateUsername(username);
@@ -161,7 +168,7 @@ public class AdminUser : AuditableBaseEntity
     /// <summary>
     /// Şifre değiştirir
     /// </summary>
-    public void ChangePassword(string newHashedPassword)
+    public void ChangePassword(string? newHashedPassword)
     {
         if (string.IsNullOrWhiteSpace(newHashedPassword))
             throw new ArgumentNullException(nameof(newHashedPassword));
@@ -239,7 +246,7 @@ public class AdminUser : AuditableBaseEntity
     /// <summary>
     /// Admin rolünü değiştirir
     /// </summary>
-    public void ChangeRole(string newRole, string changedByAdminId)
+    public void ChangeRole(string? newRole, string changedByAdminId)
     {
         ValidateRole(newRole);
 
@@ -286,7 +293,7 @@ public class AdminUser : AuditableBaseEntity
     /// <summary>
     /// Email günceller
     /// </summary>
-    public void UpdateEmail(string newEmail, string updatedByAdminId)
+    public void UpdateEmail(string? newEmail, string updatedByAdminId)
     {
         ValidateEmail(newEmail);
 
@@ -316,7 +323,7 @@ public class AdminUser : AuditableBaseEntity
             throw new BusinessRuleException("Kullanıcı adı sadece harf, rakam ve alt çizgi içerebilir.");
     }
 
-    private static void ValidateEmail(string email)
+    private static void ValidateEmail(string? email)
     {
         if (string.IsNullOrWhiteSpace(email))
             throw new ArgumentNullException(nameof(email));
@@ -325,7 +332,7 @@ public class AdminUser : AuditableBaseEntity
             throw new BusinessRuleException("Geçersiz email formatı.");
     }
 
-    private static void ValidateRole(string role)
+    private static void ValidateRole(string? role)
     {
         var validRoles = new[] { "SuperAdmin", "Moderator", "ContentManager" };
         if (!validRoles.Contains(role))

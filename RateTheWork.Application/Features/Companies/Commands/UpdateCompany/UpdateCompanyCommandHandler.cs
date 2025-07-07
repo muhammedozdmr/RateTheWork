@@ -15,7 +15,7 @@ public record UpdateCompanyCommand : IRequest<UpdateCompanyResult>
     /// <summary>
     /// Güncellenecek şirketin ID'si
     /// </summary>
-    public string CompanyId { get; init; } = string.Empty;
+    public string? CompanyId { get; init; } = string.Empty;
     
     /// <summary>
     /// Şirket adı (değiştirilmek istenmiyorsa null)

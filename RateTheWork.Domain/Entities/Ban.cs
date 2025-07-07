@@ -31,9 +31,9 @@ public class Ban : BaseEntity
     }
 
     // Properties
-    public string UserId { get; private set; }
-    public string AdminId { get; private set; }
-    public string Reason { get; private set; }
+    public string? UserId { get; private set; }
+    public string? AdminId { get; private set; }
+    public string? Reason { get; private set; }
     public string? DetailedReason { get; private set; }
     public DateTime BannedAt { get; private set; }
     public DateTime? UnbanDate { get; private set; } // Süresizse null
@@ -45,11 +45,18 @@ public class Ban : BaseEntity
     public bool IsAppealable { get; private set; } // İtiraz edilebilir mi?
     public DateTime? AppealDeadline { get; private set; } // İtiraz son tarihi
     public string? AppealNotes { get; private set; } // İtiraz notları
+    
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private Ban() : base()
+    {
+    }
 
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private Ban(string userId, string adminId, string reason) : base()
+    private Ban(string? userId, string? adminId, string? reason) : base()
     {
         UserId = userId;
         AdminId = adminId;

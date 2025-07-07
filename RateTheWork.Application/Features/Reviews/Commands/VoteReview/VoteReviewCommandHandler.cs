@@ -17,7 +17,7 @@ public record VoteReviewCommand : IRequest<VoteReviewResult>
     /// <summary>
     /// Oylanacak yorumun ID'si
     /// </summary>
-    public string ReviewId { get; init; } = string.Empty;
+    public string? ReviewId { get; init; } = string.Empty;
     
     /// <summary>
     /// Oy türü (true: upvote, false: downvote)

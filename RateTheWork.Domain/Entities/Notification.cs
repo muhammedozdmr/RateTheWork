@@ -61,10 +61,10 @@ public class Notification : BaseEntity
     }
 
     // Properties
-    public string UserId { get; private set; }
-    public string Type { get; private set; }
-    public string Title { get; private set; }
-    public string Message { get; private set; }
+    public string? UserId { get; private set; }
+    public string? Type { get; private set; }
+    public string? Title { get; private set; }
+    public string? Message { get; private set; }
     public bool IsRead { get; private set; }
     public DateTime? ReadAt { get; private set; }
     public string? RelatedEntityType { get; private set; }
@@ -78,11 +78,18 @@ public class Notification : BaseEntity
     public bool RequiresAction { get; private set; } // Kullanıcı aksiyonu gerekli mi?
     public bool WasSent { get; private set; } // Email/SMS vs. gönderildi mi?
     public DateTime? SentAt { get; private set; }
+    
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private Notification() : base()
+    {
+    }
 
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private Notification(string userId, string type, string title, string message) : base()
+    private Notification(string? userId, string? type, string? title, string? message) : base()
     {
         UserId = userId;
         Type = type;
@@ -364,7 +371,7 @@ public class Notification : BaseEntity
     /// <summary>
     /// Bildirim özetini döndür
     /// </summary>
-    public string GetSummary()
+    public string? GetSummary()
     {
         var summary = Title;
         
@@ -407,13 +414,13 @@ public class Notification : BaseEntity
     {
         IconType = Type switch
         {
-            var t when t.StartsWith("Account.") => "user",
-            var t when t.StartsWith("Review.") => "message-square",
-            var t when t.StartsWith("Document.") => "file-check",
-            var t when t.StartsWith("Moderation.") => "shield",
-            var t when t.StartsWith("Badge.") => "award",
-            var t when t.StartsWith("Company.") => "building",
-            var t when t.StartsWith("System.") => "info",
+            var t when t != null && t.StartsWith("Account.") => "user",
+            var t when t != null && t.StartsWith("Review.") => "message-square",
+            var t when t != null && t.StartsWith("Document.") => "file-check",
+            var t when t != null && t.StartsWith("Moderation.") => "shield",
+            var t when t != null && t.StartsWith("Badge.") => "award",
+            var t when t != null && t.StartsWith("Company.") => "building",
+            var t when t != null && t.StartsWith("System.") => "info",
             _ => "bell"
         };
 

@@ -74,7 +74,7 @@ public interface ICompanyRepository : IBaseRepository<Company>
     /// Şirketin ortalama puanını yeniden hesaplar ve günceller
     /// </summary>
     /// <param name="companyId">Şirket ID'si</param>
-    Task RecalculateAverageRatingAsync(string companyId);
+    Task RecalculateAverageRatingAsync(string? companyId);
     
     /// <summary>
     /// Şirketin ağırlıklı ortalama puanını hesaplar

@@ -34,12 +34,12 @@ public class Report : BaseEntity
     }
 
     // Properties
-    public string ReviewId { get; private set; }
-    public string ReporterUserId { get; private set; }
-    public string ReportReason { get; private set; }
+    public string? ReviewId { get; private set; }
+    public string? ReporterUserId { get; private set; }
+    public string? ReportReason { get; private set; }
     public string? ReportDetails { get; private set; }
     public DateTime ReportedAt { get; private set; }
-    public string Status { get; private set; }
+    public string? Status { get; private set; }
     public string? AdminNotes { get; private set; }
     public string? ReviewedBy { get; private set; }
     public DateTime? ReviewedAt { get; private set; }
@@ -50,9 +50,16 @@ public class Report : BaseEntity
     public string? RelatedReports { get; private set; } // İlişkili diğer şikayetler
 
     /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private Report() : base()
+    {
+    }
+    
+    /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private Report(string reviewId, string reporterUserId, string reportReason, string status) : base()
+    private Report(string? reviewId, string? reporterUserId, string? reportReason, string? status) : base()
     {
         ReviewId = reviewId;
         ReporterUserId = reporterUserId;

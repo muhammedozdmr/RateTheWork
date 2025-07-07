@@ -86,7 +86,7 @@ public record CreateCompanyResult
     /// <summary>
     /// Oluşturulan şirketin ID'si
     /// </summary>
-    public string CompanyId { get; init; } = string.Empty;
+    public string? CompanyId { get; init; } = string.Empty;
     
     /// <summary>
     /// İşlem başarılı mı?

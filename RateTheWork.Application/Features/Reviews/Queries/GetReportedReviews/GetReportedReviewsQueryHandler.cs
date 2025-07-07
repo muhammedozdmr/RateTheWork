@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using RateTheWork.Application.Common.Exceptions;
 using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Application.Common.Mappings;
+using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Interfaces;
 
 namespace RateTheWork.Application.Features.Reviews.Queries.GetReportedReviews;
@@ -58,7 +59,7 @@ public record ReportedReviewDto
     /// <summary>
     /// Yorum ID'si
     /// </summary>
-    public string ReviewId { get; init; } = string.Empty;
+    public string? ReviewId { get; init; } = string.Empty;
     
     /// <summary>
     /// Şirket bilgileri
@@ -91,7 +92,7 @@ public record ReportedReviewDto
 /// </summary>
 public record CompanyInfo
 {
-    public string CompanyId { get; init; } = string.Empty;
+    public string? CompanyId { get; init; } = string.Empty;
     public string CompanyName { get; init; } = string.Empty;
 }
 
@@ -100,7 +101,7 @@ public record CompanyInfo
 /// </summary>
 public record ReviewerInfo
 {
-    public string UserId { get; init; } = string.Empty;
+    public string? UserId { get; init; } = string.Empty;
     public string Username { get; init; } = string.Empty;
     public string Email { get; init; } = string.Empty;
     public int TotalReviews { get; init; }
@@ -112,9 +113,9 @@ public record ReviewerInfo
 /// </summary>
 public record ReviewContent
 {
-    public string CommentType { get; init; } = string.Empty;
+    public string? CommentType { get; init; } = string.Empty;
     public decimal OverallRating { get; init; }
-    public string CommentText { get; init; } = string.Empty;
+    public string? CommentText { get; init; } = string.Empty;
     public DateTime PostedDate { get; init; }
     public bool IsActive { get; init; }
     public bool IsDocumentVerified { get; init; }
@@ -137,12 +138,12 @@ public record ReportInfo
 /// </summary>
 public record ReportDetail
 {
-    public string ReportId { get; init; } = string.Empty;
+    public string? ReportId { get; init; } = string.Empty;
     public string ReporterUsername { get; init; } = string.Empty;
-    public string ReportReason { get; init; } = string.Empty;
+    public string? ReportReason { get; init; } = string.Empty;
     public string? ReportDetails { get; init; }
     public DateTime ReportedAt { get; init; }
-    public string Status { get; init; } = string.Empty;
+    public string? Status { get; init; } = string.Empty;
 }
 
 /// <summary>
@@ -279,9 +280,9 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
             .ToList();
 
         // 11. İlişkili verileri toplu getir
-        var userIds = new List<string>();
-        var companyIds = new List<string>();
-        var reporterIds = new List<string>();
+        var userIds = new List<string?>();
+        var companyIds = new List<string?>();
+        var reporterIds = new List<string?>();
 
         foreach (var group in pagedGroups)
         {
@@ -301,7 +302,7 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
         var companyDict = companies.ToDictionary(c => c.Id);
 
         var reporters = await _unitOfWork.Users.GetAsync(u => reporterIds.Distinct().Contains(u.Id));
-        var reporterDict = reporters.ToDictionary(u => u.Id);
+        Dictionary<string?, User> reporterDict = reporters.ToDictionary(u => u.Id);
 
         // 12. Kullanıcı istatistikleri
         var userReviewStats = await GetUserReviewStats(userIds.Distinct().ToList(), cancellationToken);
@@ -399,11 +400,11 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
     /// <summary>
     /// Kullanıcıların yorum istatistiklerini getirir
     /// </summary>
-    private async Task<Dictionary<string, (int TotalReviews, int ReportedReviews)>> GetUserReviewStats(
-        List<string> userIds, 
+    private async Task<Dictionary<string?, (int TotalReviews, int ReportedReviews)>> GetUserReviewStats(
+        List<string?> userIds, 
         CancellationToken cancellationToken)
     {
-        var stats = new Dictionary<string, (int TotalReviews, int ReportedReviews)>();
+        var stats = new Dictionary<string?, (int TotalReviews, int ReportedReviews)>();
 
         var userReviewCounts = await _unitOfWork.Reviews.GetQueryable()
             .Where(r => userIds.Contains(r.UserId))

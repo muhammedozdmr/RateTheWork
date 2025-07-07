@@ -16,7 +16,7 @@ public record ReportReviewCommand : IRequest<ReportReviewResult>
     /// <summary>
     /// Şikayet edilecek yorumun ID'si
     /// </summary>
-    public string ReviewId { get; init; } = string.Empty;
+    public string? ReviewId { get; init; } = string.Empty;
     
     /// <summary>
     /// Şikayet nedeni
@@ -42,7 +42,7 @@ public record ReportReviewResult
     /// <summary>
     /// Şikayet ID'si
     /// </summary>
-    public string ReportId { get; init; } = string.Empty;
+    public string? ReportId { get; init; } = string.Empty;
     
     /// <summary>
     /// Otomatik aksiyon alındı mı?
@@ -208,7 +208,7 @@ public class ReportReviewCommandHandler : IRequestHandler<ReportReviewCommand, R
     /// <summary>
     /// Admin'lere bildirim oluştur
     /// </summary>
-    private async Task CreateAdminNotification(string message, string reviewId)
+    private async Task CreateAdminNotification(string message, string? reviewId)
     {
         // Tüm moderatör ve admin'leri bul
         var admins = await _unitOfWork.AdminUsers.GetAsync(a => 

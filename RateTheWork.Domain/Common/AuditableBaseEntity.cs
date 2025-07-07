@@ -43,7 +43,7 @@ public abstract class AuditableBaseEntity : BaseEntity
     /// <summary>
     /// Varolan bir auditable entity'yi yüklerken kullanılır
     /// </summary>
-    protected AuditableBaseEntity(string id, DateTime createdAt, DateTime? modifiedAt) 
+    protected AuditableBaseEntity(string? id, DateTime createdAt, DateTime? modifiedAt) 
         : base(id, createdAt, modifiedAt)
     {
         IsDeleted = false;

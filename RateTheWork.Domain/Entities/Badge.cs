@@ -34,10 +34,10 @@ public class Badge : BaseEntity
     }
 
     // Properties
-    public string Name { get; private set; }
-    public string Description { get; private set; }
-    public string IconUrl { get; private set; }
-    public string Criteria { get; private set; }
+    public string? Name { get; private set; }
+    public string? Description { get; private set; }
+    public string? IconUrl { get; private set; }
+    public string? Criteria { get; private set; }
     public BadgeType Type { get; private set; }
     public BadgeRarity Rarity { get; private set; }
     public int RequiredCount { get; private set; } // Kaç adet gerekli (yorum sayısı vb.)
@@ -46,10 +46,18 @@ public class Badge : BaseEntity
     public DateTime? AvailableUntil { get; private set; }
     public int Points { get; private set; } // Rozet puanı (gamification için)
 
+    
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private Badge() : base()
+    {
+    }
+    
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private Badge(string name, string description, string ıconUrl, string criteria) : base()
+    private Badge(string? name, string? description, string? ıconUrl, string? criteria) : base()
     {
         Name = name;
         Description = description;
@@ -61,9 +69,9 @@ public class Badge : BaseEntity
     /// Yeni rozet oluşturur
     /// </summary>
     public static Badge Create(
-        string name,
-        string description,
-        string iconUrl,
+        string? name,
+        string? description,
+        string? iconUrl,
         string criteria,
         BadgeType type,
         BadgeRarity rarity,
@@ -97,9 +105,9 @@ public class Badge : BaseEntity
     /// Özel etkinlik rozeti oluşturur
     /// </summary>
     public static Badge CreateSpecialEventBadge(
-        string name,
-        string description,
-        string iconUrl,
+        string? name,
+        string? description,
+        string? iconUrl,
         string criteria,
         DateTime availableFrom,
         DateTime availableUntil,
@@ -215,7 +223,7 @@ public class Badge : BaseEntity
     /// <summary>
     /// Rozet bilgilerini günceller
     /// </summary>
-    public void UpdateInfo(string name, string description, string iconUrl)
+    public void UpdateInfo(string? name, string? description, string? iconUrl)
     {
         ValidateName(name);
         ValidateDescription(description);
@@ -230,7 +238,7 @@ public class Badge : BaseEntity
     /// <summary>
     /// Rozet kriterini günceller
     /// </summary>
-    public void UpdateCriteria(string criteria, int requiredCount)
+    public void UpdateCriteria(string? criteria, int requiredCount)
     {
         if (string.IsNullOrWhiteSpace(criteria))
             throw new ArgumentNullException(nameof(criteria));
@@ -329,7 +337,7 @@ public class Badge : BaseEntity
     }
 
     // Validation methods
-    private static void ValidateName(string name)
+    private static void ValidateName(string? name)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentNullException(nameof(name));
@@ -338,7 +346,7 @@ public class Badge : BaseEntity
             throw new BusinessRuleException("Rozet adı 100 karakterden uzun olamaz.");
     }
 
-    private static void ValidateDescription(string description)
+    private static void ValidateDescription(string? description)
     {
         if (string.IsNullOrWhiteSpace(description))
             throw new ArgumentNullException(nameof(description));
@@ -347,7 +355,7 @@ public class Badge : BaseEntity
             throw new BusinessRuleException("Rozet açıklaması 500 karakterden uzun olamaz.");
     }
 
-    private static void ValidateIconUrl(string iconUrl)
+    private static void ValidateIconUrl(string? iconUrl)
     {
         if (string.IsNullOrWhiteSpace(iconUrl))
             throw new ArgumentNullException(nameof(iconUrl));

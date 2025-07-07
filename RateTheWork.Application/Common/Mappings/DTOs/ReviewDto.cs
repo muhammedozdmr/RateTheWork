@@ -33,7 +33,7 @@ public record ReviewDto
     /// <summary>
     /// Yorum metni (ilk 200 karakter)
     /// </summary>
-    public string CommentPreview { get; init; } = string.Empty;
+    public string? CommentPreview { get; init; } = string.Empty;
     
     /// <summary>
     /// Yorum tarihi

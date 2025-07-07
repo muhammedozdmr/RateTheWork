@@ -6,7 +6,7 @@ namespace RateTheWork.Domain.Events;
 /// Yorum oylandı event'i
 /// </summary>
 public record ReviewVotedEvent(
-    string VoteId,
+    string? VoteId,
     string UserId,
     string ReviewId,
     ReviewVote.VoteType VoteType,
@@ -21,9 +21,9 @@ public record ReviewVotedEvent(
 /// Yorum oyu değiştirildi event'i
 /// </summary>
 public record ReviewVoteChangedEvent(
-    string VoteId,
-    string UserId,
-    string ReviewId,
+    string? VoteId,
+    string? UserId,
+    string? ReviewId,
     ReviewVote.VoteType OldVoteType,
     ReviewVote.VoteType NewVoteType,
     DateTime OccurredOn = default

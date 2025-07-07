@@ -15,7 +15,7 @@ public interface IBaseRepository<T> where T : BaseEntity
     /// </summary>
     /// <param name="id">Entity ID'si</param>
     /// <returns>Bulunan entity veya null</returns>
-    Task<T?> GetByIdAsync(string id);
+    Task<T?> GetByIdAsync(string? id);
 
     /// <summary>
     /// Tüm entity'leri getirir

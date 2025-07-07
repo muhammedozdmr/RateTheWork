@@ -16,7 +16,7 @@ public record CreateReviewCommand : IRequest<CreateReviewResult>
     /// <summary>
     /// Yorum yapılacak şirket ID'si
     /// </summary>
-    public string CompanyId { get; init; } = string.Empty;
+    public string? CompanyId { get; init; } = string.Empty;
     
     /// <summary>
     /// Yorum türü (Maaş, Çalışma Ortamı vb.)
@@ -47,7 +47,7 @@ public record CreateReviewResult
     /// <summary>
     /// Oluşturulan yorumun ID'si
     /// </summary>
-    public string ReviewId { get; init; } = string.Empty;
+    public string? ReviewId { get; init; } = string.Empty;
     
     /// <summary>
     /// İşlem başarılı mı?

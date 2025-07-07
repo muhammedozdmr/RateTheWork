@@ -15,7 +15,7 @@ public record DeleteCompanyCommand : IRequest<DeleteCompanyResult>
     /// <summary>
     /// Silinecek şirketin ID'si
     /// </summary>
-    public string CompanyId { get; init; } = string.Empty;
+    public string? CompanyId { get; init; } = string.Empty;
     
     /// <summary>
     /// Silme nedeni (admin log için)

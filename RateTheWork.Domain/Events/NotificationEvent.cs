@@ -6,7 +6,7 @@ namespace RateTheWork.Domain.Events;
 /// Bildirim oluşturuldu event'i
 /// </summary>
 public record NotificationCreatedEvent(
-    string NotificationId,
+    string? NotificationId,
     string UserId,
     string NotificationType,
     Notification.NotificationPriority Priority,
@@ -20,8 +20,8 @@ public record NotificationCreatedEvent(
 /// Bildirim okundu event'i
 /// </summary>
 public record NotificationReadEvent(
-    string NotificationId,
-    string UserId,
+    string? NotificationId,
+    string? UserId,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -32,8 +32,8 @@ public record NotificationReadEvent(
 /// Bildirim silindi event'i
 /// </summary>
 public record NotificationDeletedEvent(
-    string NotificationId,
-    string UserId,
+    string? NotificationId,
+    string? UserId,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {

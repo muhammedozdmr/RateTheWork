@@ -10,7 +10,7 @@ public record ReviewDetailDto : ReviewDto
     /// <summary>
     /// Tam yorum metni
     /// </summary>
-    public string FullComment { get; init; } = string.Empty;
+    public string? FullComment { get; init; } = string.Empty;
     
     /// <summary>
     /// Belge yüklendi mi?

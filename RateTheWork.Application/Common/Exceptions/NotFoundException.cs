@@ -37,7 +37,7 @@ public class NotFoundException : Exception
     /// </summary>
     /// <param name="name">Entity adı</param>
     /// <param name="key">Aranan key değeri</param>
-    public NotFoundException(string name, object key)
+    public NotFoundException(string name, object? key)
         : base($"Entity \"{name}\" ({key}) bulunamadı.")
     {
     }

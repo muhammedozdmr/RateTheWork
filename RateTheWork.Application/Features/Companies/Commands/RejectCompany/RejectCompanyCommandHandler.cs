@@ -15,7 +15,7 @@ public record RejectCompanyCommand : IRequest<RejectCompanyResult>
     /// <summary>
     /// Reddedilecek şirketin ID'si
     /// </summary>
-    public string CompanyId { get; init; } = string.Empty;
+    public string? CompanyId { get; init; } = string.Empty;
     
     /// <summary>
     /// Red nedeni (kullanıcıya gösterilecek)

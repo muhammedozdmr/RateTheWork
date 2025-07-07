@@ -4,7 +4,7 @@ namespace RateTheWork.Domain.Events;
 /// Yorum eklendi event'i
 /// </summary>
 public record ReviewCreatedEvent(
-    string ReviewId,
+    string? ReviewId,
     string UserId,
     string CompanyId,
     decimal Rating,
@@ -18,7 +18,7 @@ public record ReviewCreatedEvent(
 /// Yorum düzenlendi event'i
 /// </summary>
 public record ReviewEditedEvent(
-    string ReviewId,
+    string? ReviewId,
     string EditorUserId,
     string EditReason,
     DateTime OccurredOn = default
@@ -31,7 +31,7 @@ public record ReviewEditedEvent(
 /// Yorum şikayet edildi event'i
 /// </summary>
 public record ReviewReportedEvent(
-    string ReviewId,
+    string? ReviewId,
     string ReporterUserId,
     string ReportReason,
     int TotalReportCount,
@@ -45,7 +45,7 @@ public record ReviewReportedEvent(
 /// Yorum gizlendi event'i
 /// </summary>
 public record ReviewHiddenEvent(
-    string ReviewId,
+    string? ReviewId,
     string Reason,
     DateTime OccurredOn = default
 ) : IDomainEvent
@@ -57,7 +57,7 @@ public record ReviewHiddenEvent(
 /// Yorum tekrar aktif edildi event'i
 /// </summary>
 public record ReviewActivatedEvent(
-    string ReviewId,
+    string? ReviewId,
     string AdminId,
     string Reason,
     DateTime OccurredOn = default
@@ -70,7 +70,7 @@ public record ReviewActivatedEvent(
 /// Yoruma belge eklendi event'i
 /// </summary>
 public record ReviewDocumentAttachedEvent(
-    string ReviewId,
+    string? ReviewId,
     string DocumentUrl,
     DateTime OccurredOn = default
 ) : IDomainEvent
@@ -82,7 +82,7 @@ public record ReviewDocumentAttachedEvent(
 /// Yorum belgesi doğrulandı event'i
 /// </summary>
 public record ReviewDocumentVerifiedEvent(
-    string ReviewId,
+    string? ReviewId,
     string AdminId,
     string DocumentUrl,
     DateTime OccurredOn = default

@@ -4,8 +4,8 @@ namespace RateTheWork.Domain.Events;
 /// Rozet deaktive edildi event'i
 /// </summary>
 public record BadgeDeactivatedEvent(
-    string BadgeId,
-    string BadgeName,
+    string? BadgeId,
+    string? BadgeName,
     string Reason,
     DateTime OccurredOn = default
 ) : IDomainEvent
@@ -17,8 +17,8 @@ public record BadgeDeactivatedEvent(
 /// Rozet aktive edildi event'i
 /// </summary>
 public record BadgeActivatedEvent(
-    string BadgeId,
-    string BadgeName,
+    string? BadgeId,
+    string? BadgeName,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -29,7 +29,7 @@ public record BadgeActivatedEvent(
 /// Kullanıcıya rozet verildi event'i
 /// </summary>
 public record BadgeAwardedEvent(
-    string UserBadgeId,
+    string? UserBadgeId,
     string UserId,
     string BadgeId,
     DateTime AwardedAt,
@@ -44,9 +44,9 @@ public record BadgeAwardedEvent(
 /// Kullanıcı rozeti görüntüledi event'i
 /// </summary>
 public record BadgeViewedEvent(
-    string UserBadgeId,
-    string UserId,
-    string BadgeId,
+    string? UserBadgeId,
+    string? UserId,
+    string? BadgeId,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -57,9 +57,9 @@ public record BadgeViewedEvent(
 /// Kullanıcı rozeti gösterdi event'i
 /// </summary>
 public record BadgeDisplayedEvent(
-    string UserBadgeId,
-    string UserId,
-    string BadgeId,
+    string? UserBadgeId,
+    string? UserId,
+    string? BadgeId,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -70,9 +70,9 @@ public record BadgeDisplayedEvent(
 /// Kullanıcı rozeti gizledi event'i
 /// </summary>
 public record BadgeHiddenEvent(
-    string UserBadgeId,
-    string UserId,
-    string BadgeId,
+    string? UserBadgeId,
+    string? UserId,
+    string? BadgeId,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {

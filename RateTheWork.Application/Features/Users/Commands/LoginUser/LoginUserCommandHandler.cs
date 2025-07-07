@@ -67,7 +67,7 @@ public record UserLoginInfo
     /// <summary>
     /// Kullanıcı ID'si
     /// </summary>
-    public string UserId { get; init; } = string.Empty;
+    public string? UserId { get; init; } = string.Empty;
     
     /// <summary>
     /// Anonim kullanıcı adı

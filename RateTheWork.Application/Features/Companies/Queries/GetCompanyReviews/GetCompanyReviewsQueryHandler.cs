@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using RateTheWork.Application.Common.Exceptions;
 using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Application.Common.Mappings;
+using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Interfaces;
 
 namespace RateTheWork.Application.Features.Companies.Queries.GetCompanyReviews;
@@ -17,7 +18,7 @@ public record GetCompanyReviewsQuery : PaginatedRequest, IRequest<PagedList<Comp
     /// <summary>
     /// Yorumları getirilecek şirketin ID'si
     /// </summary>
-    public string CompanyId { get; init; } = string.Empty;
+    public string? CompanyId { get; init; } = string.Empty;
     
     /// <summary>
     /// Yorum türü filtresi (opsiyonel)
@@ -53,7 +54,7 @@ public record CompanyReviewDto
     /// <summary>
     /// Yorum ID'si
     /// </summary>
-    public string ReviewId { get; init; } = string.Empty;
+    public string? ReviewId { get; init; } = string.Empty;
     
     /// <summary>
     /// Yorumu yapan kullanıcının anonim adı
@@ -63,7 +64,7 @@ public record CompanyReviewDto
     /// <summary>
     /// Yorum türü
     /// </summary>
-    public string CommentType { get; init; } = string.Empty;
+    public string? CommentType { get; init; } = string.Empty;
     
     /// <summary>
     /// Verilen puan
@@ -73,7 +74,7 @@ public record CompanyReviewDto
     /// <summary>
     /// Yorum metni
     /// </summary>
-    public string CommentText { get; init; } = string.Empty;
+    public string? CommentText { get; init; } = string.Empty;
     
     /// <summary>
     /// Yorum tarihi
@@ -196,7 +197,7 @@ public class GetCompanyReviewsQueryHandler : IRequestHandler<GetCompanyReviewsQu
         var userDict = users.ToDictionary(u => u.Id);
 
         // Mevcut kullanıcının oylarını getir
-        Dictionary<string, bool>? userVotes = null;
+        Dictionary<string?, bool>? userVotes = null;
         if (_currentUserService.IsAuthenticated && !string.IsNullOrEmpty(_currentUserService.UserId))
         {
             userVotes = await _unitOfWork.ReviewVotes

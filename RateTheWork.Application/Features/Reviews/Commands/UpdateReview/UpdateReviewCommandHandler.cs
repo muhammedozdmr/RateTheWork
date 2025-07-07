@@ -15,7 +15,7 @@ public record UpdateReviewCommand : IRequest<UpdateReviewResult>
     /// <summary>
     /// Güncellenecek yorumun ID'si
     /// </summary>
-    public string ReviewId { get; init; } = string.Empty;
+    public string? ReviewId { get; init; } = string.Empty;
     
     /// <summary>
     /// Yeni puan (değiştirilmek istenmiyorsa null)

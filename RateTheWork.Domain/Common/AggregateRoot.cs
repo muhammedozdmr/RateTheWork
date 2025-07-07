@@ -25,7 +25,7 @@ public abstract class AggregateRoot : BaseEntity
     /// <summary>
     /// Varolan bir aggregate root'u yüklerken kullanılır
     /// </summary>
-    protected AggregateRoot(string id, DateTime createdAt, DateTime? modifiedAt, int version) 
+    protected AggregateRoot(string? id, DateTime createdAt, DateTime? modifiedAt, int version) 
         : base(id, createdAt, modifiedAt)
     {
         Version = version;

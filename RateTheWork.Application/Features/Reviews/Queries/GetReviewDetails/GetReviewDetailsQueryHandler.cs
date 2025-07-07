@@ -16,7 +16,7 @@ public record GetReviewDetailsQuery : IRequest<ReviewDetailDto>
     /// <summary>
     /// Detayları getirilecek yorumun ID'si
     /// </summary>
-    public string ReviewId { get; init; } = string.Empty;
+    public string? ReviewId { get; init; } = string.Empty;
 }
 
 /// <summary>
@@ -69,7 +69,7 @@ public class GetReviewDetailsQueryHandler : IRequestHandler<GetReviewDetailsQuer
             var userBadges = await _unitOfWork.UserBadges.GetAsync(ub => ub.UserId == author.Id);
             if (userBadges.Any())
             {
-                var badgeIds = userBadges.Select(ub => ub.BadgeId).ToList();
+                List<string?> badgeIds = userBadges.Select(ub => ub.BadgeId).ToList();
                 var badges = await _unitOfWork.Badges.GetAsync(b => badgeIds.Contains(b.Id));
                 badgeList = badges.Select(b => new BadgeInfo
                 {
@@ -211,8 +211,8 @@ public record ReviewAuthorInfo
 /// </summary>
 public record BadgeInfo
 {
-    public string Name { get; init; } = string.Empty;
-    public string IconUrl { get; init; } = string.Empty;
+    public string? Name { get; init; } = string.Empty;
+    public string? IconUrl { get; init; } = string.Empty;
 }
 
 /// <summary>
@@ -220,7 +220,7 @@ public record BadgeInfo
 /// </summary>
 public record ReviewCompanyInfo
 {
-    public string CompanyId { get; init; } = string.Empty;
+    public string? CompanyId { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
     public string Sector { get; init; } = string.Empty;
     public string? LogoUrl { get; init; }
@@ -247,11 +247,11 @@ public record ReviewAdminInfo
 /// </summary>
 public record ReportDetail
 {
-    public string ReportId { get; init; } = string.Empty;
-    public string Reason { get; init; } = string.Empty;
+    public string? ReportId { get; init; } = string.Empty;
+    public string? Reason { get; init; } = string.Empty;
     public string? Details { get; init; }
     public DateTime ReportedAt { get; init; }
-    public string Status { get; init; } = string.Empty;
+    public string? Status { get; init; } = string.Empty;
 }
 
 /// <summary>

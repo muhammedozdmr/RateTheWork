@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Application.Common.Mappings;
+using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Interfaces;
 
 namespace RateTheWork.Application.Features.Reviews.Queries.SearchReviews;
@@ -72,12 +73,12 @@ public record SearchReviewDto
     /// <summary>
     /// Yorum ID'si
     /// </summary>
-    public string ReviewId { get; init; } = string.Empty;
+    public string? ReviewId { get; init; } = string.Empty;
     
     /// <summary>
     /// Şirket ID'si
     /// </summary>
-    public string CompanyId { get; init; } = string.Empty;
+    public string? CompanyId { get; init; } = string.Empty;
     
     /// <summary>
     /// Şirket adı
@@ -97,7 +98,7 @@ public record SearchReviewDto
     /// <summary>
     /// Yorum türü
     /// </summary>
-    public string CommentType { get; init; } = string.Empty;
+    public string? CommentType { get; init; } = string.Empty;
     
     /// <summary>
     /// Verilen puan
@@ -107,7 +108,7 @@ public record SearchReviewDto
     /// <summary>
     /// Yorum metni (özet - ilk 200 karakter)
     /// </summary>
-    public string CommentSummary { get; init; } = string.Empty;
+    public string? CommentSummary { get; init; } = string.Empty;
     
     /// <summary>
     /// Yorum tarihi
@@ -272,7 +273,7 @@ public class SearchReviewsQueryHandler : IRequestHandler<SearchReviewsQuery, Pag
     /// <summary>
     /// Metni belirtilen uzunlukta keser
     /// </summary>
-    private static string TruncateText(string text, int maxLength)
+    private static string? TruncateText(string? text, int maxLength)
     {
         if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
             return text;

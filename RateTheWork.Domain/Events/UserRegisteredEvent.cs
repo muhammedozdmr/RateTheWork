@@ -1,7 +1,7 @@
 namespace RateTheWork.Domain.Events;
 
 public record UserRegisteredEvent(
-    string UserId,
+    string? UserId,
     string Email,
     string AnonymousUsername,
     DateTime OccurredOn = default

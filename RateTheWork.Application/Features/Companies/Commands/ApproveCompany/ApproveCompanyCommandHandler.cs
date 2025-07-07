@@ -15,7 +15,7 @@ public record ApproveCompanyCommand : IRequest<ApproveCompanyResult>
     /// <summary>
     /// Onaylanacak şirketin ID'si
     /// </summary>
-    public string CompanyId { get; init; } = string.Empty;
+    public string? CompanyId { get; init; } = string.Empty;
     
     /// <summary>
     /// Onay notları (opsiyonel)

@@ -60,7 +60,7 @@ public interface IUserRepository : IBaseRepository<User>
     /// <param name="companyId">Şirket ID'si</param>
     /// <param name="commentType">Yorum türü (örn: "Maaş", "Çalışma Ortamı")</param>
     /// <returns>Yorum yapılmış mı?</returns>
-    Task<bool> HasUserReviewedCompanyAsync(string userId, string companyId, string commentType);
+    Task<bool> HasUserReviewedCompanyAsync(string? userId, string? companyId, string commentType);
     
     /// <summary>
     /// Kullanıcının banlı olup olmadığını kontrol eder

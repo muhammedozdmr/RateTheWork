@@ -10,8 +10,8 @@ namespace RateTheWork.Domain.Entities;
 public class UserBadge : BaseEntity
 {
     // Properties
-    public string UserId { get; private set; }
-    public string BadgeId { get; private set; }
+    public string? UserId { get; private set; }
+    public string? BadgeId { get; private set; }
     public DateTime AwardedAt { get; private set; }
     public string? AwardReason { get; private set; } // Neden kazandı (özel durumlar için)
     public bool IsDisplayed { get; private set; } // Kullanıcı profilinde görünsün mü?
@@ -23,11 +23,18 @@ public class UserBadge : BaseEntity
     // Navigation için referanslar (lazy loading için kullanılabilir)
     private User? _user;
     private Badge? _badge;
+    
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private UserBadge() : base()
+    {
+    }
 
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private UserBadge(string userId, string badgeId) : base()
+    private UserBadge(string? userId, string? badgeId) : base()
     {
         UserId = userId;
         BadgeId = badgeId;

@@ -33,15 +33,15 @@ public class VerificationRequest : ApprovableBaseEntity
     }
 
     // Properties
-    public string ReviewId { get; private set; }
-    public string UserId { get; private set; }
+    public string? ReviewId { get; private set; }
+    public string? UserId { get; private set; }
     public string? AdminId { get; private set; }
-    public string DocumentUrl { get; private set; }
-    public string DocumentName { get; private set; }
-    public string DocumentType { get; private set; }
+    public string? DocumentUrl { get; private set; }
+    public string? DocumentName { get; private set; }
+    public string? DocumentType { get; private set; }
     public VerificationType Type { get; private set; }
     public DateTime RequestedAt { get; private set; }
-    public string Status { get; private set; }
+    public string? Status { get; private set; }
     public DateTime? ProcessedAt { get; private set; }
     public string? ProcessingNotes { get; private set; }
     public bool IsUrgent { get; private set; }
@@ -49,11 +49,18 @@ public class VerificationRequest : ApprovableBaseEntity
     public string? RejectionReason { get; private set; }
     public bool AllowResubmission { get; private set; } // Tekrar gönderilebilir mi?
     public string? SecurityCheckNotes { get; private set; } // Güvenlik kontrol notları
+    
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private VerificationRequest() : base()
+    {
+    }
 
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private VerificationRequest(string reviewId, string userId, string documentUrl, string documentName, string documentType, string status) : base()
+    private VerificationRequest(string? reviewId, string? userId, string? documentUrl, string? documentName, string? documentType, string? status) : base()
     {
         ReviewId = reviewId;
         UserId = userId;
@@ -70,8 +77,8 @@ public class VerificationRequest : ApprovableBaseEntity
     public static VerificationRequest Create(
         string reviewId,
         string userId,
-        string documentUrl,
-        string documentName,
+        string? documentUrl,
+        string? documentName,
         string documentType,
         VerificationType verificationType = VerificationType.ReviewDocument)
     {
@@ -265,7 +272,7 @@ public class VerificationRequest : ApprovableBaseEntity
     /// <summary>
     /// Belge yeniden yüklendi
     /// </summary>
-    public void UpdateDocument(string newDocumentUrl, string newDocumentName)
+    public void UpdateDocument(string? newDocumentUrl, string? newDocumentName)
     {
         if (Status != VerificationStatuses.Rejected || !AllowResubmission)
             throw new BusinessRuleException("Belge güncellemesi yapılamaz.");
@@ -338,7 +345,7 @@ public class VerificationRequest : ApprovableBaseEntity
     }
 
     // Validation methods
-    private static void ValidateDocumentUrl(string url)
+    private static void ValidateDocumentUrl(string? url)
     {
         if (string.IsNullOrWhiteSpace(url))
             throw new ArgumentNullException(nameof(url));
@@ -347,7 +354,7 @@ public class VerificationRequest : ApprovableBaseEntity
             throw new BusinessRuleException("Geçersiz belge URL'i.");
     }
 
-    private static void ValidateDocumentName(string name)
+    private static void ValidateDocumentName(string? name)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentNullException(nameof(name));

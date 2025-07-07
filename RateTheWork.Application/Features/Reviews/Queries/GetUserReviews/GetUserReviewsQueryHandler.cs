@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using RateTheWork.Application.Common.Exceptions;
 using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Application.Common.Mappings;
+using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Interfaces;
 
 namespace RateTheWork.Application.Features.Reviews.Queries.GetUserReviews;
@@ -43,12 +44,12 @@ public record UserReviewDto
     /// <summary>
     /// Yorum ID'si
     /// </summary>
-    public string ReviewId { get; init; } = string.Empty;
+    public string? ReviewId { get; init; } = string.Empty;
     
     /// <summary>
     /// Şirket ID'si
     /// </summary>
-    public string CompanyId { get; init; } = string.Empty;
+    public string? CompanyId { get; init; } = string.Empty;
     
     /// <summary>
     /// Şirket adı
@@ -58,7 +59,7 @@ public record UserReviewDto
     /// <summary>
     /// Yorum türü
     /// </summary>
-    public string CommentType { get; init; } = string.Empty;
+    public string? CommentType { get; init; } = string.Empty;
     
     /// <summary>
     /// Verilen puan
@@ -68,7 +69,7 @@ public record UserReviewDto
     /// <summary>
     /// Yorum metni
     /// </summary>
-    public string CommentText { get; init; } = string.Empty;
+    public string? CommentText { get; init; } = string.Empty;
     
     /// <summary>
     /// Yorum tarihi

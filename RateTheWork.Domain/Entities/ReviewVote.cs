@@ -26,8 +26,8 @@ public class ReviewVote : BaseEntity
     }
 
     // Properties
-    public string UserId { get; private set; }
-    public string ReviewId { get; private set; }
+    public string? UserId { get; private set; }
+    public string? ReviewId { get; private set; }
     public bool IsUpvote { get; private set; }
     public DateTime VotedAt { get; private set; }
     public VoteSource Source { get; private set; }
@@ -38,11 +38,18 @@ public class ReviewVote : BaseEntity
     public bool WasChanged { get; private set; } // Oy değiştirildi mi?
     public DateTime? LastChangedAt { get; private set; }
     public int ChangeCount { get; private set; } // Kaç kez değiştirildi?
+    
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private ReviewVote() : base()
+    {
+    }
 
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private ReviewVote(string userId, string reviewId) : base()
+    private ReviewVote(string? userId, string? reviewId) : base()
     {
         UserId = userId;
         ReviewId = reviewId;

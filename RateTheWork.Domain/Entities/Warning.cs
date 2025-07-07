@@ -29,9 +29,9 @@ public class Warning : BaseEntity
     }
 
     // Properties
-    public string UserId { get; private set; }
-    public string AdminId { get; private set; }
-    public string Reason { get; private set; }
+    public string? UserId { get; private set; }
+    public string? AdminId { get; private set; }
+    public string? Reason { get; private set; }
     public string? DetailedExplanation { get; private set; }
     public WarningType Type { get; private set; }
     public WarningSeverity Severity { get; private set; }
@@ -47,9 +47,16 @@ public class Warning : BaseEntity
     public int Points { get; private set; } // Uyarı puanı (ağırlık)
 
     /// <summary>
-    /// EF Core için private constructor
+    /// EF Core için parametresiz private constructor
     /// </summary>
-    private Warning(string userId, string adminId, string reason) : base()
+    private Warning() : base()
+    {
+    }
+    
+    /// <summary>
+    /// EF Core için factory private constructor
+    /// </summary>
+    private Warning(string? userId, string? adminId, string? reason) : base()
     {
         UserId = userId;
         AdminId = adminId;

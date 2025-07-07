@@ -6,7 +6,7 @@ namespace RateTheWork.Domain.Events;
 /// Kullanıcı uyarıldı event'i
 /// </summary>
 public record UserWarnedEvent(
-    string WarningId,
+    string? WarningId,
     string UserId,
     string AdminId,
     string Reason,
@@ -23,8 +23,8 @@ public record UserWarnedEvent(
 /// Uyarı onaylandı event'i
 /// </summary>
 public record WarningAcknowledgedEvent(
-    string WarningId,
-    string UserId,
+    string? WarningId,
+    string? UserId,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -35,8 +35,8 @@ public record WarningAcknowledgedEvent(
 /// Uyarıya itiraz edildi event'i
 /// </summary>
 public record WarningAppealedEvent(
-    string WarningId,
-    string UserId,
+    string? WarningId,
+    string? UserId,
     string AppealReason,
     DateTime OccurredOn = default
 ) : IDomainEvent
@@ -48,8 +48,8 @@ public record WarningAppealedEvent(
 /// Uyarı itirazı değerlendirildi event'i
 /// </summary>
 public record WarningAppealReviewedEvent(
-    string WarningId,
-    string UserId,
+    string? WarningId,
+    string? UserId,
     string ReviewedByAdminId,
     bool Accepted,
     string ReviewNotes,
@@ -63,8 +63,8 @@ public record WarningAppealReviewedEvent(
 /// Uyarı iptal edildi event'i
 /// </summary>
 public record WarningRevokedEvent(
-    string WarningId,
-    string UserId,
+    string? WarningId,
+    string? UserId,
     string RevokedByAdminId,
     string Reason,
     DateTime OccurredOn = default

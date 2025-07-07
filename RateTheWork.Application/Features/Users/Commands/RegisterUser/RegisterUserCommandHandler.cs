@@ -80,7 +80,7 @@ public record RegisterUserResult
     /// <summary>
     /// Başarılı kayıt durumunda oluşturulan kullanıcı ID'si
     /// </summary>
-    public string UserId { get; init; } = string.Empty;
+    public string? UserId { get; init; } = string.Empty;
     
     /// <summary>
     /// Sistem tarafından otomatik oluşturulan anonim kullanıcı adı

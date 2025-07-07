@@ -13,7 +13,7 @@ public abstract class BaseEntity
     /// <summary>
     /// Entity'nin benzersiz kimliği (GUID)
     /// </summary>
-    public string Id { get; protected set; }
+    public string? Id { get; }
     
     /// <summary>
     /// Entity'nin oluşturulma tarihi
@@ -43,7 +43,7 @@ public abstract class BaseEntity
     /// <summary>
     /// Varolan bir entity'yi yüklerken kullanılır (örn: veritabanından)
     /// </summary>
-    protected BaseEntity(string id, DateTime createdAt, DateTime? modifiedAt)
+    protected BaseEntity(string? id, DateTime createdAt, DateTime? modifiedAt)
     {
         Id = id;
         CreatedAt = createdAt;

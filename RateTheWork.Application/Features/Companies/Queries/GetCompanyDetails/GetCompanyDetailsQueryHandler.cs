@@ -16,7 +16,7 @@ public record GetCompanyDetailsQuery : IRequest<CompanyDetailDto>
     /// <summary>
     /// Detayları getirilecek şirketin ID'si
     /// </summary>
-    public string CompanyId { get; init; } = string.Empty;
+    public string? CompanyId { get; init; } = string.Empty;
 }
 
 /// <summary>
@@ -100,7 +100,7 @@ public class GetCompanyDetailsQueryHandler : IRequestHandler<GetCompanyDetailsQu
     /// <summary>
     /// Şirket yorum istatistiklerini hesaplar
     /// </summary>
-    private async Task<ReviewStatistics> GetReviewStatisticsAsync(string companyId, CancellationToken cancellationToken)
+    private async Task<ReviewStatistics> GetReviewStatisticsAsync(string? companyId, CancellationToken cancellationToken)
     {
         var reviews = await _unitOfWork.Reviews.GetAsync(r => 
             r.CompanyId == companyId && r.IsActive);
@@ -133,7 +133,7 @@ public class GetCompanyDetailsQueryHandler : IRequestHandler<GetCompanyDetailsQu
     /// <summary>
     /// Kullanıcının bu şirkete yaptığı yorum türlerini getirir
     /// </summary>
-    private async Task<List<string>> GetUserReviewTypesAsync(string companyId, string userId, CancellationToken cancellationToken)
+    private async Task<List<string>> GetUserReviewTypesAsync(string? companyId, string userId, CancellationToken cancellationToken)
     {
         var userReviews = await _unitOfWork.Reviews.GetAsync(r => 
             r.CompanyId == companyId && 

@@ -4,8 +4,8 @@ namespace RateTheWork.Domain.Interfaces;
 
 public interface IReviewVoteRepository : IBaseRepository<ReviewVote>
 {
-    Task<ReviewVote?> GetUserVoteForReviewAsync(string userId, string reviewId);
-    Task<List<ReviewVote>> GetVotesForReviewAsync(string reviewId);
+    Task<ReviewVote?> GetUserVoteForReviewAsync(string userId, string? reviewId);
+    Task<List<ReviewVote>> GetVotesForReviewAsync(string? reviewId);
     Task<int> GetUpvoteCountAsync(string reviewId);
     Task<int> GetDownvoteCountAsync(string reviewId);
     Task<bool> HasUserVotedAsync(string userId, string reviewId);

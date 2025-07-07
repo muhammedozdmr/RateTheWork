@@ -43,7 +43,7 @@ public abstract class ApprovableBaseEntity : AuditableBaseEntity
     /// <summary>
     /// Varolan bir approvable entity'yi yüklerken kullanılır
     /// </summary>
-    protected ApprovableBaseEntity(string id, DateTime createdAt, DateTime? modifiedAt) 
+    protected ApprovableBaseEntity(string? id, DateTime createdAt, DateTime? modifiedAt) 
         : base(id, createdAt, modifiedAt)
     {
         IsApproved = false;

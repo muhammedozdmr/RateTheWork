@@ -4,7 +4,7 @@ namespace RateTheWork.Domain.Events;
 /// Doğrulama talebi oluşturuldu event'i
 /// </summary>
 public record VerificationRequestCreatedEvent(
-    string RequestId,
+    string? RequestId,
     string UserId,
     string ReviewId,
     string DocumentType,
@@ -18,7 +18,7 @@ public record VerificationRequestCreatedEvent(
 /// Doğrulama talebi işleme alındı event'i
 /// </summary>
 public record VerificationRequestProcessingStartedEvent(
-    string RequestId,
+    string? RequestId,
     string AdminId,
     DateTime OccurredOn = default
 ) : IDomainEvent
@@ -30,11 +30,11 @@ public record VerificationRequestProcessingStartedEvent(
 /// Doğrulama talebi onaylandı event'i
 /// </summary>
 public record VerificationRequestApprovedEvent(
-    string RequestId,
-    string UserId,
-    string ReviewId,
+    string? RequestId,
+    string? UserId,
+    string? ReviewId,
     string ApprovedByAdminId,
-    string DocumentType,
+    string? DocumentType,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -45,9 +45,9 @@ public record VerificationRequestApprovedEvent(
 /// Doğrulama talebi reddedildi event'i
 /// </summary>
 public record VerificationRequestRejectedEvent(
-    string RequestId,
-    string UserId,
-    string ReviewId,
+    string? RequestId,
+    string? UserId,
+    string? ReviewId,
     string RejectedByAdminId,
     string RejectionReason,
     DateTime OccurredOn = default
@@ -60,9 +60,9 @@ public record VerificationRequestRejectedEvent(
 /// Doğrulama talebi yeniden gönderildi event'i
 /// </summary>
 public record VerificationRequestResubmittedEvent(
-    string RequestId,
-    string UserId,
-    string ReviewId,
+    string? RequestId,
+    string? UserId,
+    string? ReviewId,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -73,7 +73,7 @@ public record VerificationRequestResubmittedEvent(
 /// Doğrulama talebi acil işaretlendi event'i
 /// </summary>
 public record VerificationRequestMarkedUrgentEvent(
-    string RequestId,
+    string? RequestId,
     string MarkedByAdminId,
     string Reason,
     DateTime OccurredOn = default

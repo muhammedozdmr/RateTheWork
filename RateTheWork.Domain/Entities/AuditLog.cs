@@ -58,10 +58,10 @@ public class AuditLog : BaseEntity
     }
 
     // Properties
-    public string AdminUserId { get; private set; }
-    public string ActionType { get; private set; }
-    public string EntityType { get; private set; }
-    public string EntityId { get; private set; }
+    public string? AdminUserId { get; private set; }
+    public string? ActionType { get; private set; }
+    public string? EntityType { get; private set; }
+    public string? EntityId { get; private set; }
     public string? Details { get; private set; }
     public DateTime Timestamp { get; private set; }
     public AuditSeverity Severity { get; private set; }
@@ -74,9 +74,16 @@ public class AuditLog : BaseEntity
     public string? AdditionalData { get; private set; } // JSON format
 
     /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private AuditLog() : base()
+    {
+    }
+    
+    /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private AuditLog(string adminUserId, string actionType, string entityType, string entityId) : base()
+    private AuditLog(string? adminUserId, string? actionType, string? entityType, string? entityId) : base()
     {
         AdminUserId = adminUserId;
         ActionType = actionType;

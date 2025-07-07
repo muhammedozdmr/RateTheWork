@@ -20,11 +20,11 @@ public class Review : AuditableBaseEntity
     private const int MaxEditHours = 24; // Yorum düzenleme süresi
 
     // Properties
-    public string CompanyId { get; private set; }
-    public string UserId { get; private set; }
-    public string CommentType { get; private set; }
+    public string? CompanyId { get; private set; }
+    public string? UserId { get; private set; }
+    public string? CommentType { get; private set; }
     public decimal OverallRating { get; private set; }
-    public string CommentText { get; private set; }
+    public string? CommentText { get; private set; }
     public string? DocumentUrl { get; private set; }
     public bool IsDocumentVerified { get; private set; }
     public int Upvotes { get; private set; }
@@ -34,11 +34,18 @@ public class Review : AuditableBaseEntity
     public DateTime? LastEditedAt { get; private set; }
     public string? EditReason { get; private set; }
     public int EditCount { get; private set; }
+    
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private Review() : base()
+    {
+    }
 
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private Review(string companyId, string userId, string commentType, string commentText) : base()
+    private Review(string? companyId, string? userId, string? commentType, string? commentText) : base()
     {
         CompanyId = companyId;
         UserId = userId;
@@ -54,7 +61,7 @@ public class Review : AuditableBaseEntity
         string userId,
         string commentType,
         decimal overallRating,
-        string commentText,
+        string? commentText,
         string? documentUrl = null)
     {
         // Validasyonlar
@@ -93,7 +100,7 @@ public class Review : AuditableBaseEntity
     /// <summary>
     /// Yorumu düzenler
     /// </summary>
-    public void Edit(string newCommentText, string editReason, string editorUserId)
+    public void Edit(string? newCommentText, string editReason, string editorUserId)
     {
         // Yetki kontrolü
         if (UserId != editorUserId)
@@ -274,7 +281,7 @@ public class Review : AuditableBaseEntity
             throw new BusinessRuleException($"Puan {MinRating} ile {MaxRating} arasında olmalıdır.");
     }
 
-    private static void ValidateCommentText(string commentText)
+    private static void ValidateCommentText(string? commentText)
     {
         if (string.IsNullOrWhiteSpace(commentText))
             throw new BusinessRuleException("Yorum metni boş olamaz.");

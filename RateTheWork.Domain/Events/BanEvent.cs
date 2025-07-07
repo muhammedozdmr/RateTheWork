@@ -6,7 +6,7 @@ namespace RateTheWork.Domain.Events;
 /// Kullanıcı banlandı event'i
 /// </summary>
 public record UserBannedEvent(
-    string BanId,
+    string? BanId,
     string UserId,
     string AdminId,
     string Reason,
@@ -22,8 +22,8 @@ public record UserBannedEvent(
 /// Ban kaldırıldı event'i
 /// </summary>
 public record BanLiftedEvent(
-    string BanId,
-    string UserId,
+    string? BanId,
+    string? UserId,
     string LiftedByAdminId,
     string Reason,
     Ban.BanType BanType,
@@ -37,8 +37,8 @@ public record BanLiftedEvent(
 /// Ban süresi uzatıldı event'i
 /// </summary>
 public record BanExtendedEvent(
-    string BanId,
-    string UserId,
+    string? BanId,
+    string? UserId,
     string ExtendedByAdminId,
     int AdditionalDays,
     string Reason,
@@ -52,8 +52,8 @@ public record BanExtendedEvent(
 /// Ban kalıcı yapıldı event'i
 /// </summary>
 public record BanMadePermanentEvent(
-    string BanId,
-    string UserId,
+    string? BanId,
+    string? UserId,
     string AdminId,
     string Reason,
     DateTime OccurredOn = default

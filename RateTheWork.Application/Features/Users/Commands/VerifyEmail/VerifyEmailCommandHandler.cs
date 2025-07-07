@@ -13,7 +13,7 @@ public record VerifyEmailCommand : IRequest<VerifyEmailResult>
     /// <summary>
     /// Kullanıcı ID'si
     /// </summary>
-    public string UserId { get; init; } = string.Empty;
+    public string? UserId { get; init; } = string.Empty;
     
     /// <summary>
     /// Email doğrulama token'ı

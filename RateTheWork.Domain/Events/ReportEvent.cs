@@ -4,7 +4,7 @@ namespace RateTheWork.Domain.Events;
 /// Şikayet oluşturuldu event'i
 /// </summary>
 public record ReportCreatedEvent(
-    string ReportId,
+    string? ReportId,
     string ReviewId,
     string ReporterUserId,
     string ReportReason,
@@ -19,8 +19,8 @@ public record ReportCreatedEvent(
 /// Şikayet incelemeye alındı event'i
 /// </summary>
 public record ReportReviewStartedEvent(
-    string ReportId,
-    string ReviewId,
+    string? ReportId,
+    string? ReviewId,
     string AdminId,
     DateTime OccurredOn = default
 ) : IDomainEvent
@@ -32,11 +32,11 @@ public record ReportReviewStartedEvent(
 /// Şikayet çözümlendi event'i
 /// </summary>
 public record ReportResolvedEvent(
-    string ReportId,
-    string ReviewId,
+    string? ReportId,
+    string? ReviewId,
     string AdminId,
     string ActionTaken,
-    string ReportReason,
+    string? ReportReason,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -47,8 +47,8 @@ public record ReportResolvedEvent(
 /// Şikayet reddedildi event'i
 /// </summary>
 public record ReportDismissedEvent(
-    string ReportId,
-    string ReviewId,
+    string? ReportId,
+    string? ReviewId,
     string AdminId,
     string DismissReason,
     DateTime OccurredOn = default
@@ -61,8 +61,8 @@ public record ReportDismissedEvent(
 /// Şikayet üst yönetime iletildi event'i
 /// </summary>
 public record ReportEscalatedEvent(
-    string ReportId,
-    string ReviewId,
+    string? ReportId,
+    string? ReviewId,
     string AdminId,
     string EscalationReason,
     DateTime OccurredOn = default
