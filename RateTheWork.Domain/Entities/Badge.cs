@@ -12,32 +12,44 @@ public class Badge : BaseEntity
     // Badge Types
     public enum BadgeType
     {
-        FirstReview,        // İlk yorum
-        ActiveReviewer,     // Aktif yorumcu (10+ yorum)
-        TrustedReviewer,    // Güvenilir yorumcu (5+ doğrulanmış yorum)
-        TopContributor,    // En çok katkıda bulunan (50+ yorum)
-        CompanyExplorer,   // Farklı şirketlerde yorum yapan (10+ şirket)
-        DetailedReviewer,  // Detaylı yorumlar yazan (ortalama 500+ karakter)
-        HelpfulReviewer,   // Faydalı yorumlar (upvote oranı %80+)
-        Anniversary,       // Platform yıldönümü
-        SpecialEvent      // Özel etkinlik rozeti
+        FirstReview
+        , // İlk yorum
+        ActiveReviewer
+        , // Aktif yorumcu (10+ yorum)
+        TrustedReviewer
+        , // Güvenilir yorumcu (5+ doğrulanmış yorum)
+        TopContributor
+        , // En çok katkıda bulunan (50+ yorum)
+        CompanyExplorer
+        , // Farklı şirketlerde yorum yapan (10+ şirket)
+        DetailedReviewer
+        , // Detaylı yorumlar yazan (ortalama 500+ karakter)
+        HelpfulReviewer
+        , // Faydalı yorumlar (upvote oranı %80+)
+        Anniversary
+        , // Platform yıldönümü
+        SpecialEvent // Özel etkinlik rozeti
     }
 
     // Badge Rarity Levels
     public enum BadgeRarity
     {
-        Common,      // Herkes kazanabilir
-        Uncommon,    // Biraz çaba gerektirir
-        Rare,        // Zor kazanılır
-        Epic,        // Çok zor kazanılır
-        Legendary    // Efsanevi seviye
+        Common
+        , // Herkes kazanabilir
+        Uncommon
+        , // Biraz çaba gerektirir
+        Rare
+        , // Zor kazanılır
+        Epic
+        , // Çok zor kazanılır
+        Legendary // Efsanevi seviye
     }
 
     // Properties
-    public string? Name { get; private set; }
-    public string? Description { get; private set; }
-    public string? IconUrl { get; private set; }
-    public string? Criteria { get; private set; }
+    public string? Name { get; private set; } = string.Empty;
+    public string? Description { get; private set; } = string.Empty;
+    public string? IconUrl { get; private set; } = string.Empty;
+    public string? Criteria { get; private set; } = string.Empty;
     public BadgeType Type { get; private set; }
     public BadgeRarity Rarity { get; private set; }
     public int RequiredCount { get; private set; } // Kaç adet gerekli (yorum sayısı vb.)
@@ -46,14 +58,14 @@ public class Badge : BaseEntity
     public DateTime? AvailableUntil { get; private set; }
     public int Points { get; private set; } // Rozet puanı (gamification için)
 
-    
+
     /// <summary>
     /// EF Core için parametresiz private constructor
     /// </summary>
     private Badge() : base()
     {
     }
-    
+
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
@@ -68,15 +80,17 @@ public class Badge : BaseEntity
     /// <summary>
     /// Yeni rozet oluşturur
     /// </summary>
-    public static Badge Create(
-        string? name,
-        string? description,
-        string? iconUrl,
-        string criteria,
-        BadgeType type,
-        BadgeRarity rarity,
-        int requiredCount = 0,
-        int points = 10)
+    public static Badge Create
+    (
+        string? name
+        , string? description
+        , string? iconUrl
+        , string criteria
+        , BadgeType type
+        , BadgeRarity rarity
+        , int requiredCount = 0
+        , int points = 10
+    )
     {
         ValidateName(name);
         ValidateDescription(description);
@@ -84,15 +98,9 @@ public class Badge : BaseEntity
 
         var badge = new Badge
         {
-            Name = name,
-            Description = description,
-            IconUrl = iconUrl,
-            Criteria = criteria ?? throw new ArgumentNullException(nameof(criteria)),
-            Type = type,
-            Rarity = rarity,
-            RequiredCount = requiredCount,
-            IsActive = true,
-            Points = points
+            Name = name, Description = description, IconUrl = iconUrl
+            , Criteria = criteria ?? throw new ArgumentNullException(nameof(criteria)), Type = type, Rarity = rarity
+            , RequiredCount = requiredCount, IsActive = true, Points = points
         };
 
         // Rozet tipine göre varsayılan değerler
@@ -104,14 +112,16 @@ public class Badge : BaseEntity
     /// <summary>
     /// Özel etkinlik rozeti oluşturur
     /// </summary>
-    public static Badge CreateSpecialEventBadge(
-        string? name,
-        string? description,
-        string? iconUrl,
-        string criteria,
-        DateTime availableFrom,
-        DateTime availableUntil,
-        int points = 50)
+    public static Badge CreateSpecialEventBadge
+    (
+        string? name
+        , string? description
+        , string? iconUrl
+        , string criteria
+        , DateTime availableFrom
+        , DateTime availableUntil
+        , int points = 50
+    )
     {
         var badge = Create(name, description, iconUrl, criteria, BadgeType.SpecialEvent, BadgeRarity.Epic, 0, points);
         badge.SetAvailabilityPeriod(availableFrom, availableUntil);
@@ -121,14 +131,16 @@ public class Badge : BaseEntity
     /// <summary>
     /// Kullanıcının rozeti kazanıp kazanamayacağını kontrol eder
     /// </summary>
-    public bool CheckEligibility(
-        int userReviewCount,
-        int userVerifiedReviewCount,
-        int userCompanyCount,
-        double userAverageCommentLength,
-        double userUpvoteRatio,
-        DateTime userRegistrationDate,
-        int userWarningCount)
+    public bool CheckEligibility
+    (
+        int userReviewCount
+        , int userVerifiedReviewCount
+        , int userCompanyCount
+        , double userAverageCommentLength
+        , double userUpvoteRatio
+        , DateTime userRegistrationDate
+        , int userWarningCount
+    )
     {
         // Aktif değilse kazanılamaz
         if (!IsActive)
@@ -141,24 +153,15 @@ public class Badge : BaseEntity
         // Rozet tipine göre kontrol
         return Type switch
         {
-            BadgeType.FirstReview => userReviewCount >= 1,
-            
-            BadgeType.ActiveReviewer => userReviewCount >= RequiredCount,
-            
-            BadgeType.TrustedReviewer => userVerifiedReviewCount >= RequiredCount,
-            
-            BadgeType.TopContributor => userReviewCount >= RequiredCount && userWarningCount == 0,
-            
-            BadgeType.CompanyExplorer => userCompanyCount >= RequiredCount,
-            
-            BadgeType.DetailedReviewer => userAverageCommentLength >= 500 && userReviewCount >= 5,
-            
-            BadgeType.HelpfulReviewer => userUpvoteRatio >= 0.8 && userReviewCount >= 10,
-            
-            BadgeType.Anniversary => (DateTime.UtcNow - userRegistrationDate).TotalDays >= 365,
-            
-            BadgeType.SpecialEvent => true, // Özel mantık gerekebilir
-            
+            BadgeType.FirstReview => userReviewCount >= 1, BadgeType.ActiveReviewer => userReviewCount >= RequiredCount
+            , BadgeType.TrustedReviewer => userVerifiedReviewCount >= RequiredCount
+            , BadgeType.TopContributor => userReviewCount >= RequiredCount && userWarningCount == 0
+            , BadgeType.CompanyExplorer => userCompanyCount >= RequiredCount
+            , BadgeType.DetailedReviewer => userAverageCommentLength >= 500 && userReviewCount >= 5
+            , BadgeType.HelpfulReviewer => userUpvoteRatio >= 0.8 && userReviewCount >= 10
+            , BadgeType.Anniversary => (DateTime.UtcNow - userRegistrationDate).TotalDays >= 365
+            , BadgeType.SpecialEvent => true, // Özel mantık gerekebilir
+
             _ => false
         };
     }
@@ -258,11 +261,15 @@ public class Badge : BaseEntity
     {
         return Rarity switch
         {
-            BadgeRarity.Common => "#808080",      // Gri
-            BadgeRarity.Uncommon => "#1EFF00",    // Yeşil
-            BadgeRarity.Rare => "#0080FF",        // Mavi
-            BadgeRarity.Epic => "#B335F7",        // Mor
-            BadgeRarity.Legendary => "#FF8000",   // Turuncu
+            BadgeRarity.Common => "#808080", // Gri
+            BadgeRarity.Uncommon => "#1EFF00"
+            , // Yeşil
+            BadgeRarity.Rare => "#0080FF"
+            , // Mavi
+            BadgeRarity.Epic => "#B335F7"
+            , // Mor
+            BadgeRarity.Legendary => "#FF8000"
+            , // Turuncu
             _ => "#808080"
         };
     }
@@ -327,12 +334,8 @@ public class Badge : BaseEntity
     {
         return Rarity switch
         {
-            BadgeRarity.Common => "Sıradan",
-            BadgeRarity.Uncommon => "Yaygın Olmayan",
-            BadgeRarity.Rare => "Nadir",
-            BadgeRarity.Epic => "Epik",
-            BadgeRarity.Legendary => "Efsanevi",
-            _ => "Bilinmeyen"
+            BadgeRarity.Common => "Sıradan", BadgeRarity.Uncommon => "Yaygın Olmayan", BadgeRarity.Rare => "Nadir"
+            , BadgeRarity.Epic => "Epik", BadgeRarity.Legendary => "Efsanevi", _ => "Bilinmeyen"
         };
     }
 

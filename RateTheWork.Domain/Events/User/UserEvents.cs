@@ -1,13 +1,13 @@
-namespace RateTheWork.Domain.Events;
+namespace RateTheWork.Domain.Events.User;
 
 /// <summary>
-/// Yorum eklendi event'i
+/// 1. Kullanıcı kayıt oldu event'i
 /// </summary>
-public record ReviewCreatedEvent(
-    string? ReviewId,
+public record UserRegisteredEvent(
     string UserId,
-    string CompanyId,
-    decimal Rating,
+    string Email,
+    string AnonymousUsername,
+    DateTime RegisteredAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -15,12 +15,12 @@ public record ReviewCreatedEvent(
 }
 
 /// <summary>
-/// Yorum düzenlendi event'i
+/// 2. Email doğrulandı event'i
 /// </summary>
-public record ReviewEditedEvent(
-    string? ReviewId,
-    string EditorUserId,
-    string EditReason,
+public record UserEmailVerifiedEvent(
+    string UserId,
+    string Email,
+    DateTime VerifiedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -28,13 +28,12 @@ public record ReviewEditedEvent(
 }
 
 /// <summary>
-/// Yorum şikayet edildi event'i
+/// 3. Telefon doğrulandı event'i
 /// </summary>
-public record ReviewReportedEvent(
-    string? ReviewId,
-    string ReporterUserId,
-    string ReportReason,
-    int TotalReportCount,
+public record UserPhoneVerifiedEvent(
+    string UserId,
+    string PhoneNumber,
+    DateTime VerifiedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -42,36 +41,12 @@ public record ReviewReportedEvent(
 }
 
 /// <summary>
-/// Yorum gizlendi event'i
+/// 4. TC Kimlik doğrulandı event'i
 /// </summary>
-public record ReviewHiddenEvent(
-    string? ReviewId,
-    string Reason,
-    DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
-
-/// <summary>
-/// Yorum tekrar aktif edildi event'i
-/// </summary>
-public record ReviewActivatedEvent(
-    string? ReviewId,
-    string AdminId,
-    string Reason,
-    DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
-
-/// <summary>
-/// Yoruma belge eklendi event'i
-/// </summary>
-public record ReviewDocumentAttachedEvent(
-    string? ReviewId,
+public record UserTcIdentityVerifiedEvent(
+    string UserId,
     string DocumentUrl,
+    DateTime VerifiedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -79,12 +54,37 @@ public record ReviewDocumentAttachedEvent(
 }
 
 /// <summary>
-/// Yorum belgesi doğrulandı event'i
+/// 5. Kullanıcı profili güncellendi event'i
 /// </summary>
-public record ReviewDocumentVerifiedEvent(
-    string? ReviewId,
-    string AdminId,
-    string DocumentUrl,
+public record UserProfileUpdatedEvent(
+    string UserId,
+    string[] UpdatedFields,
+    DateTime UpdatedAt,
+    DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 6. Kullanıcı şifresi değiştirildi event'i
+/// </summary>
+public record UserPasswordChangedEvent(
+    string UserId,
+    DateTime ChangedAt,
+    DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 7. Kullanıcı hesabı silindi event'i
+/// </summary>
+public record UserAccountDeletedEvent(
+    string UserId,
+    string Reason,
+    DateTime DeletedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {

@@ -1,17 +1,18 @@
-using RateTheWork.Domain.Entities;
-
-namespace RateTheWork.Domain.Events;
+namespace RateTheWork.Domain.Events.Warning;
 
 /// <summary>
-/// Kullanıcı banlandı event'i
+/// 1. Kullanıcı uyarıldı event'i
 /// </summary>
-public record UserBannedEvent(
-    string? BanId,
+public record UserWarnedEvent(
+    string WarningId,
     string UserId,
     string AdminId,
     string Reason,
-    Ban.BanType BanType,
-    DateTime? UnbanDate,
+    string WarningType,
+    string Severity,
+    int Points,
+    int TotalWarnings,
+    DateTime IssuedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -19,14 +20,12 @@ public record UserBannedEvent(
 }
 
 /// <summary>
-/// Ban kaldırıldı event'i
+/// 2. Uyarı onaylandı (kullanıcı gördü) event'i
 /// </summary>
-public record BanLiftedEvent(
-    string? BanId,
-    string? UserId,
-    string LiftedByAdminId,
-    string Reason,
-    Ban.BanType BanType,
+public record WarningAcknowledgedEvent(
+    string WarningId,
+    string UserId,
+    DateTime AcknowledgedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -34,14 +33,13 @@ public record BanLiftedEvent(
 }
 
 /// <summary>
-/// Ban süresi uzatıldı event'i
+/// 3. Uyarıya itiraz edildi event'i
 /// </summary>
-public record BanExtendedEvent(
-    string? BanId,
-    string? UserId,
-    string ExtendedByAdminId,
-    int AdditionalDays,
-    string Reason,
+public record WarningAppealedEvent(
+    string WarningId,
+    string UserId,
+    string AppealNotes,
+    DateTime AppealedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -49,13 +47,12 @@ public record BanExtendedEvent(
 }
 
 /// <summary>
-/// Ban kalıcı yapıldı event'i
+/// 4. Uyarı süresi doldu event'i
 /// </summary>
-public record BanMadePermanentEvent(
-    string? BanId,
-    string? UserId,
-    string AdminId,
-    string Reason,
+public record WarningExpiredEvent(
+    string WarningId,
+    string UserId,
+    DateTime ExpiredAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {

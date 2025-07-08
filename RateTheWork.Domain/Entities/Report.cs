@@ -34,20 +34,20 @@ public class Report : BaseEntity
     }
 
     // Properties
-    public string? ReviewId { get; private set; }
-    public string? ReporterUserId { get; private set; }
-    public string? ReportReason { get; private set; }
-    public string? ReportDetails { get; private set; }
+    public string? ReviewId { get; private set; } = string.Empty;
+    public string? ReporterUserId { get; private set; } = string.Empty;
+    public string? ReportReason { get; private set; } = string.Empty;
+    public string? ReportDetails { get; private set; } = string.Empty;
     public DateTime ReportedAt { get; private set; }
-    public string? Status { get; private set; }
-    public string? AdminNotes { get; private set; }
-    public string? ReviewedBy { get; private set; }
+    public string? Status { get; private set; } = string.Empty;
+    public string? AdminNotes { get; private set; } = string.Empty;
+    public string? ReviewedBy { get; private set; } = string.Empty;
     public DateTime? ReviewedAt { get; private set; }
-    public string? ActionTaken { get; private set; } // Alınan aksiyon
+    public string? ActionTaken { get; private set; } = string.Empty; // Alınan aksiyon
     public bool IsAnonymous { get; private set; } // Anonim şikayet mi?
     public int Priority { get; private set; } // Öncelik (1-5)
     public bool RequiresUrgentAction { get; private set; }
-    public string? RelatedReports { get; private set; } // İlişkili diğer şikayetler
+    public string? RelatedReports { get; private set; } = string.Empty; // İlişkili diğer şikayetler
 
     /// <summary>
     /// EF Core için parametresiz private constructor
@@ -55,7 +55,7 @@ public class Report : BaseEntity
     private Report() : base()
     {
     }
-    
+
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
@@ -70,31 +70,29 @@ public class Report : BaseEntity
     /// <summary>
     /// Yeni şikayet oluşturur
     /// </summary>
-    public static Report Create(
-        string reviewId,
-        string reporterUserId,
-        string reportReason,
-        string? reportDetails = null,
-        bool isAnonymous = false)
+    public static Report Create
+    (
+        string reviewId
+        , string reporterUserId
+        , string reportReason
+        , string? reportDetails = null
+        , bool isAnonymous = false
+    )
     {
         ValidateReportReason(reportReason);
         ValidateReportDetails(reportDetails);
 
         var report = new Report
         {
-            ReviewId = reviewId ?? throw new ArgumentNullException(nameof(reviewId)),
-            ReporterUserId = reporterUserId ?? throw new ArgumentNullException(nameof(reporterUserId)),
-            ReportReason = reportReason,
-            ReportDetails = reportDetails,
-            ReportedAt = DateTime.UtcNow,
-            Status = ReportStatuses.Pending,
-            IsAnonymous = isAnonymous,
-            Priority = CalculatePriority(reportReason),
-            RequiresUrgentAction = false
+            ReviewId = reviewId ?? throw new ArgumentNullException(nameof(reviewId))
+            , ReporterUserId = reporterUserId ?? throw new ArgumentNullException(nameof(reporterUserId))
+            , ReportReason = reportReason, ReportDetails = reportDetails, ReportedAt = DateTime.UtcNow
+            , Status = ReportStatuses.Pending, IsAnonymous = isAnonymous, Priority = CalculatePriority(reportReason)
+            , RequiresUrgentAction = false
         };
 
         // Belirli durumlar için acil işlem gerekir
-        if (reportReason == ReportReasons.Harassment || 
+        if (reportReason == ReportReasons.Harassment ||
             reportReason == ReportReasons.PersonalAttack ||
             reportReason == ReportReasons.ConfidentialInfo)
         {
@@ -120,7 +118,8 @@ public class Report : BaseEntity
     public void StartReview(string adminId)
     {
         if (Status != ReportStatuses.Pending)
-            throw new BusinessRuleException($"Sadece '{ReportStatuses.Pending}' durumundaki şikayetler incelemeye alınabilir.");
+            throw new BusinessRuleException(
+                $"Sadece '{ReportStatuses.Pending}' durumundaki şikayetler incelemeye alınabilir.");
 
         Status = ReportStatuses.UnderReview;
         ReviewedBy = adminId;
@@ -144,13 +143,13 @@ public class Report : BaseEntity
         Status = ReportStatuses.Resolved;
         ActionTaken = actionTaken;
         AdminNotes = CombineNotes(AdminNotes, adminNotes, adminId);
-        
+
         if (string.IsNullOrEmpty(ReviewedBy))
         {
             ReviewedBy = adminId;
             ReviewedAt = DateTime.UtcNow;
         }
-        
+
         SetModifiedDate();
 
         AddDomainEvent(new ReportResolvedEvent(
@@ -176,13 +175,13 @@ public class Report : BaseEntity
         Status = ReportStatuses.Dismissed;
         ActionTaken = "Şikayet reddedildi";
         AdminNotes = CombineNotes(AdminNotes, $"Red nedeni: {dismissReason}", adminId);
-        
+
         if (string.IsNullOrEmpty(ReviewedBy))
         {
             ReviewedBy = adminId;
             ReviewedAt = DateTime.UtcNow;
         }
-        
+
         SetModifiedDate();
 
         AddDomainEvent(new ReportDismissedEvent(Id, ReviewId, adminId, dismissReason));
@@ -241,7 +240,7 @@ public class Report : BaseEntity
                 RelatedReports = string.Join(",", reports);
             }
         }
-        
+
         SetModifiedDate();
     }
 
@@ -258,7 +257,8 @@ public class Report : BaseEntity
 
         var oldPriority = Priority;
         Priority = newPriority;
-        AdminNotes = CombineNotes(AdminNotes, $"Öncelik değiştirildi: {oldPriority} -> {newPriority}. Neden: {reason}", updatedBy);
+        AdminNotes = CombineNotes(AdminNotes, $"Öncelik değiştirildi: {oldPriority} -> {newPriority}. Neden: {reason}"
+            , updatedBy);
         SetModifiedDate();
     }
 
@@ -275,9 +275,9 @@ public class Report : BaseEntity
         {
             Priority = Math.Max(Priority, 4); // En az 4 öncelik
         }
-        
-        AdminNotes = CombineNotes(AdminNotes, 
-            $"Acil işlem durumu: {(isUrgent ? "EVET" : "HAYIR")}. Neden: {reason}", 
+
+        AdminNotes = CombineNotes(AdminNotes,
+            $"Acil işlem durumu: {(isUrgent ? "EVET" : "HAYIR")}. Neden: {reason}",
             setBy);
         SetModifiedDate();
     }
@@ -288,20 +288,20 @@ public class Report : BaseEntity
     public string GetSummary()
     {
         var summary = $"{ReportReason}";
-        
+
         if (!string.IsNullOrWhiteSpace(ReportDetails))
         {
-            var preview = ReportDetails.Length > 50 
-                ? ReportDetails.Substring(0, 50) + "..." 
+            var preview = ReportDetails.Length > 50
+                ? ReportDetails.Substring(0, 50) + "..."
                 : ReportDetails;
             summary += $": {preview}";
         }
 
         summary += $" [{Status}]";
-        
+
         if (RequiresUrgentAction)
             summary = "🚨 " + summary;
-            
+
         return summary;
     }
 
@@ -312,18 +312,18 @@ public class Report : BaseEntity
     {
         var history = $"Şikayet Tarihi: {ReportedAt:dd.MM.yyyy HH:mm}\n";
         history += $"Durum: {Status}\n";
-        
+
         if (ReviewedAt.HasValue)
         {
             history += $"İnceleme Tarihi: {ReviewedAt.Value:dd.MM.yyyy HH:mm}\n";
             history += $"İnceleyen: {ReviewedBy}\n";
         }
-        
+
         if (!string.IsNullOrWhiteSpace(ActionTaken))
         {
             history += $"Alınan Aksiyon: {ActionTaken}\n";
         }
-        
+
         return history;
     }
 
@@ -332,15 +332,9 @@ public class Report : BaseEntity
     {
         return reportReason switch
         {
-            ReportReasons.Harassment => 5,
-            ReportReasons.PersonalAttack => 5,
-            ReportReasons.ConfidentialInfo => 5,
-            ReportReasons.InappropriateContent => 4,
-            ReportReasons.FalseInformation => 3,
-            ReportReasons.Spam => 2,
-            ReportReasons.OffTopic => 1,
-            ReportReasons.Duplicate => 1,
-            _ => 3
+            ReportReasons.Harassment => 5, ReportReasons.PersonalAttack => 5, ReportReasons.ConfidentialInfo => 5
+            , ReportReasons.InappropriateContent => 4, ReportReasons.FalseInformation => 3, ReportReasons.Spam => 2
+            , ReportReasons.OffTopic => 1, ReportReasons.Duplicate => 1, _ => 3
         };
     }
 
@@ -362,15 +356,9 @@ public class Report : BaseEntity
     {
         var validReasons = new[]
         {
-            ReportReasons.InappropriateContent,
-            ReportReasons.FalseInformation,
-            ReportReasons.Spam,
-            ReportReasons.Harassment,
-            ReportReasons.PersonalAttack,
-            ReportReasons.ConfidentialInfo,
-            ReportReasons.OffTopic,
-            ReportReasons.Duplicate,
-            ReportReasons.Other
+            ReportReasons.InappropriateContent, ReportReasons.FalseInformation, ReportReasons.Spam
+            , ReportReasons.Harassment, ReportReasons.PersonalAttack, ReportReasons.ConfidentialInfo
+            , ReportReasons.OffTopic, ReportReasons.Duplicate, ReportReasons.Other
         };
 
         if (!validReasons.Contains(reason))

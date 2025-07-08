@@ -20,21 +20,21 @@ public class Review : AuditableBaseEntity
     private const int MaxEditHours = 24; // Yorum düzenleme süresi
 
     // Properties
-    public string? CompanyId { get; private set; }
-    public string? UserId { get; private set; }
-    public string? CommentType { get; private set; }
+    public string? CompanyId { get; private set; } = string.Empty;
+    public string? UserId { get; private set; } = string.Empty;
+    public string? CommentType { get; private set; } = string.Empty;
     public decimal OverallRating { get; private set; }
-    public string? CommentText { get; private set; }
-    public string? DocumentUrl { get; private set; }
+    public string? CommentText { get; private set; } = string.Empty;
+    public string? DocumentUrl { get; private set; } = string.Empty;
     public bool IsDocumentVerified { get; private set; }
     public int Upvotes { get; private set; }
     public int Downvotes { get; private set; }
     public int ReportCount { get; private set; }
     public bool IsActive { get; private set; }
     public DateTime? LastEditedAt { get; private set; }
-    public string? EditReason { get; private set; }
+    public string? EditReason { get; private set; } = string.Empty;
     public int EditCount { get; private set; }
-    
+
     /// <summary>
     /// EF Core için parametresiz private constructor
     /// </summary>
@@ -56,13 +56,15 @@ public class Review : AuditableBaseEntity
     /// <summary>
     /// Yeni yorum oluşturur (Factory method)
     /// </summary>
-    public static Review Create(
-        string companyId,
-        string userId,
-        string commentType,
-        decimal overallRating,
-        string? commentText,
-        string? documentUrl = null)
+    public static Review Create
+    (
+        string companyId
+        , string userId
+        , string commentType
+        , decimal overallRating
+        , string? commentText
+        , string? documentUrl = null
+    )
     {
         // Validasyonlar
         ValidateRating(overallRating);
@@ -71,18 +73,10 @@ public class Review : AuditableBaseEntity
 
         var review = new Review
         {
-            CompanyId = companyId ?? throw new ArgumentNullException(nameof(companyId)),
-            UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
-            CommentType = commentType,
-            OverallRating = overallRating,
-            CommentText = commentText,
-            DocumentUrl = documentUrl,
-            IsDocumentVerified = false,
-            Upvotes = 0,
-            Downvotes = 0,
-            ReportCount = 0,
-            IsActive = true,
-            EditCount = 0
+            CompanyId = companyId ?? throw new ArgumentNullException(nameof(companyId))
+            , UserId = userId ?? throw new ArgumentNullException(nameof(userId)), CommentType = commentType
+            , OverallRating = overallRating, CommentText = commentText, DocumentUrl = documentUrl
+            , IsDocumentVerified = false, Upvotes = 0, Downvotes = 0, ReportCount = 0, IsActive = true, EditCount = 0
         };
 
         // Domain Event

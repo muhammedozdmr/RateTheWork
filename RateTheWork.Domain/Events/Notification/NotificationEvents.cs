@@ -1,15 +1,15 @@
-using RateTheWork.Domain.Entities;
-
-namespace RateTheWork.Domain.Events;
+namespace RateTheWork.Domain.Events.Notification;
 
 /// <summary>
-/// Bildirim oluşturuldu event'i
+/// 1. Bildirim oluşturuldu event'i
 /// </summary>
 public record NotificationCreatedEvent(
-    string? NotificationId,
+    string NotificationId,
     string UserId,
-    string NotificationType,
-    Notification.NotificationPriority Priority,
+    string Type,
+    string Title,
+    string Priority,
+    DateTime CreatedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -17,11 +17,12 @@ public record NotificationCreatedEvent(
 }
 
 /// <summary>
-/// Bildirim okundu event'i
+/// 2. Bildirim okundu event'i
 /// </summary>
 public record NotificationReadEvent(
-    string? NotificationId,
-    string? UserId,
+    string NotificationId,
+    string UserId,
+    DateTime ReadAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -29,11 +30,14 @@ public record NotificationReadEvent(
 }
 
 /// <summary>
-/// Bildirim silindi event'i
+/// 3. Toplu bildirim gönderildi event'i
 /// </summary>
-public record NotificationDeletedEvent(
-    string? NotificationId,
-    string? UserId,
+public record BulkNotificationSentEvent(
+    string[] UserIds,
+    string Type,
+    string Title,
+    int TotalCount,
+    DateTime SentAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {

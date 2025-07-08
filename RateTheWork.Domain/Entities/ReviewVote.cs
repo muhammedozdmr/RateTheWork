@@ -11,34 +11,39 @@ public class ReviewVote : BaseEntity
     // Vote Types
     public enum VoteType
     {
-        Upvote,   // Faydalı
-        Downvote  // Faydalı değil
+        Upvote
+        , // Faydalı
+        Downvote // Faydalı değil
     }
 
     // Vote Sources
     public enum VoteSource
     {
-        Direct,           // Doğrudan yorum sayfasından
-        ReviewList,       // Yorum listesinden
-        CompanyProfile,   // Şirket profilinden
-        UserProfile,      // Kullanıcı profilinden
-        SearchResults     // Arama sonuçlarından
+        Direct
+        , // Doğrudan yorum sayfasından
+        ReviewList
+        , // Yorum listesinden
+        CompanyProfile
+        , // Şirket profilinden
+        UserProfile
+        , // Kullanıcı profilinden
+        SearchResults // Arama sonuçlarından
     }
 
     // Properties
-    public string? UserId { get; private set; }
-    public string? ReviewId { get; private set; }
+    public string? UserId { get; private set; } = string.Empty;
+    public string? ReviewId { get; private set; } = string.Empty;
     public bool IsUpvote { get; private set; }
     public DateTime VotedAt { get; private set; }
     public VoteSource Source { get; private set; }
-    public string? IpAddress { get; private set; } // Kötüye kullanım tespiti için
-    public string? UserAgent { get; private set; }
+    public string? IpAddress { get; private set; } = string.Empty; // Kötüye kullanım tespiti için
+    public string? UserAgent { get; private set; } = string.Empty;
     public bool IsVerifiedUser { get; private set; } // Doğrulanmış kullanıcı mı?
     public int UserReputationAtTime { get; private set; } // Oy verildiği andaki kullanıcı itibarı
     public bool WasChanged { get; private set; } // Oy değiştirildi mi?
     public DateTime? LastChangedAt { get; private set; }
     public int ChangeCount { get; private set; } // Kaç kez değiştirildi?
-    
+
     /// <summary>
     /// EF Core için parametresiz private constructor
     /// </summary>
@@ -58,15 +63,17 @@ public class ReviewVote : BaseEntity
     /// <summary>
     /// Yeni oy oluşturur
     /// </summary>
-    public static ReviewVote Create(
-        string userId,
-        string reviewId,
-        bool isUpvote,
-        VoteSource source = VoteSource.Direct,
-        bool isVerifiedUser = false,
-        int userReputation = 0,
-        string? ipAddress = null,
-        string? userAgent = null)
+    public static ReviewVote Create
+    (
+        string userId
+        , string reviewId
+        , bool isUpvote
+        , VoteSource source = VoteSource.Direct
+        , bool isVerifiedUser = false
+        , int userReputation = 0
+        , string? ipAddress = null
+        , string? userAgent = null
+    )
     {
         if (string.IsNullOrWhiteSpace(userId))
             throw new ArgumentNullException(nameof(userId));
@@ -76,17 +83,9 @@ public class ReviewVote : BaseEntity
 
         var vote = new ReviewVote
         {
-            UserId = userId,
-            ReviewId = reviewId,
-            IsUpvote = isUpvote,
-            VotedAt = DateTime.UtcNow,
-            Source = source,
-            IsVerifiedUser = isVerifiedUser,
-            UserReputationAtTime = userReputation,
-            IpAddress = ipAddress,
-            UserAgent = userAgent,
-            WasChanged = false,
-            ChangeCount = 0
+            UserId = userId, ReviewId = reviewId, IsUpvote = isUpvote, VotedAt = DateTime.UtcNow, Source = source
+            , IsVerifiedUser = isVerifiedUser, UserReputationAtTime = userReputation, IpAddress = ipAddress
+            , UserAgent = userAgent, WasChanged = false, ChangeCount = 0
         };
 
         // Domain Event
@@ -262,20 +261,17 @@ public class ReviewVote : BaseEntity
         var voteType = IsUpvote ? "👍 Faydalı" : "👎 Faydalı Değil";
         var trustLevel = CalculateTrustScore() switch
         {
-            >= 80 => "Yüksek Güven",
-            >= 50 => "Orta Güven",
-            >= 30 => "Düşük Güven",
-            _ => "Şüpheli"
+            >= 80 => "Yüksek Güven", >= 50 => "Orta Güven", >= 30 => "Düşük Güven", _ => "Şüpheli"
         };
 
         var summary = $"{voteType} [{trustLevel}]";
-        
+
         if (WasChanged)
             summary += $" (Değiştirildi: {ChangeCount} kez)";
-            
+
         if (IsVerifiedUser)
             summary += " ✓";
-            
+
         return summary;
     }
 
@@ -286,14 +282,9 @@ public class ReviewVote : BaseEntity
     {
         return new VoteStatistics
         {
-            VoteType = IsUpvote ? VoteType.Upvote : VoteType.Downvote,
-            VotedAt = VotedAt,
-            Source = Source,
-            Weight = CalculateVoteWeight(),
-            TrustScore = CalculateTrustScore(),
-            IsVerifiedUser = IsVerifiedUser,
-            ChangeCount = ChangeCount,
-            TimeSinceVote = DateTime.UtcNow - VotedAt
+            VoteType = IsUpvote ? VoteType.Upvote : VoteType.Downvote, VotedAt = VotedAt, Source = Source
+            , Weight = CalculateVoteWeight(), TrustScore = CalculateTrustScore(), IsVerifiedUser = IsVerifiedUser
+            , ChangeCount = ChangeCount, TimeSinceVote = DateTime.UtcNow - VotedAt
         };
     }
 
@@ -327,12 +318,9 @@ public class ReviewVote : BaseEntity
     {
         return Source switch
         {
-            VoteSource.Direct => "Yorum Sayfası",
-            VoteSource.ReviewList => "Yorum Listesi",
-            VoteSource.CompanyProfile => "Şirket Profili",
-            VoteSource.UserProfile => "Kullanıcı Profili",
-            VoteSource.SearchResults => "Arama Sonuçları",
-            _ => "Bilinmeyen"
+            VoteSource.Direct => "Yorum Sayfası", VoteSource.ReviewList => "Yorum Listesi"
+            , VoteSource.CompanyProfile => "Şirket Profili", VoteSource.UserProfile => "Kullanıcı Profili"
+            , VoteSource.SearchResults => "Arama Sonuçları", _ => "Bilinmeyen"
         };
     }
 

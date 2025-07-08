@@ -1,14 +1,16 @@
-namespace RateTheWork.Domain.Events;
+namespace RateTheWork.Domain.Events.Report;
 
 /// <summary>
-/// Şikayet oluşturuldu event'i
+/// 1. Şikayet oluşturuldu event'i
 /// </summary>
 public record ReportCreatedEvent(
-    string? ReportId,
+    string ReportId,
     string ReviewId,
     string ReporterUserId,
     string ReportReason,
-    bool RequiresUrgentAction,
+    bool IsAnonymous,
+    int Priority,
+    DateTime ReportedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -16,12 +18,12 @@ public record ReportCreatedEvent(
 }
 
 /// <summary>
-/// Şikayet incelemeye alındı event'i
+/// 2. Şikayet incelemeye alındı event'i
 /// </summary>
-public record ReportReviewStartedEvent(
-    string? ReportId,
-    string? ReviewId,
-    string AdminId,
+public record ReportUnderReviewEvent(
+    string ReportId,
+    string ReviewedBy,
+    DateTime StartedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -29,14 +31,13 @@ public record ReportReviewStartedEvent(
 }
 
 /// <summary>
-/// Şikayet çözümlendi event'i
+/// 3. Şikayet çözümlendi event'i
 /// </summary>
 public record ReportResolvedEvent(
-    string? ReportId,
-    string? ReviewId,
-    string AdminId,
+    string ReportId,
+    string ResolvedBy,
     string ActionTaken,
-    string? ReportReason,
+    DateTime ResolvedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -44,13 +45,13 @@ public record ReportResolvedEvent(
 }
 
 /// <summary>
-/// Şikayet reddedildi event'i
+/// 4. Şikayet reddedildi event'i
 /// </summary>
 public record ReportDismissedEvent(
-    string? ReportId,
-    string? ReviewId,
-    string AdminId,
+    string ReportId,
+    string DismissedBy,
     string DismissReason,
+    DateTime DismissedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -58,15 +59,16 @@ public record ReportDismissedEvent(
 }
 
 /// <summary>
-/// Şikayet üst yönetime iletildi event'i
+/// 5. Şikayet üst yönetime iletildi event'i
 /// </summary>
 public record ReportEscalatedEvent(
-    string? ReportId,
-    string? ReviewId,
-    string AdminId,
+    string ReportId,
+    string EscalatedBy,
     string EscalationReason,
+    DateTime EscalatedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
 }
+

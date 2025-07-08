@@ -10,13 +10,16 @@ namespace RateTheWork.Domain.Entities;
 /// </summary>
 public class VerificationRequest : ApprovableBaseEntity
 {
-    // Verification Types
+    // VerificationRequest Types
     public enum VerificationType
     {
-        ReviewDocument,     // Yorum belgesi doğrulama
-        CompanyDocument,   // Şirket belgesi doğrulama
-        UserIdentity,      // Kullanıcı kimlik doğrulama
-        EmploymentProof    // Çalışma belgesi doğrulama
+        ReviewDocument
+        , // Yorum belgesi doğrulama
+        CompanyDocument
+        , // Şirket belgesi doğrulama
+        UserIdentity
+        , // Kullanıcı kimlik doğrulama
+        EmploymentProof // Çalışma belgesi doğrulama
     }
 
     // Document Types
@@ -33,23 +36,23 @@ public class VerificationRequest : ApprovableBaseEntity
     }
 
     // Properties
-    public string? ReviewId { get; private set; }
-    public string? UserId { get; private set; }
-    public string? AdminId { get; private set; }
-    public string? DocumentUrl { get; private set; }
-    public string? DocumentName { get; private set; }
-    public string? DocumentType { get; private set; }
+    public string? ReviewId { get; private set; } = string.Empty;
+    public string? UserId { get; private set; } = string.Empty;
+    public string? AdminId { get; private set; } = string.Empty;
+    public string? DocumentUrl { get; private set; } = string.Empty;
+    public string? DocumentName { get; private set; } = string.Empty;
+    public string? DocumentType { get; private set; } = string.Empty;
     public VerificationType Type { get; private set; }
     public DateTime RequestedAt { get; private set; }
-    public string? Status { get; private set; }
+    public string? Status { get; private set; } = string.Empty;
     public DateTime? ProcessedAt { get; private set; }
-    public string? ProcessingNotes { get; private set; }
+    public string? ProcessingNotes { get; private set; } = string.Empty;
     public bool IsUrgent { get; private set; }
     public int ProcessingTimeHours { get; private set; } // İşlem süresi (saat)
-    public string? RejectionReason { get; private set; }
+    public string? RejectionReason { get; private set; } = string.Empty;
     public bool AllowResubmission { get; private set; } // Tekrar gönderilebilir mi?
-    public string? SecurityCheckNotes { get; private set; } // Güvenlik kontrol notları
-    
+    public string? SecurityCheckNotes { get; private set; } = string.Empty; // Güvenlik kontrol notları
+
     /// <summary>
     /// EF Core için parametresiz private constructor
     /// </summary>
@@ -60,7 +63,15 @@ public class VerificationRequest : ApprovableBaseEntity
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
-    private VerificationRequest(string? reviewId, string? userId, string? documentUrl, string? documentName, string? documentType, string? status) : base()
+    private VerificationRequest
+    (
+        string? reviewId
+        , string? userId
+        , string? documentUrl
+        , string? documentName
+        , string? documentType
+        , string? status
+    ) : base()
     {
         ReviewId = reviewId;
         UserId = userId;
@@ -69,18 +80,20 @@ public class VerificationRequest : ApprovableBaseEntity
         DocumentType = documentType;
         Status = status;
     }
-    
+
 
     /// <summary>
     /// Yeni doğrulama talebi oluşturur
     /// </summary>
-    public static VerificationRequest Create(
-        string reviewId,
-        string userId,
-        string? documentUrl,
-        string? documentName,
-        string documentType,
-        VerificationType verificationType = VerificationType.ReviewDocument)
+    public static VerificationRequest Create
+    (
+        string reviewId
+        , string userId
+        , string? documentUrl
+        , string? documentName
+        , string documentType
+        , VerificationType verificationType = VerificationType.ReviewDocument
+    )
     {
         ValidateDocumentUrl(documentUrl);
         ValidateDocumentName(documentName);
@@ -88,21 +101,15 @@ public class VerificationRequest : ApprovableBaseEntity
 
         var request = new VerificationRequest
         {
-            ReviewId = reviewId ?? throw new ArgumentNullException(nameof(reviewId)),
-            UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
-            DocumentUrl = documentUrl,
-            DocumentName = documentName,
-            DocumentType = documentType,
-            Type = verificationType,
-            RequestedAt = DateTime.UtcNow,
-            Status = VerificationStatuses.Pending,
-            IsUrgent = false,
-            ProcessingTimeHours = 0,
-            AllowResubmission = true
+            ReviewId = reviewId ?? throw new ArgumentNullException(nameof(reviewId))
+            , UserId = userId ?? throw new ArgumentNullException(nameof(userId)), DocumentUrl = documentUrl
+            , DocumentName = documentName, DocumentType = documentType, Type = verificationType
+            , RequestedAt = DateTime.UtcNow, Status = VerificationStatuses.Pending, IsUrgent = false
+            , ProcessingTimeHours = 0, AllowResubmission = true
         };
 
         // Belge tipine göre aciliyet belirleme
-        if (documentType == DocumentTypes.EmploymentContract || 
+        if (documentType == DocumentTypes.EmploymentContract ||
             documentType == DocumentTypes.PaySlip)
         {
             request.IsUrgent = true;
@@ -125,7 +132,8 @@ public class VerificationRequest : ApprovableBaseEntity
     public void StartProcessing(string adminId)
     {
         if (Status != VerificationStatuses.Pending)
-            throw new BusinessRuleException($"Sadece '{VerificationStatuses.Pending}' durumundaki talepler işleme alınabilir.");
+            throw new BusinessRuleException(
+                $"Sadece '{VerificationStatuses.Pending}' durumundaki talepler işleme alınabilir.");
 
         AdminId = adminId;
         Status = "Processing";
@@ -144,13 +152,13 @@ public class VerificationRequest : ApprovableBaseEntity
 
         // Temel onaylama işlemi
         base.Approve(approvedBy, notes);
-        
+
         // VerificationRequest'e özel işlemler
         Status = VerificationStatuses.Approved;
         AdminId = approvedBy;
         ProcessedAt = DateTime.UtcNow;
         ProcessingNotes = notes;
-        
+
         // İşlem süresini hesapla
         ProcessingTimeHours = (int)(ProcessedAt.Value - RequestedAt).TotalHours;
 
@@ -174,13 +182,13 @@ public class VerificationRequest : ApprovableBaseEntity
 
         // Temel reddetme işlemi
         base.Reject(rejectedBy, reason);
-        
+
         // VerificationRequest'e özel işlemler
         Status = VerificationStatuses.Rejected;
         AdminId = rejectedBy;
         ProcessedAt = DateTime.UtcNow;
         RejectionReason = reason;
-        
+
         // İşlem süresini hesapla
         ProcessingTimeHours = (int)(ProcessedAt.Value - RequestedAt).TotalHours;
 
@@ -287,7 +295,7 @@ public class VerificationRequest : ApprovableBaseEntity
         ProcessedAt = null;
         RejectionReason = null;
         ResetApproval(); // ApprovableBaseEntity metodu
-        
+
         SetModifiedDate();
 
         AddDomainEvent(new VerificationRequestResubmittedEvent(Id, UserId, ReviewId));
@@ -300,10 +308,13 @@ public class VerificationRequest : ApprovableBaseEntity
     {
         return Type switch
         {
-            VerificationType.ReviewDocument => IsUrgent ? 2 : 24,      // 2 veya 24 saat
-            VerificationType.CompanyDocument => IsUrgent ? 4 : 48,     // 4 veya 48 saat
-            VerificationType.UserIdentity => 12,                       // 12 saat
-            VerificationType.EmploymentProof => IsUrgent ? 6 : 36,     // 6 veya 36 saat
+            VerificationType.ReviewDocument => IsUrgent ? 2 : 24, // 2 veya 24 saat
+            VerificationType.CompanyDocument => IsUrgent ? 4 : 48
+            , // 4 veya 48 saat
+            VerificationType.UserIdentity => 12
+            , // 12 saat
+            VerificationType.EmploymentProof => IsUrgent ? 6 : 36
+            , // 6 veya 36 saat
             _ => 24
         };
     }
@@ -314,10 +325,10 @@ public class VerificationRequest : ApprovableBaseEntity
     public string GetSummary()
     {
         var summary = $"{DocumentType} - {Status}";
-        
+
         if (IsUrgent)
             summary = "🚨 ACİL " + summary;
-            
+
         if (ProcessedAt.HasValue)
         {
             summary += $" (İşlem süresi: {ProcessingTimeHours} saat)";
@@ -337,10 +348,10 @@ public class VerificationRequest : ApprovableBaseEntity
     public bool IsWithinSLA()
     {
         var targetHours = EstimateProcessingTime();
-        var actualHours = ProcessedAt.HasValue 
-            ? ProcessingTimeHours 
+        var actualHours = ProcessedAt.HasValue
+            ? ProcessingTimeHours
             : (int)(DateTime.UtcNow - RequestedAt).TotalHours;
-            
+
         return actualHours <= targetHours;
     }
 
@@ -372,14 +383,9 @@ public class VerificationRequest : ApprovableBaseEntity
     {
         var validTypes = new[]
         {
-            DocumentTypes.PaySlip,
-            DocumentTypes.EmploymentContract,
-            DocumentTypes.EmploymentCertificate,
-            DocumentTypes.CompanyIdCard,
-            DocumentTypes.SeveranceLetter,
-            DocumentTypes.TaxReturn,
-            DocumentTypes.TradeRegistry,
-            DocumentTypes.Other
+            DocumentTypes.PaySlip, DocumentTypes.EmploymentContract, DocumentTypes.EmploymentCertificate
+            , DocumentTypes.CompanyIdCard, DocumentTypes.SeveranceLetter, DocumentTypes.TaxReturn
+            , DocumentTypes.TradeRegistry, DocumentTypes.Other
         };
 
         if (!validTypes.Contains(type))

@@ -1,13 +1,15 @@
-namespace RateTheWork.Domain.Events;
+namespace RateTheWork.Domain.Events.VerificationRequest;
 
 /// <summary>
-/// Doğrulama talebi oluşturuldu event'i
+/// 1. Doğrulama talebi oluşturuldu event'i
 /// </summary>
 public record VerificationRequestCreatedEvent(
-    string? RequestId,
+    string RequestId,
     string UserId,
     string ReviewId,
     string DocumentType,
+    string VerificationType,
+    DateTime RequestedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -15,11 +17,12 @@ public record VerificationRequestCreatedEvent(
 }
 
 /// <summary>
-/// Doğrulama talebi işleme alındı event'i
+/// 2. Doğrulama talebi işleme alındı event'i
 /// </summary>
 public record VerificationRequestProcessingStartedEvent(
-    string? RequestId,
+    string RequestId,
     string AdminId,
+    DateTime StartedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -27,14 +30,16 @@ public record VerificationRequestProcessingStartedEvent(
 }
 
 /// <summary>
-/// Doğrulama talebi onaylandı event'i
+/// 3. Doğrulama talebi onaylandı event'i
 /// </summary>
 public record VerificationRequestApprovedEvent(
-    string? RequestId,
-    string? UserId,
-    string? ReviewId,
+    string RequestId,
+    string UserId,
+    string ReviewId,
     string ApprovedByAdminId,
-    string? DocumentType,
+    string DocumentType,
+    int ProcessingTimeHours,
+    DateTime ApprovedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -42,14 +47,16 @@ public record VerificationRequestApprovedEvent(
 }
 
 /// <summary>
-/// Doğrulama talebi reddedildi event'i
+/// 4. Doğrulama talebi reddedildi event'i
 /// </summary>
 public record VerificationRequestRejectedEvent(
-    string? RequestId,
-    string? UserId,
-    string? ReviewId,
+    string RequestId,
+    string UserId,
+    string ReviewId,
     string RejectedByAdminId,
     string RejectionReason,
+    bool AllowResubmission,
+    DateTime RejectedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -57,12 +64,14 @@ public record VerificationRequestRejectedEvent(
 }
 
 /// <summary>
-/// Doğrulama talebi yeniden gönderildi event'i
+/// 5. Doğrulama talebi yeniden gönderildi event'i
 /// </summary>
 public record VerificationRequestResubmittedEvent(
-    string? RequestId,
-    string? UserId,
-    string? ReviewId,
+    string RequestId,
+    string UserId,
+    string ReviewId,
+    string NewDocumentUrl,
+    DateTime ResubmittedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {
@@ -70,12 +79,13 @@ public record VerificationRequestResubmittedEvent(
 }
 
 /// <summary>
-/// Doğrulama talebi acil işaretlendi event'i
+/// 6. Doğrulama talebi acil işaretlendi event'i
 /// </summary>
 public record VerificationRequestMarkedUrgentEvent(
-    string? RequestId,
+    string RequestId,
     string MarkedByAdminId,
     string Reason,
+    DateTime MarkedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {

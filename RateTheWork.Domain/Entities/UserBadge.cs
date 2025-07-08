@@ -10,20 +10,22 @@ namespace RateTheWork.Domain.Entities;
 public class UserBadge : BaseEntity
 {
     // Properties
-    public string? UserId { get; private set; }
-    public string? BadgeId { get; private set; }
+    public string? UserId { get; private set; } = string.Empty;
+    public string? BadgeId { get; private set; } = string.Empty;
     public DateTime AwardedAt { get; private set; }
-    public string? AwardReason { get; private set; } // Neden kazandı (özel durumlar için)
+    public string? AwardReason { get; private set; } = string.Empty; // Neden kazandı (özel durumlar için)
     public bool IsDisplayed { get; private set; } // Kullanıcı profilinde görünsün mü?
     public int DisplayOrder { get; private set; } // Görüntüleme sırası
     public bool IsNew { get; private set; } // Kullanıcı henüz görmedi mi?
     public DateTime? ViewedAt { get; private set; } // Kullanıcı ne zaman gördü?
-    public string? SpecialNote { get; private set; } // Özel not (örn: "2024 yılının en aktif yorumcusu")
-    
+
+    public string? SpecialNote { get; private set; } =
+        string.Empty; // Özel not (örn: "2024 yılının en aktif yorumcusu")
+
     // Navigation için referanslar (lazy loading için kullanılabilir)
     private User? _user;
     private Badge? _badge;
-    
+
     /// <summary>
     /// EF Core için parametresiz private constructor
     /// </summary>
@@ -43,11 +45,13 @@ public class UserBadge : BaseEntity
     /// <summary>
     /// Kullanıcıya rozet atar
     /// </summary>
-    public static UserBadge Award(
-        string userId,
-        string badgeId,
-        string? awardReason = null,
-        string? specialNote = null)
+    public static UserBadge Award
+    (
+        string userId
+        , string badgeId
+        , string? awardReason = null
+        , string? specialNote = null
+    )
     {
         if (string.IsNullOrWhiteSpace(userId))
             throw new ArgumentNullException(nameof(userId));
@@ -57,14 +61,12 @@ public class UserBadge : BaseEntity
 
         var userBadge = new UserBadge
         {
-            UserId = userId,
-            BadgeId = badgeId,
-            AwardedAt = DateTime.UtcNow,
-            AwardReason = awardReason,
-            IsDisplayed = true, // Varsayılan olarak görünür
-            DisplayOrder = 999, // En sona ekle
-            IsNew = true,
-            SpecialNote = specialNote
+            UserId = userId, BadgeId = badgeId, AwardedAt = DateTime.UtcNow, AwardReason = awardReason
+            , IsDisplayed = true, // Varsayılan olarak görünür
+            DisplayOrder = 999
+            , // En sona ekle
+            IsNew = true
+            , SpecialNote = specialNote
         };
 
         // Domain Event
@@ -171,7 +173,7 @@ public class UserBadge : BaseEntity
     public void LoadBadge(Badge badge)
     {
         _badge = badge ?? throw new ArgumentNullException(nameof(badge));
-        
+
         if (_badge.Id != BadgeId)
             throw new BusinessRuleException("Yanlış rozet yüklendi.");
     }
@@ -182,7 +184,7 @@ public class UserBadge : BaseEntity
     public void LoadUser(User user)
     {
         _user = user ?? throw new ArgumentNullException(nameof(user));
-        
+
         if (_user.Id != UserId)
             throw new BusinessRuleException("Yanlış kullanıcı yüklendi.");
     }
@@ -196,10 +198,10 @@ public class UserBadge : BaseEntity
             return $"Rozet #{BadgeId} - {AwardedAt:dd.MM.yyyy}";
 
         var info = $"{_badge.Name} - {AwardedAt:dd.MM.yyyy}";
-        
+
         if (!string.IsNullOrWhiteSpace(SpecialNote))
             info += $" ({SpecialNote})";
-            
+
         return info;
     }
 
@@ -228,7 +230,7 @@ public class UserBadge : BaseEntity
     public bool IsAnniversary()
     {
         var daysSinceAwarded = (DateTime.UtcNow - AwardedAt).TotalDays;
-        
+
         // 365 günün katları (yıllık)
         return daysSinceAwarded > 0 && daysSinceAwarded % 365 < 1;
     }
@@ -242,16 +244,16 @@ public class UserBadge : BaseEntity
 
         if (age.TotalDays < 1)
             return "Bugün kazanıldı";
-        
+
         if (age.TotalDays < 7)
             return $"{(int)age.TotalDays} gün önce";
-            
+
         if (age.TotalDays < 30)
             return $"{(int)(age.TotalDays / 7)} hafta önce";
-            
+
         if (age.TotalDays < 365)
             return $"{(int)(age.TotalDays / 30)} ay önce";
-            
+
         var years = (int)(age.TotalDays / 365);
         return years == 1 ? "1 yıl önce" : $"{years} yıl önce";
     }

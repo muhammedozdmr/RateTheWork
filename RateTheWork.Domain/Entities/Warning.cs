@@ -12,37 +12,44 @@ public class Warning : BaseEntity
     // Warning Types
     public enum WarningType
     {
-        ContentViolation,      // İçerik ihlali
-        SpamBehavior,         // Spam davranışı
-        FalseInformation,     // Yanlış bilgi
-        DisrespectfulBehavior, // Saygısız davranış
-        Other                 // Diğer
+        ContentViolation
+        , // İçerik ihlali
+        SpamBehavior
+        , // Spam davranışı
+        FalseInformation
+        , // Yanlış bilgi
+        DisrespectfulBehavior
+        , // Saygısız davranış
+        Other // Diğer
     }
 
     // Warning Severity
     public enum WarningSeverity
     {
-        Low,      // Düşük - Bilgilendirme amaçlı
-        Medium,   // Orta - Dikkat edilmesi gereken
-        High,     // Yüksek - Ciddi ihlal
-        Critical  // Kritik - Ban'a yakın
+        Low
+        , // Düşük - Bilgilendirme amaçlı
+        Medium
+        , // Orta - Dikkat edilmesi gereken
+        High
+        , // Yüksek - Ciddi ihlal
+        Critical // Kritik - Ban'a yakın
     }
 
     // Properties
-    public string? UserId { get; private set; }
-    public string? AdminId { get; private set; }
-    public string? Reason { get; private set; }
-    public string? DetailedExplanation { get; private set; }
+    public string? UserId { get; private set; } = string.Empty;
+    public string? AdminId { get; private set; } = string.Empty;
+    public string? Reason { get; private set; } = string.Empty;
+    public string? DetailedExplanation { get; private set; } = string.Empty;
     public WarningType Type { get; private set; }
     public WarningSeverity Severity { get; private set; }
     public DateTime IssuedAt { get; private set; }
-    public string? RelatedEntityType { get; private set; } // Review, Comment vb.
-    public string? RelatedEntityId { get; private set; } // İlgili entity ID
+    public string? RelatedEntityType { get; private set; } = string.Empty; // Review, Comment vb.
+    public string? RelatedEntityId { get; private set; } = string.Empty; // İlgili entity ID
     public bool IsAcknowledged { get; private set; } // Kullanıcı gördü mü?
     public DateTime? AcknowledgedAt { get; private set; }
     public bool IsActive { get; private set; } // Geçerli mi?
     public DateTime? ExpiresAt { get; private set; } // Ne zaman geçersiz olacak?
-    public string? AppealNotes { get; private set; } // İtiraz notları
+    public string? AppealNotes { get; private set; } = string.Empty; // İtiraz notları
     public bool WasAppealed { get; private set; } // İtiraz edildi mi?
     public int Points { get; private set; } // Uyarı puanı (ağırlık)
 
@@ -52,7 +59,7 @@ public class Warning : BaseEntity
     private Warning() : base()
     {
     }
-    
+
     /// <summary>
     /// EF Core için factory private constructor
     /// </summary>
@@ -66,33 +73,28 @@ public class Warning : BaseEntity
     /// <summary>
     /// Yeni uyarı oluşturur
     /// </summary>
-    public static Warning Create(
-        string userId,
-        string adminId,
-        string reason,
-        WarningType type,
-        WarningSeverity severity,
-        string? relatedEntityType = null,
-        string? relatedEntityId = null,
-        string? detailedExplanation = null,
-        int? expirationDays = null)
+    public static Warning Create
+    (
+        string userId
+        , string adminId
+        , string reason
+        , WarningType type
+        , WarningSeverity severity
+        , string? relatedEntityType = null
+        , string? relatedEntityId = null
+        , string? detailedExplanation = null
+        , int? expirationDays = null
+    )
     {
         ValidateReason(reason);
 
         var warning = new Warning
         {
-            UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
-            AdminId = adminId ?? throw new ArgumentNullException(nameof(adminId)),
-            Reason = reason,
-            DetailedExplanation = detailedExplanation,
-            Type = type,
-            Severity = severity,
-            IssuedAt = DateTime.UtcNow,
-            RelatedEntityType = relatedEntityType,
-            RelatedEntityId = relatedEntityId,
-            IsAcknowledged = false,
-            IsActive = true,
-            WasAppealed = false
+            UserId = userId ?? throw new ArgumentNullException(nameof(userId))
+            , AdminId = adminId ?? throw new ArgumentNullException(nameof(adminId)), Reason = reason
+            , DetailedExplanation = detailedExplanation, Type = type, Severity = severity, IssuedAt = DateTime.UtcNow
+            , RelatedEntityType = relatedEntityType, RelatedEntityId = relatedEntityId, IsAcknowledged = false
+            , IsActive = true, WasAppealed = false
         };
 
         // Severity'ye göre puan hesapla
@@ -125,12 +127,14 @@ public class Warning : BaseEntity
     /// <summary>
     /// Sistem otomatik uyarısı oluşturur
     /// </summary>
-    public static Warning CreateSystemAutomatic(
-        string userId,
-        string reason,
-        WarningType type,
-        string? relatedEntityType = null,
-        string? relatedEntityId = null)
+    public static Warning CreateSystemAutomatic
+    (
+        string userId
+        , string reason
+        , WarningType type
+        , string? relatedEntityType = null
+        , string? relatedEntityId = null
+    )
     {
         return Create(
             userId,
@@ -293,11 +297,8 @@ public class Warning : BaseEntity
     {
         return Severity switch
         {
-            WarningSeverity.Low => 1,
-            WarningSeverity.Medium => 3,
-            WarningSeverity.High => 5,
-            WarningSeverity.Critical => 10,
-            _ => 1
+            WarningSeverity.Low => 1, WarningSeverity.Medium => 3, WarningSeverity.High => 5
+            , WarningSeverity.Critical => 10, _ => 1
         };
     }
 
@@ -308,10 +309,13 @@ public class Warning : BaseEntity
     {
         var days = Severity switch
         {
-            WarningSeverity.Low => 30,      // 30 gün
-            WarningSeverity.Medium => 90,    // 90 gün
-            WarningSeverity.High => 180,     // 180 gün
-            WarningSeverity.Critical => 365, // 1 yıl
+            WarningSeverity.Low => 30, // 30 gün
+            WarningSeverity.Medium => 90
+            , // 90 gün
+            WarningSeverity.High => 180
+            , // 180 gün
+            WarningSeverity.Critical => 365
+            , // 1 yıl
             _ => 90
         };
 
@@ -324,7 +328,7 @@ public class Warning : BaseEntity
     public string GetSummary()
     {
         var summary = $"[{Severity}] {Type}: {Reason}";
-        
+
         if (RelatedEntityType != null && RelatedEntityId != null)
         {
             summary += $" (İlgili: {RelatedEntityType} #{RelatedEntityId})";

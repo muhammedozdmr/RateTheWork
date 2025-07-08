@@ -19,7 +19,7 @@ public class Notification : BaseEntity
         public const string PhoneVerified = "Account.PhoneVerified";
         public const string PasswordChanged = "Account.PasswordChanged";
         public const string ProfileUpdated = "Account.ProfileUpdated";
-        
+
         // Review
         public const string ReviewApproved = "Review.Approved";
         public const string ReviewRejected = "Review.Rejected";
@@ -27,24 +27,24 @@ public class Notification : BaseEntity
         public const string ReviewReceivesComment = "Review.ReceivedComment";
         public const string ReviewReported = "Review.Reported";
         public const string ReviewHidden = "Review.Hidden";
-        
+
         // Document
         public const string DocumentVerified = "Document.Verified";
         public const string DocumentRejected = "Document.Rejected";
-        
+
         // Moderation
         public const string WarningIssued = "Moderation.Warning";
         public const string BanIssued = "Moderation.Ban";
         public const string BanLifted = "Moderation.BanLifted";
-        
+
         // Badge
         public const string BadgeEarned = "Badge.Earned";
         public const string BadgeRemoved = "Badge.Removed";
-        
+
         // Company
         public const string CompanyResponded = "Company.Responded";
         public const string CompanyVerified = "Company.Verified";
-        
+
         // System
         public const string SystemAnnouncement = "System.Announcement";
         public const string SystemMaintenance = "System.Maintenance";
@@ -54,31 +54,34 @@ public class Notification : BaseEntity
     // Notification Priority
     public enum NotificationPriority
     {
-        Low,      // Düşük öncelik - rozet kazanma vb.
-        Normal,   // Normal - çoğu bildirim
-        High,     // Yüksek - uyarılar vb.
-        Critical  // Kritik - ban, güvenlik vb.
+        Low
+        , // Düşük öncelik - rozet kazanma vb.
+        Normal
+        , // Normal - çoğu bildirim
+        High
+        , // Yüksek - uyarılar vb.
+        Critical // Kritik - ban, güvenlik vb.
     }
 
     // Properties
-    public string? UserId { get; private set; }
-    public string? Type { get; private set; }
-    public string? Title { get; private set; }
-    public string? Message { get; private set; }
+    public string? UserId { get; private set; } = string.Empty;
+    public string? Type { get; private set; } = string.Empty;
+    public string? Title { get; private set; } = string.Empty;
+    public string? Message { get; private set; } = string.Empty;
     public bool IsRead { get; private set; }
     public DateTime? ReadAt { get; private set; }
-    public string? RelatedEntityType { get; private set; }
-    public string? RelatedEntityId { get; private set; }
+    public string? RelatedEntityType { get; private set; } = string.Empty;
+    public string? RelatedEntityId { get; private set; } = string.Empty;
     public NotificationPriority Priority { get; private set; }
-    public string? ActionUrl { get; private set; } // Tıklandığında gidilecek URL
-    public string? IconType { get; private set; } // UI için ikon tipi
+    public string? ActionUrl { get; private set; } = string.Empty; // Tıklandığında gidilecek URL
+    public string? IconType { get; private set; } = string.Empty; // UI için ikon tipi
     public DateTime? ExpiresAt { get; private set; } // Ne zaman geçersiz olacak
     public bool IsDeleted { get; private set; } // Kullanıcı sildi mi?
-    public string? Data { get; private set; } // Ek veri (JSON)
+    public string? Data { get; private set; } = string.Empty; // Ek veri (JSON)
     public bool RequiresAction { get; private set; } // Kullanıcı aksiyonu gerekli mi?
     public bool WasSent { get; private set; } // Email/SMS vs. gönderildi mi?
     public DateTime? SentAt { get; private set; }
-    
+
     /// <summary>
     /// EF Core için parametresiz private constructor
     /// </summary>
@@ -100,16 +103,18 @@ public class Notification : BaseEntity
     /// <summary>
     /// Yeni bildirim oluşturur
     /// </summary>
-    public static Notification Create(
-        string userId,
-        string type,
-        string title,
-        string message,
-        NotificationPriority priority = NotificationPriority.Normal,
-        string? relatedEntityType = null,
-        string? relatedEntityId = null,
-        string? actionUrl = null,
-        bool requiresAction = false)
+    public static Notification Create
+    (
+        string userId
+        , string type
+        , string title
+        , string message
+        , NotificationPriority priority = NotificationPriority.Normal
+        , string? relatedEntityType = null
+        , string? relatedEntityId = null
+        , string? actionUrl = null
+        , bool requiresAction = false
+    )
     {
         ValidateType(type);
         ValidateTitle(title);
@@ -117,18 +122,10 @@ public class Notification : BaseEntity
 
         var notification = new Notification
         {
-            UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
-            Type = type,
-            Title = title,
-            Message = message,
-            IsRead = false,
-            RelatedEntityType = relatedEntityType,
-            RelatedEntityId = relatedEntityId,
-            Priority = priority,
-            ActionUrl = actionUrl,
-            RequiresAction = requiresAction,
-            IsDeleted = false,
-            WasSent = false
+            UserId = userId ?? throw new ArgumentNullException(nameof(userId)), Type = type, Title = title
+            , Message = message, IsRead = false, RelatedEntityType = relatedEntityType
+            , RelatedEntityId = relatedEntityId, Priority = priority, ActionUrl = actionUrl
+            , RequiresAction = requiresAction, IsDeleted = false, WasSent = false
         };
 
         // Type'a göre varsayılan değerler
@@ -154,7 +151,8 @@ public class Notification : BaseEntity
             userId,
             NotificationTypes.Welcome,
             "RateTheWork'e Hoş Geldiniz! 🎉",
-            $"Merhaba {username}, aramıza hoş geldin! Şirket değerlendirmelerini inceleyebilir ve kendi deneyimlerini paylaşabilirsin.",
+            $"Merhaba {username}, aramıza hoş geldin! Şirket değerlendirmelerini inceleyebilir ve kendi deneyimlerini paylaşabilirsin."
+            ,
             NotificationPriority.Normal,
             "User",
             userId,
@@ -165,10 +163,12 @@ public class Notification : BaseEntity
     /// <summary>
     /// Yorum onaylandı bildirimi
     /// </summary>
-    public static Notification CreateReviewApprovedNotification(
-        string userId,
-        string companyName,
-        string reviewId)
+    public static Notification CreateReviewApprovedNotification
+    (
+        string userId
+        , string companyName
+        , string reviewId
+    )
     {
         return Create(
             userId,
@@ -185,10 +185,12 @@ public class Notification : BaseEntity
     /// <summary>
     /// Uyarı bildirimi
     /// </summary>
-    public static Notification CreateWarningNotification(
-        string userId,
-        string warningReason,
-        string warningId)
+    public static Notification CreateWarningNotification
+    (
+        string userId
+        , string warningReason
+        , string warningId
+    )
     {
         var notification = Create(
             userId,
@@ -209,10 +211,12 @@ public class Notification : BaseEntity
     /// <summary>
     /// Rozet kazandı bildirimi
     /// </summary>
-    public static Notification CreateBadgeEarnedNotification(
-        string userId,
-        string badgeName,
-        string badgeId)
+    public static Notification CreateBadgeEarnedNotification
+    (
+        string userId
+        , string badgeName
+        , string badgeId
+    )
     {
         return Create(
             userId,
@@ -229,11 +233,13 @@ public class Notification : BaseEntity
     /// <summary>
     /// Sistem duyurusu
     /// </summary>
-    public static Notification CreateSystemAnnouncement(
-        string userId,
-        string title,
-        string message,
-        DateTime? expiresAt = null)
+    public static Notification CreateSystemAnnouncement
+    (
+        string userId
+        , string title
+        , string message
+        , DateTime? expiresAt = null
+    )
     {
         var notification = Create(
             userId,
@@ -312,7 +318,7 @@ public class Notification : BaseEntity
 
         WasSent = true;
         SentAt = DateTime.UtcNow;
-        
+
         // Data'ya gönderim kanalını ekle
         AddData("sentChannel", channel);
         SetModifiedDate();
@@ -324,7 +330,7 @@ public class Notification : BaseEntity
     public void AddData(string key, object value)
     {
         Dictionary<string, object> dataDict;
-        
+
         if (string.IsNullOrWhiteSpace(Data))
         {
             dataDict = new Dictionary<string, object>();
@@ -333,8 +339,8 @@ public class Notification : BaseEntity
         {
             try
             {
-                dataDict = JsonSerializer.Deserialize<Dictionary<string, object>>(Data) 
-                    ?? new Dictionary<string, object>();
+                dataDict = JsonSerializer.Deserialize<Dictionary<string, object>>(Data)
+                           ?? new Dictionary<string, object>();
             }
             catch
             {
@@ -343,12 +349,12 @@ public class Notification : BaseEntity
         }
 
         dataDict[key] = value;
-        
-        Data = JsonSerializer.Serialize(dataDict, new JsonSerializerOptions 
-        { 
+
+        Data = JsonSerializer.Serialize(dataDict, new JsonSerializerOptions
+        {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });
-        
+
         SetModifiedDate();
     }
 
@@ -374,15 +380,15 @@ public class Notification : BaseEntity
     public string? GetSummary()
     {
         var summary = Title;
-        
+
         if (Priority == NotificationPriority.Critical)
             summary = "🚨 " + summary;
         else if (Priority == NotificationPriority.High)
             summary = "⚠️ " + summary;
-            
+
         if (RequiresAction && !IsRead)
             summary += " [Aksiyon Gerekli]";
-            
+
         return summary;
     }
 
@@ -405,7 +411,7 @@ public class Notification : BaseEntity
             return $"{(int)(age.TotalDays / 7)} hafta önce";
         if (age.TotalDays < 365)
             return $"{(int)(age.TotalDays / 30)} ay önce";
-        
+
         return $"{(int)(age.TotalDays / 365)} yıl önce";
     }
 
@@ -414,14 +420,13 @@ public class Notification : BaseEntity
     {
         IconType = Type switch
         {
-            var t when t != null && t.StartsWith("Account.") => "user",
-            var t when t != null && t.StartsWith("Review.") => "message-square",
-            var t when t != null && t.StartsWith("Document.") => "file-check",
-            var t when t != null && t.StartsWith("Moderation.") => "shield",
-            var t when t != null && t.StartsWith("Badge.") => "award",
-            var t when t != null && t.StartsWith("Company.") => "building",
-            var t when t != null && t.StartsWith("System.") => "info",
-            _ => "bell"
+            var t when t != null && t.StartsWith("Account.") => "user"
+            , var t when t != null && t.StartsWith("Review.") => "message-square"
+            , var t when t != null && t.StartsWith("Document.") => "file-check"
+            , var t when t != null && t.StartsWith("Moderation.") => "shield"
+            , var t when t != null && t.StartsWith("Badge.") => "award"
+            , var t when t != null && t.StartsWith("Company.") => "building"
+            , var t when t != null && t.StartsWith("System.") => "info", _ => "bell"
         };
 
         // Kritik bildirimler için süre

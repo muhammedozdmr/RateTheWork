@@ -16,19 +16,19 @@ public class AdminUser : AuditableBaseEntity
     private const int AccountLockMinutes = 30;
 
     // Properties
-    public string? Username { get; private set; }
-    public string? HashedPassword { get; private set; }
-    public string? Email { get; private set; }
-    public string? Role { get; private set; } // SuperAdmin, Moderator, ContentManager
+    public string? Username { get; private set; } = string.Empty;
+    public string? HashedPassword { get; private set; } = string.Empty;
+    public string? Email { get; private set; } = string.Empty;
+    public string? Role { get; private set; } = string.Empty; // SuperAdmin, Moderator, ContentManager
     public bool IsActive { get; private set; }
     public int FailedLoginAttempts { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
     public DateTime? LastFailedLoginAt { get; private set; }
     public DateTime? LockedUntil { get; private set; }
-    public string? TwoFactorSecret { get; private set; }
+    public string? TwoFactorSecret { get; private set; } = string.Empty;
     public bool IsTwoFactorEnabled { get; private set; }
     public DateTime? PasswordChangedAt { get; private set; }
-    public string? PasswordResetToken { get; private set; }
+    public string? PasswordResetToken { get; private set; } = string.Empty;
     public DateTime? PasswordResetTokenExpiry { get; private set; }
 
     /// <summary>
@@ -37,9 +37,9 @@ public class AdminUser : AuditableBaseEntity
     private AdminUser() : base()
     {
     }
-    
+
     /// <summary>
-    /// Factory method için private constructor (mevcut)
+    /// Factory method için private constructor
     /// </summary>
     private AdminUser(string username, string hashedPassword, string email, string role) : base()
     {
@@ -52,12 +52,14 @@ public class AdminUser : AuditableBaseEntity
     /// <summary>
     /// Yeni admin kullanıcı oluşturur
     /// </summary>
-    public static AdminUser Create(
-        string username,
-        string? email,
-        string hashedPassword,
-        string? role,
-        string createdByAdminId)
+    public static AdminUser Create
+    (
+        string username
+        , string? email
+        , string hashedPassword
+        , string? role
+        , string createdByAdminId
+    )
     {
         ValidateUsername(username);
         ValidateEmail(email);
@@ -65,14 +67,9 @@ public class AdminUser : AuditableBaseEntity
 
         var adminUser = new AdminUser
         {
-            Username = username,
-            Email = email,
-            HashedPassword = hashedPassword ?? throw new ArgumentNullException(nameof(hashedPassword)),
-            Role = role,
-            IsActive = true,
-            FailedLoginAttempts = 0,
-            IsTwoFactorEnabled = false,
-            PasswordChangedAt = DateTime.UtcNow
+            Username = username, Email = email
+            , HashedPassword = hashedPassword ?? throw new ArgumentNullException(nameof(hashedPassword)), Role = role
+            , IsActive = true, FailedLoginAttempts = 0, IsTwoFactorEnabled = false, PasswordChangedAt = DateTime.UtcNow
         };
 
         adminUser.SetCreationAuditInfo(createdByAdminId);

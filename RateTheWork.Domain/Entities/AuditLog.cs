@@ -18,7 +18,7 @@ public class AuditLog : BaseEntity
         public const string ReviewDeleted = "Review.Deleted";
         public const string ReviewRestored = "Review.Restored";
         public const string ReviewEdited = "Review.Edited";
-        
+
         // User Actions
         public const string UserBanned = "User.Banned";
         public const string UserUnbanned = "User.Unbanned";
@@ -26,20 +26,20 @@ public class AuditLog : BaseEntity
         public const string UserDeleted = "User.Deleted";
         public const string UserRestored = "User.Restored";
         public const string UserVerified = "User.Verified";
-        
+
         // Company Actions
         public const string CompanyApproved = "Company.Approved";
         public const string CompanyRejected = "Company.Rejected";
         public const string CompanyDeleted = "Company.Deleted";
         public const string CompanyRestored = "Company.Restored";
         public const string CompanyEdited = "Company.Edited";
-        
+
         // Admin Actions
         public const string AdminCreated = "Admin.Created";
         public const string AdminDeleted = "Admin.Deleted";
         public const string AdminRoleChanged = "Admin.RoleChanged";
         public const string AdminPasswordReset = "Admin.PasswordReset";
-        
+
         // System Actions
         public const string SettingsChanged = "System.SettingsChanged";
         public const string DataExported = "System.DataExported";
@@ -51,27 +51,30 @@ public class AuditLog : BaseEntity
     // Severity Levels
     public enum AuditSeverity
     {
-        Info,      // Bilgi amaçlı
-        Warning,   // Dikkat edilmesi gereken
-        Critical,  // Kritik işlemler
-        Security   // Güvenlik ile ilgili
+        Info
+        , // Bilgi amaçlı
+        Warning
+        , // Dikkat edilmesi gereken
+        Critical
+        , // Kritik işlemler
+        Security // Güvenlik ile ilgili
     }
 
     // Properties
-    public string? AdminUserId { get; private set; }
-    public string? ActionType { get; private set; }
-    public string? EntityType { get; private set; }
-    public string? EntityId { get; private set; }
-    public string? Details { get; private set; }
+    public string? AdminUserId { get; private set; } = string.Empty;
+    public string? ActionType { get; private set; } = string.Empty;
+    public string? EntityType { get; private set; } = string.Empty;
+    public string? EntityId { get; private set; } = string.Empty;
+    public string? Details { get; private set; } = string.Empty;
     public DateTime Timestamp { get; private set; }
     public AuditSeverity Severity { get; private set; }
-    public string? IpAddress { get; private set; }
-    public string? UserAgent { get; private set; }
-    public string? OldValues { get; private set; } // JSON format
-    public string? NewValues { get; private set; } // JSON format
+    public string? IpAddress { get; private set; } = string.Empty;
+    public string? UserAgent { get; private set; } = string.Empty;
+    public string? OldValues { get; private set; } = string.Empty; // JSON format
+    public string? NewValues { get; private set; } = string.Empty; // JSON format
     public bool IsSuccessful { get; private set; }
-    public string? FailureReason { get; private set; }
-    public string? AdditionalData { get; private set; } // JSON format
+    public string? FailureReason { get; private set; } = string.Empty;
+    public string? AdditionalData { get; private set; } = string.Empty; // JSON format
 
     /// <summary>
     /// EF Core için parametresiz private constructor
@@ -79,7 +82,7 @@ public class AuditLog : BaseEntity
     private AuditLog() : base()
     {
     }
-    
+
     /// <summary>
     /// EF Core için private constructor
     /// </summary>
@@ -94,31 +97,27 @@ public class AuditLog : BaseEntity
     /// <summary>
     /// Yeni audit log oluşturur
     /// </summary>
-    public static AuditLog Create(
-        string adminUserId,
-        string actionType,
-        string entityType,
-        string entityId,
-        AuditSeverity severity = AuditSeverity.Info,
-        string? details = null,
-        string? ipAddress = null,
-        string? userAgent = null)
+    public static AuditLog Create
+    (
+        string adminUserId
+        , string actionType
+        , string entityType
+        , string entityId
+        , AuditSeverity severity = AuditSeverity.Info
+        , string? details = null
+        , string? ipAddress = null
+        , string? userAgent = null
+    )
     {
         ValidateActionType(actionType);
         ValidateEntityType(entityType);
 
         var auditLog = new AuditLog
         {
-            AdminUserId = adminUserId ?? throw new ArgumentNullException(nameof(adminUserId)),
-            ActionType = actionType,
-            EntityType = entityType,
-            EntityId = entityId ?? throw new ArgumentNullException(nameof(entityId)),
-            Details = details,
-            Timestamp = DateTime.UtcNow,
-            Severity = severity,
-            IpAddress = ipAddress,
-            UserAgent = userAgent,
-            IsSuccessful = true
+            AdminUserId = adminUserId ?? throw new ArgumentNullException(nameof(adminUserId)), ActionType = actionType
+            , EntityType = entityType, EntityId = entityId ?? throw new ArgumentNullException(nameof(entityId))
+            , Details = details, Timestamp = DateTime.UtcNow, Severity = severity, IpAddress = ipAddress
+            , UserAgent = userAgent, IsSuccessful = true
         };
 
         // Action type'a göre severity belirleme
@@ -133,34 +132,34 @@ public class AuditLog : BaseEntity
     /// <summary>
     /// Değişiklik kaydı ile audit log oluşturur
     /// </summary>
-    public static AuditLog CreateWithChanges<T>(
-        string adminUserId,
-        string actionType,
-        string entityType,
-        string entityId,
-        T? oldEntity,
-        T? newEntity,
-        string? details = null,
-        string? ipAddress = null) where T : class
+    public static AuditLog CreateWithChanges<T>
+    (
+        string adminUserId
+        , string actionType
+        , string entityType
+        , string entityId
+        , T? oldEntity
+        , T? newEntity
+        , string? details = null
+        , string? ipAddress = null
+    ) where T : class
     {
-        var auditLog = Create(adminUserId, actionType, entityType, entityId, 
+        var auditLog = Create(adminUserId, actionType, entityType, entityId,
             AuditSeverity.Info, details, ipAddress, null);
 
         if (oldEntity != null)
         {
-            auditLog.OldValues = JsonSerializer.Serialize(oldEntity, new JsonSerializerOptions 
-            { 
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            auditLog.OldValues = JsonSerializer.Serialize(oldEntity, new JsonSerializerOptions
+            {
+                WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
         }
 
         if (newEntity != null)
         {
-            auditLog.NewValues = JsonSerializer.Serialize(newEntity, new JsonSerializerOptions 
-            { 
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            auditLog.NewValues = JsonSerializer.Serialize(newEntity, new JsonSerializerOptions
+            {
+                WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
         }
 
@@ -170,14 +169,16 @@ public class AuditLog : BaseEntity
     /// <summary>
     /// Başarısız işlem kaydı oluşturur
     /// </summary>
-    public static AuditLog CreateFailure(
-        string adminUserId,
-        string actionType,
-        string entityType,
-        string entityId,
-        string failureReason,
-        string? details = null,
-        string? ipAddress = null)
+    public static AuditLog CreateFailure
+    (
+        string adminUserId
+        , string actionType
+        , string entityType
+        , string entityId
+        , string failureReason
+        , string? details = null
+        , string? ipAddress = null
+    )
     {
         var auditLog = Create(adminUserId, actionType, entityType, entityId,
             AuditSeverity.Warning, details, ipAddress, null);
@@ -191,25 +192,20 @@ public class AuditLog : BaseEntity
     /// <summary>
     /// Güvenlik ile ilgili audit log
     /// </summary>
-    public static AuditLog CreateSecurityLog(
-        string adminUserId,
-        string actionType,
-        string details,
-        string? ipAddress = null,
-        string? userAgent = null)
+    public static AuditLog CreateSecurityLog
+    (
+        string adminUserId
+        , string actionType
+        , string details
+        , string? ipAddress = null
+        , string? userAgent = null
+    )
     {
         return new AuditLog
         {
-            AdminUserId = adminUserId,
-            ActionType = actionType,
-            EntityType = "Security",
-            EntityId = Guid.NewGuid().ToString(),
-            Details = details,
-            Timestamp = DateTime.UtcNow,
-            Severity = AuditSeverity.Security,
-            IpAddress = ipAddress,
-            UserAgent = userAgent,
-            IsSuccessful = true
+            AdminUserId = adminUserId, ActionType = actionType, EntityType = "Security"
+            , EntityId = Guid.NewGuid().ToString(), Details = details, Timestamp = DateTime.UtcNow
+            , Severity = AuditSeverity.Security, IpAddress = ipAddress, UserAgent = userAgent, IsSuccessful = true
         };
     }
 
@@ -218,10 +214,9 @@ public class AuditLog : BaseEntity
     /// </summary>
     public void AddAdditionalData(object data)
     {
-        AdditionalData = JsonSerializer.Serialize(data, new JsonSerializerOptions 
-        { 
-            WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        AdditionalData = JsonSerializer.Serialize(data, new JsonSerializerOptions
+        {
+            WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });
         SetModifiedDate();
     }
@@ -231,10 +226,9 @@ public class AuditLog : BaseEntity
     /// </summary>
     public void AddAdditionalData(Dictionary<string, object> data)
     {
-        AdditionalData = JsonSerializer.Serialize(data, new JsonSerializerOptions 
-        { 
-            WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        AdditionalData = JsonSerializer.Serialize(data, new JsonSerializerOptions
+        {
+            WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });
         SetModifiedDate();
     }
@@ -254,7 +248,7 @@ public class AuditLog : BaseEntity
     public string GetSummary()
     {
         var summary = $"[{Timestamp:yyyy-MM-dd HH:mm:ss}] {AdminUserId} - {ActionType}";
-        
+
         if (!string.IsNullOrWhiteSpace(EntityType) && !string.IsNullOrWhiteSpace(EntityId))
         {
             summary += $" ({EntityType} #{EntityId})";
@@ -346,7 +340,7 @@ public class AuditLog : BaseEntity
                 IpAddress = $"{v6Parts[0]}:{v6Parts[1]}:xxxx:xxxx:...";
             }
         }
-        
+
         SetModifiedDate();
     }
 
@@ -355,14 +349,13 @@ public class AuditLog : BaseEntity
     {
         return actionType switch
         {
-            var type when type.Contains("Deleted") => AuditSeverity.Critical,
-            var type when type.Contains("Banned") => AuditSeverity.Critical,
-            var type when type.Contains("Password") => AuditSeverity.Security,
-            var type when type.Contains("Role") => AuditSeverity.Security,
-            var type when type.Contains("Settings") => AuditSeverity.Warning,
-            var type when type.Contains("Export") => AuditSeverity.Warning,
-            var type when type.Contains("Import") => AuditSeverity.Warning,
-            _ => AuditSeverity.Info
+            var type when type.Contains("Deleted") => AuditSeverity.Critical
+            , var type when type.Contains("Banned") => AuditSeverity.Critical
+            , var type when type.Contains("Password") => AuditSeverity.Security
+            , var type when type.Contains("Role") => AuditSeverity.Security
+            , var type when type.Contains("Settings") => AuditSeverity.Warning
+            , var type when type.Contains("Export") => AuditSeverity.Warning
+            , var type when type.Contains("Import") => AuditSeverity.Warning, _ => AuditSeverity.Info
         };
     }
 
@@ -381,8 +374,10 @@ public class AuditLog : BaseEntity
         if (string.IsNullOrWhiteSpace(entityType))
             throw new ArgumentNullException(nameof(entityType));
 
-        var validTypes = new[] { "User", "Company", "Review", "Admin", "System", "Security", 
-            "Badge", "Report", "Warning", "Ban", "Settings" };
+        var validTypes = new[]
+        {
+            "User", "Company", "Review", "Admin", "System", "Security", "Badge", "Report", "Warning", "Ban", "Settings"
+        };
 
         if (!validTypes.Contains(entityType))
             throw new BusinessRuleException($"Geçersiz entity tipi: {entityType}");
