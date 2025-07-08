@@ -1,6 +1,7 @@
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Enums;
 using RateTheWork.Domain.Events;
+using RateTheWork.Domain.Events.Review;
 using RateTheWork.Domain.Exceptions;
 
 namespace RateTheWork.Domain.Entities;
@@ -9,31 +10,23 @@ namespace RateTheWork.Domain.Entities;
 /// Yorum entity'si - Bir şirkete yapılan yorumu ve puanlamayı temsil eder.
 /// Rich domain model ile iş kurallarını içerir.
 /// </summary>
-public class Review : AuditableBaseEntity
+public class Review : AuditableBaseEntity, IAggregateRoot
 {
-    // Constants - İş kuralları
-    private const int MinCommentLength = 50;
-    private const int MaxCommentLength = 2000;
-    private const decimal MinRating = 1.0m;
-    private const decimal MaxRating = 5.0m;
-    private const int MaxReportCountBeforeAutoHide = 5;
-    private const int MaxEditHours = 24; // Yorum düzenleme süresi
-
     // Properties
-    public string? CompanyId { get; private set; } = string.Empty;
-    public string? UserId { get; private set; } = string.Empty;
-    public string? CommentType { get; private set; } = string.Empty;
+    public string CompanyId { get; private set; } = string.Empty;
+    public string UserId { get; private set; } = string.Empty;
+    public string CommentType { get; private set; } = string.Empty;
     public decimal OverallRating { get; private set; }
-    public string? CommentText { get; private set; } = string.Empty;
-    public string? DocumentUrl { get; private set; } = string.Empty;
-    public bool IsDocumentVerified { get; private set; }
-    public int Upvotes { get; private set; }
-    public int Downvotes { get; private set; }
-    public int ReportCount { get; private set; }
-    public bool IsActive { get; private set; }
+    public string CommentText { get; private set; } = string.Empty;
+    public string? DocumentUrl { get; private set; }
+    public bool IsDocumentVerified { get; private set; } = false;
+    public int Upvotes { get; private set; } = 0;
+    public int Downvotes { get; private set; } = 0;
+    public int ReportCount { get; private set; } = 0;
+    public bool IsActive { get; private set; } = true;
     public DateTime? LastEditedAt { get; private set; }
-    public string? EditReason { get; private set; } = string.Empty;
-    public int EditCount { get; private set; }
+    public string? EditReason { get; private set; }
+    public int EditCount { get; private set; } = 0;
 
     /// <summary>
     /// EF Core için parametresiz private constructor
@@ -43,28 +36,15 @@ public class Review : AuditableBaseEntity
     }
 
     /// <summary>
-    /// EF Core için private constructor
-    /// </summary>
-    private Review(string? companyId, string? userId, string? commentType, string? commentText) : base()
-    {
-        CompanyId = companyId;
-        UserId = userId;
-        CommentType = commentType;
-        CommentText = commentText;
-    }
-
-    /// <summary>
     /// Yeni yorum oluşturur (Factory method)
     /// </summary>
-    public static Review Create
-    (
-        string companyId
-        , string userId
-        , string commentType
-        , decimal overallRating
-        , string? commentText
-        , string? documentUrl = null
-    )
+    public static Review Create(
+        string companyId,
+        string userId,
+        string commentType,
+        decimal overallRating,
+        string commentText,
+        string? documentUrl = null)
     {
         // Validasyonlar
         ValidateRating(overallRating);
@@ -73,10 +53,18 @@ public class Review : AuditableBaseEntity
 
         var review = new Review
         {
-            CompanyId = companyId ?? throw new ArgumentNullException(nameof(companyId))
-            , UserId = userId ?? throw new ArgumentNullException(nameof(userId)), CommentType = commentType
-            , OverallRating = overallRating, CommentText = commentText, DocumentUrl = documentUrl
-            , IsDocumentVerified = false, Upvotes = 0, Downvotes = 0, ReportCount = 0, IsActive = true, EditCount = 0
+            CompanyId = companyId ?? throw new ArgumentNullException(nameof(companyId)),
+            UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
+            CommentType = commentType,
+            OverallRating = overallRating,
+            CommentText = commentText,
+            DocumentUrl = documentUrl,
+            IsDocumentVerified = false,
+            IsActive = true,
+            Upvotes = 0,
+            Downvotes = 0,
+            ReportCount = 0,
+            EditCount = 0
         };
 
         // Domain Event
@@ -84,7 +72,9 @@ public class Review : AuditableBaseEntity
             review.Id,
             userId,
             companyId,
+            commentType,
             overallRating,
+            !string.IsNullOrEmpty(documentUrl),
             DateTime.UtcNow
         ));
 
@@ -92,24 +82,20 @@ public class Review : AuditableBaseEntity
     }
 
     /// <summary>
-    /// Yorumu düzenler
+    /// Yorumu günceller
     /// </summary>
-    public void Edit(string? newCommentText, string editReason, string editorUserId)
+    public void Update(string newCommentText, string editReason)
     {
-        // Yetki kontrolü
-        if (UserId != editorUserId)
-            throw new BusinessRuleException("Sadece yorum sahibi düzenleme yapabilir.");
-
-        // Süre kontrolü
+        // Düzenleme süresi kontrolü
         var hoursSinceCreation = (DateTime.UtcNow - CreatedAt).TotalHours;
-        if (hoursSinceCreation > MaxEditHours)
-            throw new BusinessRuleException($"Yorumlar yalnızca ilk {MaxEditHours} saat içinde düzenlenebilir.");
+        if (hoursSinceCreation > DomainConstants.Review.MaxEditHours)
+            throw new BusinessRuleException($"Yorum oluşturulduktan {DomainConstants.Review.MaxEditHours} saat sonra düzenlenemez.");
 
-        // Validasyon
+        if (EditCount >= DomainConstants.Review.MaxEditCount)
+            throw new BusinessRuleException($"Bir yorum en fazla {DomainConstants.Review.MaxEditCount} kez düzenlenebilir.");
+
         ValidateCommentText(newCommentText);
-
-        if (string.IsNullOrWhiteSpace(editReason))
-            throw new BusinessRuleException("Düzenleme nedeni belirtilmelidir.");
+        ValidateEditReason(editReason);
 
         CommentText = newCommentText;
         EditReason = editReason;
@@ -117,179 +103,215 @@ public class Review : AuditableBaseEntity
         EditCount++;
         SetModifiedDate();
 
-        AddDomainEvent(new ReviewEditedEvent(Id, editorUserId, editReason));
+        // Domain Event
+        AddDomainEvent(new ReviewUpdatedEvent(
+            Id,
+            UserId,
+            editReason,
+            EditCount,
+            DateTime.UtcNow
+        ));
     }
 
     /// <summary>
-    /// Yoruma oy ekler
+    /// Belge yükler
     /// </summary>
-    public void AddVote(bool isUpvote)
+    public void UploadDocument(string documentUrl)
     {
-        if (!IsActive)
-            throw new BusinessRuleException("Aktif olmayan yoruma oy verilemez.");
+        if (string.IsNullOrWhiteSpace(documentUrl))
+            throw new ArgumentNullException(nameof(documentUrl));
 
-        if (isUpvote)
-            Upvotes++;
-        else
-            Downvotes++;
+        if (!string.IsNullOrEmpty(DocumentUrl))
+            throw new BusinessRuleException("Bu yorum için zaten bir belge yüklenmiş.");
 
-        SetModifiedDate();
-    }
-
-    /// <summary>
-    /// Yorumdan oy kaldırır
-    /// </summary>
-    public void RemoveVote(bool wasUpvote)
-    {
-        if (wasUpvote && Upvotes > 0)
-            Upvotes--;
-        else if (!wasUpvote && Downvotes > 0)
-            Downvotes--;
-
-        SetModifiedDate();
-    }
-
-    /// <summary>
-    /// Oy değiştirir (upvote->downvote veya tersi)
-    /// </summary>
-    public void ChangeVote(bool fromUpvote)
-    {
-        if (fromUpvote)
-        {
-            if (Upvotes > 0) Upvotes--;
-            Downvotes++;
-        }
-        else
-        {
-            if (Downvotes > 0) Downvotes--;
-            Upvotes++;
-        }
-
-        SetModifiedDate();
-    }
-
-    /// <summary>
-    /// Yoruma şikayet ekler
-    /// </summary>
-    public void AddReport(string reporterId, string reason)
-    {
-        if (!IsActive)
-            throw new BusinessRuleException("Aktif olmayan yorum şikayet edilemez.");
-
-        if (UserId == reporterId)
-            throw new BusinessRuleException("Kendi yorumunuzu şikayet edemezsiniz.");
-
-        ReportCount++;
-
-        // Otomatik gizleme kontrolü
-        if (ReportCount >= MaxReportCountBeforeAutoHide)
-        {
-            Hide($"Otomatik gizlendi: {MaxReportCountBeforeAutoHide} şikayet sınırı aşıldı");
-        }
-
-        AddDomainEvent(new ReviewReportedEvent(Id, reporterId, reason, ReportCount));
-    }
-
-    /// <summary>
-    /// Belge ekler
-    /// </summary>
-    public void AttachDocument(string documentUrl)
-    {
-        if (!string.IsNullOrWhiteSpace(DocumentUrl))
-            throw new BusinessRuleException("Bu yorumda zaten bir belge mevcut.");
-
-        DocumentUrl = documentUrl ?? throw new ArgumentNullException(nameof(documentUrl));
-        IsDocumentVerified = false;
+        DocumentUrl = documentUrl;
         SetModifiedDate();
 
-        AddDomainEvent(new ReviewDocumentAttachedEvent(Id, documentUrl));
+        // Domain Event
+        AddDomainEvent(new ReviewDocumentUploadedEvent(
+            Id,
+            documentUrl,
+            DateTime.UtcNow
+        ));
     }
 
     /// <summary>
-    /// Belgeyi doğrular
+    /// Belgeyi doğrula
     /// </summary>
-    public void VerifyDocument(string adminId)
+    public void VerifyDocument(string verifiedBy)
     {
-        if (string.IsNullOrWhiteSpace(DocumentUrl))
+        if (string.IsNullOrEmpty(DocumentUrl))
             throw new BusinessRuleException("Doğrulanacak belge bulunamadı.");
 
         if (IsDocumentVerified)
             throw new BusinessRuleException("Belge zaten doğrulanmış.");
 
         IsDocumentVerified = true;
-        SetModifiedDate();
+        SetModifiedAudit(verifiedBy);
 
-        AddDomainEvent(new ReviewDocumentVerifiedEvent(Id, adminId, DocumentUrl!));
+        // Domain Event
+        AddDomainEvent(new ReviewVerifiedEvent(
+            Id,
+            verifiedBy,
+            DateTime.UtcNow
+        ));
     }
 
     /// <summary>
-    /// Yorumu gizler
+    /// Upvote sayısını artırır
     /// </summary>
-    public void Hide(string reason)
+    public void IncrementUpvotes()
+    {
+        Upvotes++;
+        SetModifiedDate();
+    }
+
+    /// <summary>
+    /// Downvote sayısını artırır
+    /// </summary>
+    public void IncrementDownvotes()
+    {
+        Downvotes++;
+        SetModifiedDate();
+    }
+
+    /// <summary>
+    /// Upvote sayısını azaltır
+    /// </summary>
+    public void DecrementUpvotes()
+    {
+        if (Upvotes > 0)
+        {
+            Upvotes--;
+            SetModifiedDate();
+        }
+    }
+
+    /// <summary>
+    /// Downvote sayısını azaltır
+    /// </summary>
+    public void DecrementDownvotes()
+    {
+        if (Downvotes > 0)
+        {
+            Downvotes--;
+            SetModifiedDate();
+        }
+    }
+
+    /// <summary>
+    /// Şikayet sayısını artırır
+    /// </summary>
+    public void IncrementReportCount()
+    {
+        ReportCount++;
+        SetModifiedDate();
+
+        // Otomatik gizleme kontrolü
+        if (ReportCount >= DomainConstants.Review.MaxReportCountBeforeAutoHide && IsActive)
+        {
+            Hide(null, "Çok fazla şikayet nedeniyle otomatik gizlendi", true);
+        }
+    }
+
+    /// <summary>
+    /// Yorumu gizle
+    /// </summary>
+    public void Hide(string? hiddenBy, string reason, bool isAutoHidden = false)
     {
         if (!IsActive)
-            return; // Zaten gizli
+            throw new BusinessRuleException("Yorum zaten gizli.");
 
         IsActive = false;
         SetModifiedDate();
 
-        AddDomainEvent(new ReviewHiddenEvent(Id, reason));
+        // Domain Event
+        AddDomainEvent(new ReviewHiddenEvent(
+            Id,
+            hiddenBy,
+            reason,
+            isAutoHidden,
+            DateTime.UtcNow
+        ));
     }
 
     /// <summary>
-    /// Yorumu tekrar aktif eder
+    /// Yorumu aktifleştir
     /// </summary>
-    public void Activate(string adminId, string reason)
+    public void Activate(string activatedBy)
     {
         if (IsActive)
-            return; // Zaten aktif
+            throw new BusinessRuleException("Yorum zaten aktif.");
 
         IsActive = true;
-        ReportCount = 0; // Şikayetleri sıfırla
-        SetModifiedDate();
+        ReportCount = 0; // Aktivasyon sonrası şikayet sayısı sıfırlanır
+        SetModifiedAudit(activatedBy);
 
-        AddDomainEvent(new ReviewActivatedEvent(Id, adminId, reason));
+        // Domain Event
+        AddDomainEvent(new ReviewActivatedEvent(
+            Id,
+            activatedBy,
+            DateTime.UtcNow
+        ));
     }
 
     /// <summary>
-    /// Net oy sayısını hesaplar
+    /// Faydalılık skorunu hesaplar
     /// </summary>
-    public int GetNetVotes() => Upvotes - Downvotes;
-
-    /// <summary>
-    /// Yararlılık skorunu hesaplar (0-100 arası)
-    /// </summary>
-    public int CalculateHelpfulnessScore()
+    public decimal CalculateHelpfulnessScore()
     {
         var totalVotes = Upvotes + Downvotes;
-        if (totalVotes == 0) return 50; // Varsayılan skor
+        if (totalVotes == 0)
+            return 0;
 
-        var score = (Upvotes * 100) / totalVotes;
-        return Math.Max(0, Math.Min(100, score));
+        var baseScore = (decimal)Upvotes / totalVotes * 100;
+        
+        // Doğrulanmış yorumlar için bonus
+        if (IsDocumentVerified)
+            baseScore *= 1.2m;
+
+        return Math.Round(baseScore, 2);
     }
 
     // Private validation methods
     private static void ValidateRating(decimal rating)
     {
-        if (rating < MinRating || rating > MaxRating)
-            throw new BusinessRuleException($"Puan {MinRating} ile {MaxRating} arasında olmalıdır.");
+        if (rating < DomainConstants.Review.MinRating || rating > DomainConstants.Review.MaxRating)
+            throw new BusinessRuleException($"Puan {DomainConstants.Review.MinRating} ile {DomainConstants.Review.MaxRating} arasında olmalıdır.");
+
+        // 0.5'lik artışlarla sınırla
+        if (rating % 0.5m != 0)
+            throw new BusinessRuleException("Puan 0.5'lik artışlarla verilebilir.");
     }
 
-    private static void ValidateCommentText(string? commentText)
+    private static void ValidateCommentText(string commentText)
     {
         if (string.IsNullOrWhiteSpace(commentText))
-            throw new BusinessRuleException("Yorum metni boş olamaz.");
+            throw new ArgumentNullException(nameof(commentText));
 
-        if (commentText.Length < MinCommentLength)
-            throw new BusinessRuleException($"Yorum en az {MinCommentLength} karakter olmalıdır.");
+        if (commentText.Length < DomainConstants.Review.MinCommentLength)
+            throw new BusinessRuleException($"Yorum en az {DomainConstants.Review.MinCommentLength} karakter olmalıdır.");
 
-        if (commentText.Length > MaxCommentLength)
-            throw new BusinessRuleException($"Yorum en fazla {MaxCommentLength} karakter olabilir.");
+        if (commentText.Length > DomainConstants.Review.MaxCommentLength)
+            throw new BusinessRuleException($"Yorum en fazla {DomainConstants.Review.MaxCommentLength} karakter olabilir.");
     }
 
     private static void ValidateCommentType(string commentType)
     {
-        if (!CommentTypes.IsValid(commentType))
-            throw new BusinessRuleException($"Geçersiz yorum türü: {commentType}");
+        if (string.IsNullOrWhiteSpace(commentType))
+            throw new ArgumentNullException(nameof(commentType));
+
+        var validTypes = new[] { "Salary", "WorkEnvironment", "CareerGrowth", "Benefits", "Management", "WorkLifeBalance" };
+        if (!validTypes.Contains(commentType))
+            throw new BusinessRuleException("Geçersiz yorum türü.");
+    }
+
+    private static void ValidateEditReason(string editReason)
+    {
+        if (string.IsNullOrWhiteSpace(editReason))
+            throw new ArgumentNullException(nameof(editReason));
+
+        if (editReason.Length < 10)
+            throw new BusinessRuleException("Düzenleme nedeni en az 10 karakter olmalıdır.");
     }
 }

@@ -6,7 +6,7 @@ using RateTheWork.Domain.Exceptions;
 namespace RateTheWork.Domain.Entities;
 
 /// <summary>
-/// Bildirim entity'si - Kullanıcılara gönderilen her bir bildirimi kaydetmek için.
+/// Bildirim entity'si - Kullanıcılara gönderilen bildirimleri temsil eder.
 /// </summary>
 public class Notification : BaseEntity
 {
@@ -19,7 +19,7 @@ public class Notification : BaseEntity
         public const string PhoneVerified = "Account.PhoneVerified";
         public const string PasswordChanged = "Account.PasswordChanged";
         public const string ProfileUpdated = "Account.ProfileUpdated";
-
+        
         // Review
         public const string ReviewApproved = "Review.Approved";
         public const string ReviewRejected = "Review.Rejected";
@@ -27,24 +27,24 @@ public class Notification : BaseEntity
         public const string ReviewReceivesComment = "Review.ReceivedComment";
         public const string ReviewReported = "Review.Reported";
         public const string ReviewHidden = "Review.Hidden";
-
+        
         // Document
         public const string DocumentVerified = "Document.Verified";
         public const string DocumentRejected = "Document.Rejected";
-
+        
         // Moderation
         public const string WarningIssued = "Moderation.Warning";
         public const string BanIssued = "Moderation.Ban";
         public const string BanLifted = "Moderation.BanLifted";
-
+        
         // Badge
         public const string BadgeEarned = "Badge.Earned";
         public const string BadgeRemoved = "Badge.Removed";
-
+        
         // Company
         public const string CompanyResponded = "Company.Responded";
         public const string CompanyVerified = "Company.Verified";
-
+        
         // System
         public const string SystemAnnouncement = "System.Announcement";
         public const string SystemMaintenance = "System.Maintenance";
@@ -54,33 +54,30 @@ public class Notification : BaseEntity
     // Notification Priority
     public enum NotificationPriority
     {
-        Low
-        , // Düşük öncelik - rozet kazanma vb.
-        Normal
-        , // Normal - çoğu bildirim
-        High
-        , // Yüksek - uyarılar vb.
-        Critical // Kritik - ban, güvenlik vb.
+        Low,      // Düşük öncelik - rozet kazanma vb.
+        Normal,   // Normal - çoğu bildirim
+        High,     // Yüksek - uyarılar vb.
+        Critical  // Kritik - ban, güvenlik vb.
     }
 
     // Properties
-    public string? UserId { get; private set; } = string.Empty;
-    public string? Type { get; private set; } = string.Empty;
-    public string? Title { get; private set; } = string.Empty;
-    public string? Message { get; private set; } = string.Empty;
-    public bool IsRead { get; private set; }
+    public string UserId { get; private set; } = string.Empty;
+    public string Type { get; private set; } = string.Empty;
+    public string Title { get; private set; } = string.Empty;
+    public string Message { get; private set; } = string.Empty;
+    public bool IsRead { get; private set; } = false;
     public DateTime? ReadAt { get; private set; }
-    public string? RelatedEntityType { get; private set; } = string.Empty;
-    public string? RelatedEntityId { get; private set; } = string.Empty;
+    public string? RelatedEntityType { get; private set; }
+    public string? RelatedEntityId { get; private set; }
     public NotificationPriority Priority { get; private set; }
-    public string? ActionUrl { get; private set; } = string.Empty; // Tıklandığında gidilecek URL
-    public string? IconType { get; private set; } = string.Empty; // UI için ikon tipi
-    public DateTime? ExpiresAt { get; private set; } // Ne zaman geçersiz olacak
-    public bool IsDeleted { get; private set; } // Kullanıcı sildi mi?
-    public string? Data { get; private set; } = string.Empty; // Ek veri (JSON)
-    public bool RequiresAction { get; private set; } // Kullanıcı aksiyonu gerekli mi?
-    public bool WasSent { get; private set; } // Email/SMS vs. gönderildi mi?
-    public DateTime? SentAt { get; private set; }
+    public string? ActionUrl { get; private set; }
+    public string? ImageUrl { get; private set; }
+    public Dictionary<string, object>? Data { get; private set; }
+    public NotificationChannel Channels { get; private set; }
+    public bool IsEmailSent { get; private set; } = false;
+    public bool IsSmsSent { get; private set; } = false;
+    public bool IsPushSent { get; private set; } = false;
+    public DateTime? ExpiresAt { get; private set; }
 
     /// <summary>
     /// EF Core için parametresiz private constructor
@@ -90,31 +87,21 @@ public class Notification : BaseEntity
     }
 
     /// <summary>
-    /// EF Core için private constructor
+    /// Yeni bildirim oluşturur (Factory method)
     /// </summary>
-    private Notification(string? userId, string? type, string? title, string? message) : base()
-    {
-        UserId = userId;
-        Type = type;
-        Title = title;
-        Message = message;
-    }
-
-    /// <summary>
-    /// Yeni bildirim oluşturur
-    /// </summary>
-    public static Notification Create
-    (
-        string userId
-        , string type
-        , string title
-        , string message
-        , NotificationPriority priority = NotificationPriority.Normal
-        , string? relatedEntityType = null
-        , string? relatedEntityId = null
-        , string? actionUrl = null
-        , bool requiresAction = false
-    )
+    public static Notification Create(
+        string userId,
+        string type,
+        string title,
+        string message,
+        NotificationPriority priority = NotificationPriority.Normal,
+        NotificationChannel channels = NotificationChannel.InApp,
+        string? relatedEntityType = null,
+        string? relatedEntityId = null,
+        string? actionUrl = null,
+        string? imageUrl = null,
+        Dictionary<string, object>? data = null,
+        int? expirationDays = null)
     {
         ValidateType(type);
         ValidateTitle(title);
@@ -122,136 +109,69 @@ public class Notification : BaseEntity
 
         var notification = new Notification
         {
-            UserId = userId ?? throw new ArgumentNullException(nameof(userId)), Type = type, Title = title
-            , Message = message, IsRead = false, RelatedEntityType = relatedEntityType
-            , RelatedEntityId = relatedEntityId, Priority = priority, ActionUrl = actionUrl
-            , RequiresAction = requiresAction, IsDeleted = false, WasSent = false
+            UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
+            Type = type,
+            Title = title,
+            Message = message,
+            Priority = priority,
+            Channels = channels,
+            RelatedEntityType = relatedEntityType,
+            RelatedEntityId = relatedEntityId,
+            ActionUrl = actionUrl,
+            ImageUrl = imageUrl,
+            Data = data,
+            ExpiresAt = expirationDays.HasValue ? DateTime.UtcNow.AddDays(expirationDays.Value) : null
         };
-
-        // Type'a göre varsayılan değerler
-        notification.SetDefaultsByType();
 
         // Domain Event
         notification.AddDomainEvent(new NotificationCreatedEvent(
             notification.Id,
             userId,
             type,
-            priority
+            title,
+            priority.ToString(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
         ));
 
         return notification;
     }
 
     /// <summary>
-    /// Hoş geldiniz bildirimi oluşturur
+    /// Toplu bildirim oluşturur (Factory method)
     /// </summary>
-    public static Notification CreateWelcomeNotification(string userId, string username)
+    public static List<Notification> CreateBulk(
+        string[] userIds,
+        string type,
+        string title,
+        string message,
+        NotificationPriority priority = NotificationPriority.Normal,
+        NotificationChannel channels = NotificationChannel.InApp)
     {
-        return Create(
-            userId,
-            NotificationTypes.Welcome,
-            "RateTheWork'e Hoş Geldiniz! 🎉",
-            $"Merhaba {username}, aramıza hoş geldin! Şirket değerlendirmelerini inceleyebilir ve kendi deneyimlerini paylaşabilirsin."
-            ,
-            NotificationPriority.Normal,
-            "User",
-            userId,
-            "/profile"
-        );
-    }
+        if (userIds == null || userIds.Length == 0)
+            throw new ArgumentException("En az bir kullanıcı ID'si gerekli.", nameof(userIds));
 
-    /// <summary>
-    /// Yorum onaylandı bildirimi
-    /// </summary>
-    public static Notification CreateReviewApprovedNotification
-    (
-        string userId
-        , string companyName
-        , string reviewId
-    )
-    {
-        return Create(
-            userId,
-            NotificationTypes.ReviewApproved,
-            "Yorumunuz Onaylandı ✅",
-            $"{companyName} hakkındaki yorumunuz onaylandı ve yayında!",
-            NotificationPriority.Normal,
-            "Review",
-            reviewId,
-            $"/reviews/{reviewId}"
-        );
-    }
+        var notifications = new List<Notification>();
 
-    /// <summary>
-    /// Uyarı bildirimi
-    /// </summary>
-    public static Notification CreateWarningNotification
-    (
-        string userId
-        , string warningReason
-        , string warningId
-    )
-    {
-        var notification = Create(
-            userId,
-            NotificationTypes.WarningIssued,
-            "Uyarı Aldınız ⚠️",
-            $"Uyarı nedeni: {warningReason}. Lütfen platform kurallarına uygun davranın.",
-            NotificationPriority.High,
-            "Warning",
-            warningId,
-            $"/warnings/{warningId}",
-            true // Requires action
-        );
+        foreach (var userId in userIds.Distinct())
+        {
+            notifications.Add(Create(userId, type, title, message, priority, channels));
+        }
 
-        notification.ExpiresAt = DateTime.UtcNow.AddDays(30); // 30 gün görünür
-        return notification;
-    }
+        // Bulk notification event - ilk notification'a ekle
+        if (notifications.Any())
+        {
+            notifications.First().AddDomainEvent(new BulkNotificationSentEvent(
+                userIds,
+                type,
+                title,
+                userIds.Length,
+                DateTime.UtcNow,
+                DateTime.UtcNow
+            ));
+        }
 
-    /// <summary>
-    /// Rozet kazandı bildirimi
-    /// </summary>
-    public static Notification CreateBadgeEarnedNotification
-    (
-        string userId
-        , string badgeName
-        , string badgeId
-    )
-    {
-        return Create(
-            userId,
-            NotificationTypes.BadgeEarned,
-            "Yeni Rozet Kazandınız! 🏆",
-            $"Tebrikler! '{badgeName}' rozetini kazandınız.",
-            NotificationPriority.Low,
-            "Badge",
-            badgeId,
-            $"/badges/{badgeId}"
-        );
-    }
-
-    /// <summary>
-    /// Sistem duyurusu
-    /// </summary>
-    public static Notification CreateSystemAnnouncement
-    (
-        string userId
-        , string title
-        , string message
-        , DateTime? expiresAt = null
-    )
-    {
-        var notification = Create(
-            userId,
-            NotificationTypes.SystemAnnouncement,
-            title,
-            message,
-            NotificationPriority.Normal
-        );
-
-        notification.ExpiresAt = expiresAt;
-        notification.IconType = "info";
-        return notification;
+        return notifications;
     }
 
     /// <summary>
@@ -260,183 +180,76 @@ public class Notification : BaseEntity
     public void MarkAsRead()
     {
         if (IsRead)
-            return;
+            throw new BusinessRuleException("Bildirim zaten okunmuş.");
 
         IsRead = true;
         ReadAt = DateTime.UtcNow;
         SetModifiedDate();
 
-        AddDomainEvent(new NotificationReadEvent(Id, UserId));
+        // Domain Event
+        AddDomainEvent(new NotificationReadEvent(
+            Id,
+            UserId,
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        ));
     }
 
     /// <summary>
-    /// Bildirimi okunmadı olarak işaretle
+    /// Email gönderim durumunu güncelle
     /// </summary>
-    public void MarkAsUnread()
+    public void MarkEmailSent()
     {
-        if (!IsRead)
-            return;
+        if (!Channels.HasFlag(NotificationChannel.Email))
+            throw new BusinessRuleException("Bu bildirim email kanalını içermiyor.");
 
-        IsRead = false;
-        ReadAt = null;
+        IsEmailSent = true;
         SetModifiedDate();
     }
 
     /// <summary>
-    /// Bildirimi sil (soft delete)
+    /// SMS gönderim durumunu güncelle
     /// </summary>
-    public void Delete()
+    public void MarkSmsSent()
     {
-        if (IsDeleted)
-            return;
+        if (!Channels.HasFlag(NotificationChannel.SMS))
+            throw new BusinessRuleException("Bu bildirim SMS kanalını içermiyor.");
 
-        IsDeleted = true;
-        SetModifiedDate();
-
-        AddDomainEvent(new NotificationDeletedEvent(Id, UserId));
-    }
-
-    /// <summary>
-    /// Bildirimi geri al
-    /// </summary>
-    public void Restore()
-    {
-        if (!IsDeleted)
-            return;
-
-        IsDeleted = false;
+        IsSmsSent = true;
         SetModifiedDate();
     }
 
     /// <summary>
-    /// Gönderildi olarak işaretle
+    /// Push notification gönderim durumunu güncelle
     /// </summary>
-    public void MarkAsSent(string channel = "InApp")
+    public void MarkPushSent()
     {
-        if (WasSent)
-            return;
+        if (!Channels.HasFlag(NotificationChannel.Push))
+            throw new BusinessRuleException("Bu bildirim push kanalını içermiyor.");
 
-        WasSent = true;
-        SentAt = DateTime.UtcNow;
-
-        // Data'ya gönderim kanalını ekle
-        AddData("sentChannel", channel);
+        IsPushSent = true;
         SetModifiedDate();
     }
 
     /// <summary>
-    /// Ek veri ekle
-    /// </summary>
-    public void AddData(string key, object value)
-    {
-        Dictionary<string, object> dataDict;
-
-        if (string.IsNullOrWhiteSpace(Data))
-        {
-            dataDict = new Dictionary<string, object>();
-        }
-        else
-        {
-            try
-            {
-                dataDict = JsonSerializer.Deserialize<Dictionary<string, object>>(Data)
-                           ?? new Dictionary<string, object>();
-            }
-            catch
-            {
-                dataDict = new Dictionary<string, object>();
-            }
-        }
-
-        dataDict[key] = value;
-
-        Data = JsonSerializer.Serialize(dataDict, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-
-        SetModifiedDate();
-    }
-
-    /// <summary>
-    /// Süre dolmuş mu kontrol et
+    /// Bildirim süresi dolmuş mu kontrol et
     /// </summary>
     public bool IsExpired()
     {
-        return ExpiresAt.HasValue && DateTime.UtcNow > ExpiresAt.Value;
+        return ExpiresAt.HasValue && ExpiresAt.Value <= DateTime.UtcNow;
     }
 
     /// <summary>
-    /// Bildirimin görünür olup olmadığını kontrol et
+    /// Data dictionary'sine veri ekle
     /// </summary>
-    public bool IsVisible()
+    public void AddData(string key, object value)
     {
-        return !IsDeleted && !IsExpired();
+        Data ??= new Dictionary<string, object>();
+        Data[key] = value;
+        SetModifiedDate();
     }
 
-    /// <summary>
-    /// Bildirim özetini döndür
-    /// </summary>
-    public string? GetSummary()
-    {
-        var summary = Title;
-
-        if (Priority == NotificationPriority.Critical)
-            summary = "🚨 " + summary;
-        else if (Priority == NotificationPriority.High)
-            summary = "⚠️ " + summary;
-
-        if (RequiresAction && !IsRead)
-            summary += " [Aksiyon Gerekli]";
-
-        return summary;
-    }
-
-    /// <summary>
-    /// Bildirim yaşını hesapla
-    /// </summary>
-    public string GetAge()
-    {
-        var age = DateTime.UtcNow - CreatedAt;
-
-        if (age.TotalMinutes < 1)
-            return "Şimdi";
-        if (age.TotalMinutes < 60)
-            return $"{(int)age.TotalMinutes} dakika önce";
-        if (age.TotalHours < 24)
-            return $"{(int)age.TotalHours} saat önce";
-        if (age.TotalDays < 7)
-            return $"{(int)age.TotalDays} gün önce";
-        if (age.TotalDays < 30)
-            return $"{(int)(age.TotalDays / 7)} hafta önce";
-        if (age.TotalDays < 365)
-            return $"{(int)(age.TotalDays / 30)} ay önce";
-
-        return $"{(int)(age.TotalDays / 365)} yıl önce";
-    }
-
-    // Private methods
-    private void SetDefaultsByType()
-    {
-        IconType = Type switch
-        {
-            var t when t != null && t.StartsWith("Account.") => "user"
-            , var t when t != null && t.StartsWith("Review.") => "message-square"
-            , var t when t != null && t.StartsWith("Document.") => "file-check"
-            , var t when t != null && t.StartsWith("Moderation.") => "shield"
-            , var t when t != null && t.StartsWith("Badge.") => "award"
-            , var t when t != null && t.StartsWith("Company.") => "building"
-            , var t when t != null && t.StartsWith("System.") => "info", _ => "bell"
-        };
-
-        // Kritik bildirimler için süre
-        if (Priority == NotificationPriority.Critical)
-        {
-            ExpiresAt = DateTime.UtcNow.AddDays(90); // 90 gün
-        }
-    }
-
-    // Validation methods
+    // Private validation methods
     private static void ValidateType(string type)
     {
         if (string.IsNullOrWhiteSpace(type))

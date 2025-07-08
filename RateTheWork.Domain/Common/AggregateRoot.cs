@@ -6,7 +6,7 @@ namespace RateTheWork.Domain.Common;
 /// DDD Aggregate Root base class.
 /// Aggregate'lerin kök entity'leri bu sınıftan türer.
 /// </summary>
-public abstract class AggregateRoot : BaseEntity
+public abstract class AggregateRoot : BaseEntity, IAggregateRoot
 {
     /// <summary>
     /// Aggregate içindeki değişiklikleri takip eden versiyon numarası
@@ -25,7 +25,7 @@ public abstract class AggregateRoot : BaseEntity
     /// <summary>
     /// Varolan bir aggregate root'u yüklerken kullanılır
     /// </summary>
-    protected AggregateRoot(string? id, DateTime createdAt, DateTime? modifiedAt, int version) 
+    protected AggregateRoot(string id, DateTime createdAt, DateTime? modifiedAt, int version) 
         : base(id, createdAt, modifiedAt)
     {
         Version = version;

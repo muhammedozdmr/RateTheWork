@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Events;
+using RateTheWork.Domain.Events.AdminUser;
 using RateTheWork.Domain.Exceptions;
 
 namespace RateTheWork.Domain.Entities;
@@ -10,25 +11,20 @@ namespace RateTheWork.Domain.Entities;
 /// </summary>
 public class AdminUser : AuditableBaseEntity
 {
-    // Constants
-    private const int MinPasswordLength = 8;
-    private const int MaxFailedLoginAttempts = 5;
-    private const int AccountLockMinutes = 30;
-
     // Properties
-    public string? Username { get; private set; } = string.Empty;
-    public string? HashedPassword { get; private set; } = string.Empty;
-    public string? Email { get; private set; } = string.Empty;
-    public string? Role { get; private set; } = string.Empty; // SuperAdmin, Moderator, ContentManager
-    public bool IsActive { get; private set; }
-    public int FailedLoginAttempts { get; private set; }
+    public string Username { get; private set; } = string.Empty;
+    public string HashedPassword { get; private set; } = string.Empty;
+    public string Email { get; private set; } = string.Empty;
+    public string Role { get; private set; } = string.Empty;
+    public bool IsActive { get; private set; } = true;
+    public int FailedLoginAttempts { get; private set; } = 0;
     public DateTime? LastLoginAt { get; private set; }
     public DateTime? LastFailedLoginAt { get; private set; }
     public DateTime? LockedUntil { get; private set; }
-    public string? TwoFactorSecret { get; private set; } = string.Empty;
-    public bool IsTwoFactorEnabled { get; private set; }
+    public string? TwoFactorSecret { get; private set; }
+    public bool IsTwoFactorEnabled { get; private set; } = false;
     public DateTime? PasswordChangedAt { get; private set; }
-    public string? PasswordResetToken { get; private set; } = string.Empty;
+    public string? PasswordResetToken { get; private set; }
     public DateTime? PasswordResetTokenExpiry { get; private set; }
 
     /// <summary>
@@ -39,27 +35,14 @@ public class AdminUser : AuditableBaseEntity
     }
 
     /// <summary>
-    /// Factory method için private constructor
+    /// Yeni admin kullanıcı oluşturur (Factory method)
     /// </summary>
-    private AdminUser(string username, string hashedPassword, string email, string role) : base()
-    {
-        Username = username;
-        HashedPassword = hashedPassword;
-        Email = email;
-        Role = role;
-    }
-
-    /// <summary>
-    /// Yeni admin kullanıcı oluşturur
-    /// </summary>
-    public static AdminUser Create
-    (
-        string username
-        , string? email
-        , string hashedPassword
-        , string? role
-        , string createdByAdminId
-    )
+    public static AdminUser Create(
+        string username,
+        string email,
+        string hashedPassword,
+        string role,
+        string createdByAdminId)
     {
         ValidateUsername(username);
         ValidateEmail(email);
@@ -67,12 +50,15 @@ public class AdminUser : AuditableBaseEntity
 
         var adminUser = new AdminUser
         {
-            Username = username, Email = email
-            , HashedPassword = hashedPassword ?? throw new ArgumentNullException(nameof(hashedPassword)), Role = role
-            , IsActive = true, FailedLoginAttempts = 0, IsTwoFactorEnabled = false, PasswordChangedAt = DateTime.UtcNow
+            Username = username,
+            Email = email.ToLowerInvariant(),
+            HashedPassword = hashedPassword ?? throw new ArgumentNullException(nameof(hashedPassword)),
+            Role = role,
+            IsActive = true,
+            PasswordChangedAt = DateTime.UtcNow
         };
 
-        adminUser.SetCreationAuditInfo(createdByAdminId);
+        adminUser.SetCreatedAudit(createdByAdminId);
 
         // Domain Event
         adminUser.AddDomainEvent(new AdminUserCreatedEvent(
@@ -80,28 +66,34 @@ public class AdminUser : AuditableBaseEntity
             username,
             email,
             role,
-            createdByAdminId
+            createdByAdminId,
+            DateTime.UtcNow
         ));
 
         return adminUser;
     }
 
     /// <summary>
-    /// Başarılı giriş işlemi
+    /// Başarılı giriş
     /// </summary>
-    public void RecordSuccessfulLogin()
+    public void RecordSuccessfulLogin(string ipAddress, string userAgent)
     {
-        FailedLoginAttempts = 0;
         LastLoginAt = DateTime.UtcNow;
+        FailedLoginAttempts = 0;
         LastFailedLoginAt = null;
-        LockedUntil = null;
         SetModifiedDate();
 
-        AddDomainEvent(new AdminLoginSuccessEvent(Id, Username, LastLoginAt.Value));
+        // Domain Event
+        AddDomainEvent(new AdminLoginEvent(
+            Id,
+            ipAddress,
+            userAgent,
+            DateTime.UtcNow
+        ));
     }
 
     /// <summary>
-    /// Başarısız giriş işlemi
+    /// Başarısız giriş denemesi
     /// </summary>
     public void RecordFailedLogin(string ipAddress)
     {
@@ -109,199 +101,141 @@ public class AdminUser : AuditableBaseEntity
         LastFailedLoginAt = DateTime.UtcNow;
 
         // Hesap kilitleme kontrolü
-        if (FailedLoginAttempts >= MaxFailedLoginAttempts)
+        if (FailedLoginAttempts >= DomainConstants.Security.MaxFailedLoginAttempts)
         {
             LockAccount();
         }
 
         SetModifiedDate();
 
-        AddDomainEvent(new AdminLoginFailedEvent(
-            Id,
+        // Domain Event - Username ile, Id kullanmıyoruz çünkü login başarısız
+        AddDomainEvent(new AdminFailedLoginEvent(
             Username,
             ipAddress,
             FailedLoginAttempts,
-            IsAccountLocked()
+            DateTime.UtcNow
         ));
     }
 
     /// <summary>
-    /// Hesabı kilitler
+    /// Hesabı kilitle
     /// </summary>
     private void LockAccount()
     {
-        LockedUntil = DateTime.UtcNow.AddMinutes(AccountLockMinutes);
+        LockedUntil = DateTime.UtcNow.AddMinutes(DomainConstants.Security.AccountLockMinutes);
+        
+        // Domain Event
         AddDomainEvent(new AdminAccountLockedEvent(
             Id,
-            Username,
             LockedUntil.Value,
-            $"{MaxFailedLoginAttempts} başarısız giriş denemesi"
+            $"{DomainConstants.Security.MaxFailedLoginAttempts} başarısız giriş denemesi",
+            DateTime.UtcNow
         ));
     }
 
     /// <summary>
-    /// Hesap kilitli mi kontrol eder
+    /// Hesap kilitli mi kontrol et
     /// </summary>
-    public bool IsAccountLocked()
+    public bool IsLocked()
     {
         return LockedUntil.HasValue && LockedUntil.Value > DateTime.UtcNow;
     }
 
     /// <summary>
-    /// Hesap kilidini açar
+    /// Rolü değiştir
     /// </summary>
-    public void UnlockAccount(string unlockedByAdminId)
+    public void ChangeRole(string newRole, string changedBy)
     {
-        if (!IsAccountLocked())
-            return;
+        ValidateRole(newRole);
 
-        LockedUntil = null;
-        FailedLoginAttempts = 0;
-        SetModifiedDate();
+        if (Role == newRole)
+            throw new BusinessRuleException("Yeni rol mevcut rol ile aynı.");
 
-        AddDomainEvent(new AdminAccountUnlockedEvent(Id, Username, unlockedByAdminId));
+        var oldRole = Role;
+        Role = newRole;
+        SetModifiedAudit(changedBy);
+
+        // Domain Event
+        AddDomainEvent(new AdminRoleChangedEvent(
+            Id,
+            oldRole,
+            newRole,
+            changedBy,
+            DateTime.UtcNow
+        ));
     }
 
     /// <summary>
-    /// Şifre değiştirir
+    /// Şifre değiştir
     /// </summary>
-    public void ChangePassword(string? newHashedPassword)
+    public void ChangePassword(string newHashedPassword)
     {
-        if (string.IsNullOrWhiteSpace(newHashedPassword))
+        if (string.IsNullOrEmpty(newHashedPassword))
             throw new ArgumentNullException(nameof(newHashedPassword));
-
-        if (HashedPassword == newHashedPassword)
-            throw new BusinessRuleException("Yeni şifre eski şifre ile aynı olamaz.");
 
         HashedPassword = newHashedPassword;
         PasswordChangedAt = DateTime.UtcNow;
         PasswordResetToken = null;
         PasswordResetTokenExpiry = null;
         SetModifiedDate();
-
-        AddDomainEvent(new AdminPasswordChangedEvent(Id, Username));
     }
 
     /// <summary>
-    /// Şifre sıfırlama token'ı oluşturur
+    /// Şifre sıfırlama token'ı oluştur
     /// </summary>
     public string GeneratePasswordResetToken()
     {
-        PasswordResetToken = GenerateSecureToken();
-        PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(2); // 2 saat geçerli
+        PasswordResetToken = Guid.NewGuid().ToString();
+        PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(24);
         SetModifiedDate();
-
         return PasswordResetToken;
     }
 
     /// <summary>
-    /// Şifre sıfırlama token'ını doğrular
+    /// İki faktörlü doğrulamayı etkinleştir
     /// </summary>
-    public bool ValidatePasswordResetToken(string token)
-    {
-        if (string.IsNullOrWhiteSpace(PasswordResetToken))
-            return false;
-
-        if (PasswordResetTokenExpiry.HasValue && PasswordResetTokenExpiry.Value < DateTime.UtcNow)
-            return false;
-
-        return PasswordResetToken == token;
-    }
-
-    /// <summary>
-    /// 2FA etkinleştirir
-    /// </summary>
-    public string EnableTwoFactorAuthentication()
+    public string EnableTwoFactor()
     {
         if (IsTwoFactorEnabled)
-            throw new BusinessRuleException("İki faktörlü doğrulama zaten etkin.");
+            throw new BusinessRuleException("İki faktörlü doğrulama zaten aktif.");
 
-        TwoFactorSecret = GenerateSecureToken();
+        TwoFactorSecret = GenerateTwoFactorSecret();
         IsTwoFactorEnabled = true;
         SetModifiedDate();
-
-        AddDomainEvent(new AdminTwoFactorEnabledEvent(Id, Username));
-
         return TwoFactorSecret;
     }
 
     /// <summary>
-    /// 2FA devre dışı bırakır
+    /// İki faktörlü doğrulamayı devre dışı bırak
     /// </summary>
-    public void DisableTwoFactorAuthentication(string disabledByAdminId)
+    public void DisableTwoFactor()
     {
         if (!IsTwoFactorEnabled)
-            return;
+            throw new BusinessRuleException("İki faktörlü doğrulama zaten devre dışı.");
 
         TwoFactorSecret = null;
         IsTwoFactorEnabled = false;
         SetModifiedDate();
-
-        AddDomainEvent(new AdminTwoFactorDisabledEvent(Id, Username, disabledByAdminId));
     }
 
     /// <summary>
-    /// Admin rolünü değiştirir
+    /// Hesabı aktif/pasif yap
     /// </summary>
-    public void ChangeRole(string? newRole, string changedByAdminId)
+    public void SetActiveStatus(bool isActive, string modifiedBy)
     {
-        ValidateRole(newRole);
-
-        if (Role == newRole)
-            return;
-
-        var oldRole = Role;
-        Role = newRole;
-        SetModifiedDate();
-
-        AddDomainEvent(new AdminRoleChangedEvent(Id, Username, oldRole, newRole, changedByAdminId));
+        IsActive = isActive;
+        SetModifiedAudit(modifiedBy);
     }
 
-    /// <summary>
-    /// Admin hesabını deaktive eder
-    /// </summary>
-    public void Deactivate(string deactivatedByAdminId, string reason)
+    // Private helper methods
+    private static string GenerateTwoFactorSecret()
     {
-        if (!IsActive)
-            return;
-
-        IsActive = false;
-        SetModifiedDate();
-
-        AddDomainEvent(new AdminDeactivatedEvent(Id, Username, deactivatedByAdminId, reason));
-    }
-
-    /// <summary>
-    /// Admin hesabını aktive eder
-    /// </summary>
-    public void Activate(string activatedByAdminId)
-    {
-        if (IsActive)
-            return;
-
-        IsActive = true;
-        FailedLoginAttempts = 0;
-        LockedUntil = null;
-        SetModifiedDate();
-
-        AddDomainEvent(new AdminActivatedEvent(Id, Username, activatedByAdminId));
-    }
-
-    /// <summary>
-    /// Email günceller
-    /// </summary>
-    public void UpdateEmail(string? newEmail, string updatedByAdminId)
-    {
-        ValidateEmail(newEmail);
-
-        if (Email == newEmail)
-            return;
-
-        var oldEmail = Email;
-        Email = newEmail;
-        SetModifiedDate();
-
-        AddDomainEvent(new AdminEmailChangedEvent(Id, Username, oldEmail, newEmail, updatedByAdminId));
+        var key = new byte[32];
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(key);
+        }
+        return Convert.ToBase64String(key);
     }
 
     // Validation methods
@@ -310,17 +244,14 @@ public class AdminUser : AuditableBaseEntity
         if (string.IsNullOrWhiteSpace(username))
             throw new ArgumentNullException(nameof(username));
 
-        if (username.Length < 3)
-            throw new BusinessRuleException("Kullanıcı adı en az 3 karakter olmalıdır.");
-
-        if (username.Length > 50)
-            throw new BusinessRuleException("Kullanıcı adı en fazla 50 karakter olabilir.");
+        if (username.Length < 3 || username.Length > 50)
+            throw new BusinessRuleException("Kullanıcı adı 3-50 karakter arasında olmalıdır.");
 
         if (!System.Text.RegularExpressions.Regex.IsMatch(username, @"^[a-zA-Z0-9_]+$"))
             throw new BusinessRuleException("Kullanıcı adı sadece harf, rakam ve alt çizgi içerebilir.");
     }
 
-    private static void ValidateEmail(string? email)
+    private static void ValidateEmail(string email)
     {
         if (string.IsNullOrWhiteSpace(email))
             throw new ArgumentNullException(nameof(email));
@@ -329,18 +260,13 @@ public class AdminUser : AuditableBaseEntity
             throw new BusinessRuleException("Geçersiz email formatı.");
     }
 
-    private static void ValidateRole(string? role)
+    private static void ValidateRole(string role)
     {
-        var validRoles = new[] { "SuperAdmin", "Moderator", "ContentManager" };
-        if (!validRoles.Contains(role))
-            throw new BusinessRuleException($"Geçersiz rol: {role}. Geçerli roller: {string.Join(", ", validRoles)}");
-    }
+        if (string.IsNullOrWhiteSpace(role))
+            throw new ArgumentNullException(nameof(role));
 
-    private static string GenerateSecureToken()
-    {
-        using var rng = RandomNumberGenerator.Create();
-        var bytes = new byte[32];
-        rng.GetBytes(bytes);
-        return Convert.ToBase64String(bytes);
+        var validRoles = new[] { "SuperAdmin", "Admin", "Moderator", "ContentManager" };
+        if (!validRoles.Contains(role))
+            throw new BusinessRuleException("Geçersiz rol.");
     }
 }

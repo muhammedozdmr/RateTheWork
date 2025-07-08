@@ -1,5 +1,6 @@
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Events;
+using RateTheWork.Domain.Events.Badge;
 using RateTheWork.Domain.Exceptions;
 
 namespace RateTheWork.Domain.Entities;
@@ -12,52 +13,39 @@ public class Badge : BaseEntity
     // Badge Types
     public enum BadgeType
     {
-        FirstReview
-        , // İlk yorum
-        ActiveReviewer
-        , // Aktif yorumcu (10+ yorum)
-        TrustedReviewer
-        , // Güvenilir yorumcu (5+ doğrulanmış yorum)
-        TopContributor
-        , // En çok katkıda bulunan (50+ yorum)
-        CompanyExplorer
-        , // Farklı şirketlerde yorum yapan (10+ şirket)
-        DetailedReviewer
-        , // Detaylı yorumlar yazan (ortalama 500+ karakter)
-        HelpfulReviewer
-        , // Faydalı yorumlar (upvote oranı %80+)
-        Anniversary
-        , // Platform yıldönümü
-        SpecialEvent // Özel etkinlik rozeti
+        FirstReview,        // İlk yorum
+        ActiveReviewer,     // Aktif yorumcu (10+ yorum)
+        TrustedReviewer,    // Güvenilir yorumcu (5+ doğrulanmış yorum)
+        TopContributor,     // En çok katkıda bulunan (50+ yorum)
+        CompanyExplorer,    // Farklı şirketlerde yorum yapan (10+ şirket)
+        DetailedReviewer,   // Detaylı yorumlar yazan (ortalama 500+ karakter)
+        HelpfulReviewer,    // Faydalı yorumlar (upvote oranı %80+)
+        Anniversary,        // Platform yıldönümü
+        SpecialEvent        // Özel etkinlik rozeti
     }
 
     // Badge Rarity Levels
     public enum BadgeRarity
     {
-        Common
-        , // Herkes kazanabilir
-        Uncommon
-        , // Biraz çaba gerektirir
-        Rare
-        , // Zor kazanılır
-        Epic
-        , // Çok zor kazanılır
-        Legendary // Efsanevi seviye
+        Common,      // Herkes kazanabilir
+        Uncommon,    // Biraz çaba gerektirir
+        Rare,        // Zor kazanılır
+        Epic,        // Çok zor kazanılır
+        Legendary    // Efsanevi seviye
     }
 
     // Properties
-    public string? Name { get; private set; } = string.Empty;
-    public string? Description { get; private set; } = string.Empty;
-    public string? IconUrl { get; private set; } = string.Empty;
-    public string? Criteria { get; private set; } = string.Empty;
+    public string Name { get; private set; } = string.Empty;
+    public string Description { get; private set; } = string.Empty;
+    public string IconUrl { get; private set; } = string.Empty;
+    public string Criteria { get; private set; } = string.Empty;
     public BadgeType Type { get; private set; }
     public BadgeRarity Rarity { get; private set; }
-    public int RequiredCount { get; private set; } // Kaç adet gerekli (yorum sayısı vb.)
-    public bool IsActive { get; private set; }
+    public int RequiredCount { get; private set; }
+    public bool IsActive { get; private set; } = true;
     public DateTime? AvailableFrom { get; private set; }
     public DateTime? AvailableUntil { get; private set; }
-    public int Points { get; private set; } // Rozet puanı (gamification için)
-
+    public int Points { get; private set; }
 
     /// <summary>
     /// EF Core için parametresiz private constructor
@@ -67,30 +55,17 @@ public class Badge : BaseEntity
     }
 
     /// <summary>
-    /// EF Core için private constructor
+    /// Yeni rozet oluşturur (Factory method)
     /// </summary>
-    private Badge(string? name, string? description, string? ıconUrl, string? criteria) : base()
-    {
-        Name = name;
-        Description = description;
-        IconUrl = ıconUrl;
-        Criteria = criteria;
-    }
-
-    /// <summary>
-    /// Yeni rozet oluşturur
-    /// </summary>
-    public static Badge Create
-    (
-        string? name
-        , string? description
-        , string? iconUrl
-        , string criteria
-        , BadgeType type
-        , BadgeRarity rarity
-        , int requiredCount = 0
-        , int points = 10
-    )
+    public static Badge Create(
+        string name,
+        string description,
+        string iconUrl,
+        string criteria,
+        BadgeType type,
+        BadgeRarity rarity,
+        int requiredCount = 0,
+        int points = 10)
     {
         ValidateName(name);
         ValidateDescription(description);
@@ -98,96 +73,95 @@ public class Badge : BaseEntity
 
         var badge = new Badge
         {
-            Name = name, Description = description, IconUrl = iconUrl
-            , Criteria = criteria ?? throw new ArgumentNullException(nameof(criteria)), Type = type, Rarity = rarity
-            , RequiredCount = requiredCount, IsActive = true, Points = points
+            Name = name,
+            Description = description,
+            IconUrl = iconUrl,
+            Criteria = criteria ?? throw new ArgumentNullException(nameof(criteria)),
+            Type = type,
+            Rarity = rarity,
+            RequiredCount = requiredCount,
+            Points = points > 0 ? points : 10,
+            IsActive = true
         };
 
-        // Rozet tipine göre varsayılan değerler
-        badge.SetDefaultValuesByType();
+        // Domain Event
+        badge.AddDomainEvent(new BadgeCreatedEvent(
+            badge.Id,
+            badge.Name,
+            badge.Type.ToString(),
+            badge.Rarity.ToString(),
+            DateTime.UtcNow
+        ));
 
         return badge;
     }
 
     /// <summary>
-    /// Özel etkinlik rozeti oluşturur
+    /// Rozeti aktifleştir
     /// </summary>
-    public static Badge CreateSpecialEventBadge
-    (
-        string? name
-        , string? description
-        , string? iconUrl
-        , string criteria
-        , DateTime availableFrom
-        , DateTime availableUntil
-        , int points = 50
-    )
+    public void Activate(string activatedBy)
     {
-        var badge = Create(name, description, iconUrl, criteria, BadgeType.SpecialEvent, BadgeRarity.Epic, 0, points);
-        badge.SetAvailabilityPeriod(availableFrom, availableUntil);
-        return badge;
+        if (IsActive)
+            throw new BusinessRuleException("Rozet zaten aktif.");
+
+        IsActive = true;
+        SetModifiedDate();
+
+        // Domain Event
+        AddDomainEvent(new BadgeActivatedEvent(
+            Id,
+            Name,
+            activatedBy,
+            DateTime.UtcNow
+        ));
     }
 
     /// <summary>
-    /// Kullanıcının rozeti kazanıp kazanamayacağını kontrol eder
+    /// Rozeti deaktive et
     /// </summary>
-    public bool CheckEligibility
-    (
-        int userReviewCount
-        , int userVerifiedReviewCount
-        , int userCompanyCount
-        , double userAverageCommentLength
-        , double userUpvoteRatio
-        , DateTime userRegistrationDate
-        , int userWarningCount
-    )
+    public void Deactivate(string deactivatedBy, string reason)
     {
-        // Aktif değilse kazanılamaz
         if (!IsActive)
-            return false;
+            throw new BusinessRuleException("Rozet zaten deaktif.");
 
-        // Zaman kontrolü
-        if (!IsCurrentlyAvailable())
-            return false;
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ArgumentNullException(nameof(reason));
 
-        // Rozet tipine göre kontrol
-        return Type switch
-        {
-            BadgeType.FirstReview => userReviewCount >= 1, BadgeType.ActiveReviewer => userReviewCount >= RequiredCount
-            , BadgeType.TrustedReviewer => userVerifiedReviewCount >= RequiredCount
-            , BadgeType.TopContributor => userReviewCount >= RequiredCount && userWarningCount == 0
-            , BadgeType.CompanyExplorer => userCompanyCount >= RequiredCount
-            , BadgeType.DetailedReviewer => userAverageCommentLength >= 500 && userReviewCount >= 5
-            , BadgeType.HelpfulReviewer => userUpvoteRatio >= 0.8 && userReviewCount >= 10
-            , BadgeType.Anniversary => (DateTime.UtcNow - userRegistrationDate).TotalDays >= 365
-            , BadgeType.SpecialEvent => true, // Özel mantık gerekebilir
+        IsActive = false;
+        SetModifiedDate();
 
-            _ => false
-        };
+        // Domain Event
+        AddDomainEvent(new BadgeDeactivatedEvent(
+            Id,
+            Name,
+            deactivatedBy,
+            reason,
+            DateTime.UtcNow
+        ));
     }
 
     /// <summary>
-    /// Rozet şu anda kazanılabilir mi?
+    /// Rozet gereksinimlerini güncelle
     /// </summary>
-    public bool IsCurrentlyAvailable()
+    public void UpdateRequirements(int requiredCount, string criteria)
     {
-        var now = DateTime.UtcNow;
+        if (requiredCount < 0)
+            throw new BusinessRuleException("Gereksinim sayısı negatif olamaz.");
 
-        if (AvailableFrom.HasValue && now < AvailableFrom.Value)
-            return false;
+        if (string.IsNullOrWhiteSpace(criteria))
+            throw new ArgumentNullException(nameof(criteria));
 
-        if (AvailableUntil.HasValue && now > AvailableUntil.Value)
-            return false;
-
-        return IsActive;
+        RequiredCount = requiredCount;
+        Criteria = criteria;
+        SetModifiedDate();
     }
 
     /// <summary>
-    /// Rozet süresini ayarlar
+    /// Rozet süresini ayarla
     /// </summary>
-    public void SetAvailabilityPeriod(DateTime from, DateTime until)
+    public void SetAvailabilityPeriod(DateTime? from, DateTime? until)
     {
-        if (from >= until)
+        if (from.HasValue && until.HasValue && from.Value >= until.Value)
             throw new BusinessRuleException("Başlangıç tarihi bitiş tarihinden önce olmalıdır.");
 
         AvailableFrom = from;
@@ -196,151 +170,26 @@ public class Badge : BaseEntity
     }
 
     /// <summary>
-    /// Rozeti deaktive eder
+    /// Rozet şu anda kazanılabilir mi?
     /// </summary>
-    public void Deactivate(string reason)
+    public bool IsAvailable()
     {
         if (!IsActive)
-            return;
+            return false;
 
-        IsActive = false;
-        SetModifiedDate();
+        var now = DateTime.UtcNow;
 
-        AddDomainEvent(new BadgeDeactivatedEvent(Id, Name, reason));
+        if (AvailableFrom.HasValue && now < AvailableFrom.Value)
+            return false;
+
+        if (AvailableUntil.HasValue && now > AvailableUntil.Value)
+            return false;
+
+        return true;
     }
 
-    /// <summary>
-    /// Rozeti aktive eder
-    /// </summary>
-    public void Activate()
-    {
-        if (IsActive)
-            return;
-
-        IsActive = true;
-        SetModifiedDate();
-
-        AddDomainEvent(new BadgeActivatedEvent(Id, Name));
-    }
-
-    /// <summary>
-    /// Rozet bilgilerini günceller
-    /// </summary>
-    public void UpdateInfo(string? name, string? description, string? iconUrl)
-    {
-        ValidateName(name);
-        ValidateDescription(description);
-        ValidateIconUrl(iconUrl);
-
-        Name = name;
-        Description = description;
-        IconUrl = iconUrl;
-        SetModifiedDate();
-    }
-
-    /// <summary>
-    /// Rozet kriterini günceller
-    /// </summary>
-    public void UpdateCriteria(string? criteria, int requiredCount)
-    {
-        if (string.IsNullOrWhiteSpace(criteria))
-            throw new ArgumentNullException(nameof(criteria));
-
-        if (requiredCount < 0)
-            throw new BusinessRuleException("Gerekli sayı negatif olamaz.");
-
-        Criteria = criteria;
-        RequiredCount = requiredCount;
-        SetModifiedDate();
-    }
-
-    /// <summary>
-    /// Rozet nadir seviyesini döndürür
-    /// </summary>
-    public string GetRarityColor()
-    {
-        return Rarity switch
-        {
-            BadgeRarity.Common => "#808080", // Gri
-            BadgeRarity.Uncommon => "#1EFF00"
-            , // Yeşil
-            BadgeRarity.Rare => "#0080FF"
-            , // Mavi
-            BadgeRarity.Epic => "#B335F7"
-            , // Mor
-            BadgeRarity.Legendary => "#FF8000"
-            , // Turuncu
-            _ => "#808080"
-        };
-    }
-
-    /// <summary>
-    /// Rozet açıklamasını zenginleştirir
-    /// </summary>
-    public string GetDetailedDescription()
-    {
-        var details = $"{Description}\n\n";
-        details += $"Nadir Seviyesi: {GetRarityDisplayName()}\n";
-        details += $"Puan Değeri: {Points}\n";
-        details += $"Kriterler: {Criteria}";
-
-        if (RequiredCount > 0)
-            details += $"\nGerekli Sayı: {RequiredCount}";
-
-        if (AvailableFrom.HasValue || AvailableUntil.HasValue)
-        {
-            details += "\n\nKazanım Süresi: ";
-            if (AvailableFrom.HasValue)
-                details += $"{AvailableFrom.Value:dd.MM.yyyy}";
-            if (AvailableUntil.HasValue)
-                details += $" - {AvailableUntil.Value:dd.MM.yyyy}";
-        }
-
-        return details;
-    }
-
-    // Private methods
-    private void SetDefaultValuesByType()
-    {
-        switch (Type)
-        {
-            case BadgeType.FirstReview:
-                if (RequiredCount == 0) RequiredCount = 1;
-                if (Points == 10) Points = 10;
-                break;
-            case BadgeType.ActiveReviewer:
-                if (RequiredCount == 0) RequiredCount = 10;
-                if (Points == 10) Points = 25;
-                break;
-            case BadgeType.TrustedReviewer:
-                if (RequiredCount == 0) RequiredCount = 5;
-                if (Points == 10) Points = 50;
-                break;
-            case BadgeType.TopContributor:
-                if (RequiredCount == 0) RequiredCount = 50;
-                if (Points == 10) Points = 100;
-                break;
-            case BadgeType.CompanyExplorer:
-                if (RequiredCount == 0) RequiredCount = 10;
-                if (Points == 10) Points = 30;
-                break;
-            case BadgeType.Anniversary:
-                if (Points == 10) Points = 75;
-                break;
-        }
-    }
-
-    private string GetRarityDisplayName()
-    {
-        return Rarity switch
-        {
-            BadgeRarity.Common => "Sıradan", BadgeRarity.Uncommon => "Yaygın Olmayan", BadgeRarity.Rare => "Nadir"
-            , BadgeRarity.Epic => "Epik", BadgeRarity.Legendary => "Efsanevi", _ => "Bilinmeyen"
-        };
-    }
-
-    // Validation methods
-    private static void ValidateName(string? name)
+    // Private validation methods
+    private static void ValidateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentNullException(nameof(name));
@@ -349,7 +198,7 @@ public class Badge : BaseEntity
             throw new BusinessRuleException("Rozet adı 100 karakterden uzun olamaz.");
     }
 
-    private static void ValidateDescription(string? description)
+    private static void ValidateDescription(string description)
     {
         if (string.IsNullOrWhiteSpace(description))
             throw new ArgumentNullException(nameof(description));
@@ -358,12 +207,15 @@ public class Badge : BaseEntity
             throw new BusinessRuleException("Rozet açıklaması 500 karakterden uzun olamaz.");
     }
 
-    private static void ValidateIconUrl(string? iconUrl)
+    private static void ValidateIconUrl(string iconUrl)
     {
         if (string.IsNullOrWhiteSpace(iconUrl))
             throw new ArgumentNullException(nameof(iconUrl));
 
-        if (!Uri.IsWellFormedUriString(iconUrl, UriKind.Absolute))
+        if (!Uri.TryCreate(iconUrl, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
             throw new BusinessRuleException("Geçersiz ikon URL'i.");
+        }
     }
 }

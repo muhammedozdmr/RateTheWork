@@ -1,29 +1,23 @@
 namespace RateTheWork.Domain.Common;
 
 /// <summary>
-/// Audit edilebilir entity'ler için base class.
-/// Kim tarafından oluşturuldu/güncellendi bilgisini tutar.
-/// Soft delete desteği içerir.
+/// Audit bilgileri içeren entity'ler için temel sınıf.
+/// Kim tarafından ve ne zaman oluşturuldu/güncellendi bilgilerini tutar.
 /// </summary>
 public abstract class AuditableBaseEntity : BaseEntity
 {
     /// <summary>
     /// Entity'yi oluşturan kullanıcının ID'si
     /// </summary>
-    public string? CreatedBy { get; set; }
+    public string? CreatedBy { get; protected set; }
     
     /// <summary>
     /// Entity'yi son güncelleyen kullanıcının ID'si
     /// </summary>
-    public string? ModifiedBy { get; set; }
+    public string? ModifiedBy { get; protected set; }
     
     /// <summary>
-    /// Soft delete için - entity silinmiş mi?
-    /// </summary>
-    public bool IsDeleted { get; protected set; }
-    
-    /// <summary>
-    /// Silinme tarihi (soft delete)
+    /// Soft delete için silinme zamanı
     /// </summary>
     public DateTime? DeletedAt { get; protected set; }
     
@@ -31,9 +25,14 @@ public abstract class AuditableBaseEntity : BaseEntity
     /// Entity'yi silen kullanıcının ID'si
     /// </summary>
     public string? DeletedBy { get; protected set; }
+    
+    /// <summary>
+    /// Soft delete durumu
+    /// </summary>
+    public bool IsDeleted { get; protected set; }
 
     /// <summary>
-    /// Yeni auditable entity oluşturur
+    /// Yeni AuditableBaseEntity oluşturur
     /// </summary>
     protected AuditableBaseEntity() : base()
     {
@@ -41,54 +40,56 @@ public abstract class AuditableBaseEntity : BaseEntity
     }
 
     /// <summary>
-    /// Varolan bir auditable entity'yi yüklerken kullanılır
+    /// Varolan bir entity'yi yüklerken kullanılır
     /// </summary>
-    protected AuditableBaseEntity(string? id, DateTime createdAt, DateTime? modifiedAt) 
+    protected AuditableBaseEntity(string id, DateTime createdAt, DateTime? modifiedAt, 
+        string? createdBy, string? modifiedBy, DateTime? deletedAt, string? deletedBy, bool isDeleted) 
         : base(id, createdAt, modifiedAt)
     {
-        IsDeleted = false;
-    }
-
-    /// <summary>
-    /// Entity'yi soft delete yapar
-    /// </summary>
-    /// <param name="deletedBy">Silen kullanıcının ID'si</param>
-    public virtual void Delete(string deletedBy)
-    {
-        IsDeleted = true;
-        DeletedAt = DateTime.UtcNow;
-        DeletedBy = deletedBy;
-        SetModifiedDate();
-    }
-
-    /// <summary>
-    /// Soft delete'i geri alır
-    /// </summary>
-    public virtual void Restore()
-    {
-        IsDeleted = false;
-        DeletedAt = null;
-        DeletedBy = null;
-        SetModifiedDate();
-    }
-
-    /// <summary>
-    /// Entity'yi güncellerken audit bilgilerini set eder
-    /// </summary>
-    /// <param name="modifiedBy">Güncelleyen kullanıcının ID'si</param>
-    public virtual void SetAuditInfo(string modifiedBy)
-    {
+        CreatedBy = createdBy;
         ModifiedBy = modifiedBy;
-        SetModifiedDate();
+        DeletedAt = deletedAt;
+        DeletedBy = deletedBy;
+        IsDeleted = isDeleted;
     }
 
     /// <summary>
     /// Entity oluşturulurken audit bilgilerini set eder
     /// </summary>
-    /// <param name="createdBy">Oluşturan kullanıcının ID'si</param>
-    public virtual void SetCreationAuditInfo(string createdBy)
+    public virtual void SetCreatedAudit(string userId)
     {
-        CreatedBy = createdBy;
+        CreatedBy = userId;
         CreatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Entity güncellenirken audit bilgilerini set eder
+    /// </summary>
+    public virtual void SetModifiedAudit(string userId)
+    {
+        ModifiedBy = userId;
+        SetModifiedDate();
+    }
+
+    /// <summary>
+    /// Soft delete işlemi
+    /// </summary>
+    public virtual void SoftDelete(string userId)
+    {
+        IsDeleted = true;
+        DeletedAt = DateTime.UtcNow;
+        DeletedBy = userId;
+        SetModifiedAudit(userId);
+    }
+
+    /// <summary>
+    /// Soft delete'i geri al
+    /// </summary>
+    public virtual void Restore(string userId)
+    {
+        IsDeleted = false;
+        DeletedAt = null;
+        DeletedBy = null;
+        SetModifiedAudit(userId);
     }
 }

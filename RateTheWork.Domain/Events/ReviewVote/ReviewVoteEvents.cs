@@ -4,7 +4,7 @@ namespace RateTheWork.Domain.Events.ReviewVote;
 /// 1. Yorum oylandı event'i
 /// </summary>
 public record ReviewVotedEvent(
-    string VoteId,
+    string? VoteId,
     string UserId,
     string ReviewId,
     bool IsUpvote,
@@ -20,7 +20,7 @@ public record ReviewVotedEvent(
 /// 2. Yorum oyu değiştirildi event'i
 /// </summary>
 public record ReviewVoteChangedEvent(
-    string VoteId,
+    string? VoteId,
     string UserId,
     string ReviewId,
     bool OldIsUpvote,

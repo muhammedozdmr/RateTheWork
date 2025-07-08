@@ -4,7 +4,7 @@ namespace RateTheWork.Domain.Events.Warning;
 /// 1. Kullanıcı uyarıldı event'i
 /// </summary>
 public record UserWarnedEvent(
-    string WarningId,
+    string? WarningId,
     string UserId,
     string AdminId,
     string Reason,
@@ -23,7 +23,7 @@ public record UserWarnedEvent(
 /// 2. Uyarı onaylandı (kullanıcı gördü) event'i
 /// </summary>
 public record WarningAcknowledgedEvent(
-    string WarningId,
+    string? WarningId,
     string UserId,
     DateTime AcknowledgedAt,
     DateTime OccurredOn = default
@@ -36,7 +36,7 @@ public record WarningAcknowledgedEvent(
 /// 3. Uyarıya itiraz edildi event'i
 /// </summary>
 public record WarningAppealedEvent(
-    string WarningId,
+    string? WarningId,
     string UserId,
     string AppealNotes,
     DateTime AppealedAt,
@@ -50,7 +50,7 @@ public record WarningAppealedEvent(
 /// 4. Uyarı süresi doldu event'i
 /// </summary>
 public record WarningExpiredEvent(
-    string WarningId,
+    string? WarningId,
     string UserId,
     DateTime ExpiredAt,
     DateTime OccurredOn = default

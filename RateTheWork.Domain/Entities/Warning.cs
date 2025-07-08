@@ -1,5 +1,13 @@
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Events;
+using RateTheWork.Domain.Events.Warning;
+using RateTheWork.Domain.Exceptions;
+
+namespace RateTheWork.Domain.Entities;
+
+// RateTheWork.Domain/Entities/Warning.cs
+using RateTheWork.Domain.Common;
+using RateTheWork.Domain.Events;
 using RateTheWork.Domain.Exceptions;
 
 namespace RateTheWork.Domain.Entities;
@@ -12,46 +20,39 @@ public class Warning : BaseEntity
     // Warning Types
     public enum WarningType
     {
-        ContentViolation
-        , // İçerik ihlali
-        SpamBehavior
-        , // Spam davranışı
-        FalseInformation
-        , // Yanlış bilgi
-        DisrespectfulBehavior
-        , // Saygısız davranış
-        Other // Diğer
+        ContentViolation,      // İçerik ihlali
+        SpamBehavior,          // Spam davranışı
+        FalseInformation,      // Yanlış bilgi
+        DisrespectfulBehavior, // Saygısız davranış
+        Other                  // Diğer
     }
 
     // Warning Severity
     public enum WarningSeverity
     {
-        Low
-        , // Düşük - Bilgilendirme amaçlı
-        Medium
-        , // Orta - Dikkat edilmesi gereken
-        High
-        , // Yüksek - Ciddi ihlal
-        Critical // Kritik - Ban'a yakın
+        Low,      // Düşük - Bilgilendirme amaçlı
+        Medium,   // Orta - Dikkat edilmesi gereken
+        High,     // Yüksek - Ciddi ihlal
+        Critical  // Kritik - Ban'a yakın
     }
 
     // Properties
-    public string? UserId { get; private set; } = string.Empty;
-    public string? AdminId { get; private set; } = string.Empty;
-    public string? Reason { get; private set; } = string.Empty;
-    public string? DetailedExplanation { get; private set; } = string.Empty;
+    public string UserId { get; private set; } = string.Empty;
+    public string AdminId { get; private set; } = string.Empty;
+    public string Reason { get; private set; } = string.Empty;
+    public string? DetailedExplanation { get; private set; }
     public WarningType Type { get; private set; }
     public WarningSeverity Severity { get; private set; }
     public DateTime IssuedAt { get; private set; }
-    public string? RelatedEntityType { get; private set; } = string.Empty; // Review, Comment vb.
-    public string? RelatedEntityId { get; private set; } = string.Empty; // İlgili entity ID
-    public bool IsAcknowledged { get; private set; } // Kullanıcı gördü mü?
+    public string? RelatedEntityType { get; private set; }
+    public string? RelatedEntityId { get; private set; }
+    public bool IsAcknowledged { get; private set; } = false;
     public DateTime? AcknowledgedAt { get; private set; }
-    public bool IsActive { get; private set; } // Geçerli mi?
-    public DateTime? ExpiresAt { get; private set; } // Ne zaman geçersiz olacak?
-    public string? AppealNotes { get; private set; } = string.Empty; // İtiraz notları
-    public bool WasAppealed { get; private set; } // İtiraz edildi mi?
-    public int Points { get; private set; } // Uyarı puanı (ağırlık)
+    public bool IsActive { get; private set; } = true;
+    public DateTime? ExpiresAt { get; private set; }
+    public string? AppealNotes { get; private set; }
+    public bool WasAppealed { get; private set; } = false;
+    public int Points { get; private set; }
 
     /// <summary>
     /// EF Core için parametresiz private constructor
@@ -61,54 +62,36 @@ public class Warning : BaseEntity
     }
 
     /// <summary>
-    /// EF Core için factory private constructor
+    /// Yeni uyarı oluşturur (Factory method)
     /// </summary>
-    private Warning(string? userId, string? adminId, string? reason) : base()
-    {
-        UserId = userId;
-        AdminId = adminId;
-        Reason = reason;
-    }
-
-    /// <summary>
-    /// Yeni uyarı oluşturur
-    /// </summary>
-    public static Warning Create
-    (
-        string userId
-        , string adminId
-        , string reason
-        , WarningType type
-        , WarningSeverity severity
-        , string? relatedEntityType = null
-        , string? relatedEntityId = null
-        , string? detailedExplanation = null
-        , int? expirationDays = null
-    )
+    public static Warning Create(
+        string userId,
+        string adminId,
+        string reason,
+        WarningType type,
+        WarningSeverity severity,
+        string? relatedEntityType = null,
+        string? relatedEntityId = null,
+        string? detailedExplanation = null,
+        int? expirationDays = null)
     {
         ValidateReason(reason);
 
         var warning = new Warning
         {
-            UserId = userId ?? throw new ArgumentNullException(nameof(userId))
-            , AdminId = adminId ?? throw new ArgumentNullException(nameof(adminId)), Reason = reason
-            , DetailedExplanation = detailedExplanation, Type = type, Severity = severity, IssuedAt = DateTime.UtcNow
-            , RelatedEntityType = relatedEntityType, RelatedEntityId = relatedEntityId, IsAcknowledged = false
-            , IsActive = true, WasAppealed = false
+            UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
+            AdminId = adminId ?? throw new ArgumentNullException(nameof(adminId)),
+            Reason = reason,
+            Type = type,
+            Severity = severity,
+            DetailedExplanation = detailedExplanation,
+            RelatedEntityType = relatedEntityType,
+            RelatedEntityId = relatedEntityId,
+            IssuedAt = DateTime.UtcNow,
+            IsActive = true,
+            Points = CalculatePoints(severity),
+            ExpiresAt = expirationDays.HasValue ? DateTime.UtcNow.AddDays(expirationDays.Value) : null
         };
-
-        // Severity'ye göre puan hesapla
-        warning.Points = warning.CalculatePoints();
-
-        // Uyarı süresi (varsayılan: severity'ye göre)
-        if (expirationDays.HasValue)
-        {
-            warning.ExpiresAt = warning.IssuedAt.AddDays(expirationDays.Value);
-        }
-        else
-        {
-            warning.SetDefaultExpiration();
-        }
 
         // Domain Event
         warning.AddDomainEvent(new UserWarnedEvent(
@@ -116,246 +99,113 @@ public class Warning : BaseEntity
             userId,
             adminId,
             reason,
-            type,
-            severity,
-            warning.Points
+            type.ToString(),
+            severity.ToString(),
+            warning.Points,
+            0, // TotalWarnings will be calculated by handler
+            warning.IssuedAt,
+            DateTime.UtcNow
         ));
 
         return warning;
     }
 
     /// <summary>
-    /// Sistem otomatik uyarısı oluşturur
+    /// Uyarıyı onayla (kullanıcı gördü)
     /// </summary>
-    public static Warning CreateSystemAutomatic
-    (
-        string userId
-        , string reason
-        , WarningType type
-        , string? relatedEntityType = null
-        , string? relatedEntityId = null
-    )
+    public void Acknowledge()
     {
-        return Create(
-            userId,
-            "SYSTEM",
-            reason,
-            type,
-            WarningSeverity.Medium,
-            relatedEntityType,
-            relatedEntityId,
-            "Bu uyarı sistem tarafından otomatik olarak oluşturulmuştur.",
-            90 // 90 gün geçerli
-        );
-    }
-
-    /// <summary>
-    /// Kullanıcı uyarıyı gördü/onayladı
-    /// </summary>
-    public void Acknowledge(string userId)
-    {
-        if (UserId != userId)
-            throw new BusinessRuleException("Sadece uyarı sahibi onaylayabilir.");
-
         if (IsAcknowledged)
-            return;
+            throw new BusinessRuleException("Uyarı zaten onaylanmış.");
 
         IsAcknowledged = true;
         AcknowledgedAt = DateTime.UtcNow;
         SetModifiedDate();
 
-        AddDomainEvent(new WarningAcknowledgedEvent(Id, UserId));
+        // Domain Event
+        AddDomainEvent(new WarningAcknowledgedEvent(
+            Id,
+            UserId,
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        ));
     }
 
     /// <summary>
     /// Uyarıya itiraz et
     /// </summary>
-    public void Appeal(string userId, string appealReason)
+    public void Appeal(string appealNotes)
     {
-        if (UserId != userId)
-            throw new BusinessRuleException("Sadece uyarı sahibi itiraz edebilir.");
-
-        if (!IsActive)
-            throw new BusinessRuleException("Aktif olmayan uyarıya itiraz edilemez.");
+        if (string.IsNullOrWhiteSpace(appealNotes))
+            throw new ArgumentNullException(nameof(appealNotes));
 
         if (WasAppealed)
             throw new BusinessRuleException("Bu uyarıya zaten itiraz edilmiş.");
 
-        ValidateAppealReason(appealReason);
+        if (!IsActive)
+            throw new BusinessRuleException("Aktif olmayan uyarıya itiraz edilemez.");
 
         WasAppealed = true;
-        AppealNotes = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm}] Kullanıcı itirazı: {appealReason}";
+        AppealNotes = appealNotes;
         SetModifiedDate();
 
-        AddDomainEvent(new WarningAppealedEvent(Id, UserId, appealReason));
-    }
-
-    /// <summary>
-    /// Admin itirazı değerlendirir
-    /// </summary>
-    public void ReviewAppeal(string adminId, bool accepted, string reviewNotes)
-    {
-        if (!WasAppealed)
-            throw new BusinessRuleException("İtiraz edilmemiş uyarı değerlendirilemez.");
-
-        if (!IsActive)
-            throw new BusinessRuleException("Aktif olmayan uyarı değerlendirilemez.");
-
-        var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm");
-        AppealNotes += $"\n[{timestamp}] Admin değerlendirmesi ({adminId}): {reviewNotes}";
-
-        if (accepted)
-        {
-            Revoke(adminId, "İtiraz kabul edildi: " + reviewNotes);
-        }
-        else
-        {
-            AppealNotes += "\n[SONUÇ: İtiraz reddedildi]";
-            SetModifiedDate();
-        }
-
-        AddDomainEvent(new WarningAppealReviewedEvent(
+        // Domain Event
+        AddDomainEvent(new WarningAppealedEvent(
             Id,
             UserId,
-            adminId,
-            accepted,
-            reviewNotes
+            appealNotes,
+            DateTime.UtcNow,
+            DateTime.UtcNow
         ));
     }
 
     /// <summary>
-    /// Uyarıyı iptal et
+    /// Uyarı süresini kontrol et ve expire et
     /// </summary>
-    public void Revoke(string revokedBy, string reason)
+    public void CheckAndExpire()
     {
         if (!IsActive)
             return;
 
-        ValidateRevokeReason(reason);
-
-        IsActive = false;
-        var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm");
-        DetailedExplanation = $"{DetailedExplanation}\n[{timestamp}] İptal edildi ({revokedBy}): {reason}";
-        SetModifiedDate();
-
-        AddDomainEvent(new WarningRevokedEvent(
-            Id,
-            UserId,
-            revokedBy,
-            reason
-        ));
-    }
-
-    /// <summary>
-    /// Uyarı süresini uzat
-    /// </summary>
-    public void ExtendExpiration(int additionalDays, string extendedBy, string reason)
-    {
-        if (!IsActive)
-            throw new BusinessRuleException("Aktif olmayan uyarının süresi uzatılamaz.");
-
-        if (additionalDays <= 0)
-            throw new BusinessRuleException("Ek süre 0'dan büyük olmalıdır.");
-
-        if (!ExpiresAt.HasValue)
-        {
-            ExpiresAt = DateTime.UtcNow.AddDays(additionalDays);
-        }
-        else
-        {
-            ExpiresAt = ExpiresAt.Value.AddDays(additionalDays);
-        }
-
-        var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm");
-        DetailedExplanation = $"{DetailedExplanation}\n[{timestamp}] Süre uzatıldı ({extendedBy}): {reason}";
-        SetModifiedDate();
-    }
-
-    /// <summary>
-    /// Uyarının geçerli olup olmadığını kontrol et
-    /// </summary>
-    public bool CheckIfActive()
-    {
-        if (!IsActive)
-            return false;
-
-        // Süresi dolmuşsa
-        if (ExpiresAt.HasValue && DateTime.UtcNow >= ExpiresAt.Value)
+        if (ExpiresAt.HasValue && ExpiresAt.Value <= DateTime.UtcNow)
         {
             IsActive = false;
             SetModifiedDate();
-            return false;
+
+            // Domain Event
+            AddDomainEvent(new WarningExpiredEvent(
+                Id,
+                UserId,
+                DateTime.UtcNow,
+                DateTime.UtcNow
+            ));
         }
-
-        return true;
     }
 
     /// <summary>
-    /// Uyarı puanını hesapla
+    /// Uyarıyı manuel olarak kaldır
     /// </summary>
-    private int CalculatePoints()
+    public void Remove(string removedBy, string reason)
     {
-        return Severity switch
-        {
-            WarningSeverity.Low => 1, WarningSeverity.Medium => 3, WarningSeverity.High => 5
-            , WarningSeverity.Critical => 10, _ => 1
-        };
-    }
-
-    /// <summary>
-    /// Varsayılan süre belirleme
-    /// </summary>
-    private void SetDefaultExpiration()
-    {
-        var days = Severity switch
-        {
-            WarningSeverity.Low => 30, // 30 gün
-            WarningSeverity.Medium => 90
-            , // 90 gün
-            WarningSeverity.High => 180
-            , // 180 gün
-            WarningSeverity.Critical => 365
-            , // 1 yıl
-            _ => 90
-        };
-
-        ExpiresAt = IssuedAt.AddDays(days);
-    }
-
-    /// <summary>
-    /// Uyarı özetini döndür
-    /// </summary>
-    public string GetSummary()
-    {
-        var summary = $"[{Severity}] {Type}: {Reason}";
-
-        if (RelatedEntityType != null && RelatedEntityId != null)
-        {
-            summary += $" (İlgili: {RelatedEntityType} #{RelatedEntityId})";
-        }
-
         if (!IsActive)
-        {
-            summary += " [İPTAL EDİLDİ]";
-        }
-        else if (ExpiresAt.HasValue)
-        {
-            summary += $" (Geçerlilik: {ExpiresAt.Value:dd.MM.yyyy})";
-        }
+            throw new BusinessRuleException("Uyarı zaten aktif değil.");
 
-        return summary;
+        IsActive = false;
+        SetModifiedDate();
+        // Note: Removal event can be added if needed
     }
 
-    /// <summary>
-    /// Kalan süreyi hesapla
-    /// </summary>
-    public TimeSpan? GetRemainingTime()
+    // Private helper methods
+    private static int CalculatePoints(WarningSeverity severity)
     {
-        if (!IsActive || !ExpiresAt.HasValue)
-            return null;
-
-        var remaining = ExpiresAt.Value - DateTime.UtcNow;
-        return remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero;
+        return severity switch
+        {
+            WarningSeverity.Low => 1,
+            WarningSeverity.Medium => 2,
+            WarningSeverity.High => 3,
+            WarningSeverity.Critical => 5,
+            _ => 1
+        };
     }
 
     // Validation methods
@@ -368,27 +218,6 @@ public class Warning : BaseEntity
             throw new BusinessRuleException("Uyarı nedeni en az 10 karakter olmalıdır.");
 
         if (reason.Length > 500)
-            throw new BusinessRuleException("Uyarı nedeni 500 karakterden fazla olamaz.");
-    }
-
-    private static void ValidateAppealReason(string appealReason)
-    {
-        if (string.IsNullOrWhiteSpace(appealReason))
-            throw new ArgumentNullException(nameof(appealReason));
-
-        if (appealReason.Length < 20)
-            throw new BusinessRuleException("İtiraz nedeni en az 20 karakter olmalıdır.");
-
-        if (appealReason.Length > 1000)
-            throw new BusinessRuleException("İtiraz nedeni 1000 karakterden fazla olamaz.");
-    }
-
-    private static void ValidateRevokeReason(string reason)
-    {
-        if (string.IsNullOrWhiteSpace(reason))
-            throw new ArgumentNullException(nameof(reason));
-
-        if (reason.Length < 10)
-            throw new BusinessRuleException("İptal nedeni en az 10 karakter olmalıdır.");
+            throw new BusinessRuleException("Uyarı nedeni 500 karakterden uzun olamaz.");
     }
 }

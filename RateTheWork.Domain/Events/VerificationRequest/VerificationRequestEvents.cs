@@ -4,7 +4,7 @@ namespace RateTheWork.Domain.Events.VerificationRequest;
 /// 1. Doğrulama talebi oluşturuldu event'i
 /// </summary>
 public record VerificationRequestCreatedEvent(
-    string RequestId,
+    string? RequestId,
     string UserId,
     string ReviewId,
     string DocumentType,
@@ -20,7 +20,7 @@ public record VerificationRequestCreatedEvent(
 /// 2. Doğrulama talebi işleme alındı event'i
 /// </summary>
 public record VerificationRequestProcessingStartedEvent(
-    string RequestId,
+    string? RequestId,
     string AdminId,
     DateTime StartedAt,
     DateTime OccurredOn = default
@@ -33,7 +33,7 @@ public record VerificationRequestProcessingStartedEvent(
 /// 3. Doğrulama talebi onaylandı event'i
 /// </summary>
 public record VerificationRequestApprovedEvent(
-    string RequestId,
+    string? RequestId,
     string UserId,
     string ReviewId,
     string ApprovedByAdminId,
@@ -50,7 +50,7 @@ public record VerificationRequestApprovedEvent(
 /// 4. Doğrulama talebi reddedildi event'i
 /// </summary>
 public record VerificationRequestRejectedEvent(
-    string RequestId,
+    string? RequestId,
     string UserId,
     string ReviewId,
     string RejectedByAdminId,
@@ -67,7 +67,7 @@ public record VerificationRequestRejectedEvent(
 /// 5. Doğrulama talebi yeniden gönderildi event'i
 /// </summary>
 public record VerificationRequestResubmittedEvent(
-    string RequestId,
+    string? RequestId,
     string UserId,
     string ReviewId,
     string NewDocumentUrl,
@@ -82,7 +82,7 @@ public record VerificationRequestResubmittedEvent(
 /// 6. Doğrulama talebi acil işaretlendi event'i
 /// </summary>
 public record VerificationRequestMarkedUrgentEvent(
-    string RequestId,
+    string? RequestId,
     string MarkedByAdminId,
     string Reason,
     DateTime MarkedAt,

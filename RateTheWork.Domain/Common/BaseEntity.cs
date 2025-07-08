@@ -13,7 +13,7 @@ public abstract class BaseEntity
     /// <summary>
     /// Entity'nin benzersiz kimliği (GUID)
     /// </summary>
-    public string? Id { get; }
+    public string? Id { get; protected set; }
     
     /// <summary>
     /// Entity'nin oluşturulma tarihi
@@ -23,7 +23,7 @@ public abstract class BaseEntity
     /// <summary>
     /// Entity'nin son güncellenme tarihi
     /// </summary>
-    public DateTime? ModifiedAt { get; set; }
+    public DateTime? ModifiedAt { get; protected set; }
 
     /// <summary>
     /// Domain event'leri (readonly)
@@ -43,7 +43,7 @@ public abstract class BaseEntity
     /// <summary>
     /// Varolan bir entity'yi yüklerken kullanılır (örn: veritabanından)
     /// </summary>
-    protected BaseEntity(string? id, DateTime createdAt, DateTime? modifiedAt)
+    protected BaseEntity(string id, DateTime createdAt, DateTime? modifiedAt)
     {
         Id = id;
         CreatedAt = createdAt;
@@ -104,7 +104,7 @@ public abstract class BaseEntity
     /// </summary>
     public override int GetHashCode()
     {
-        return Id.GetHashCode();
+        return Id?.GetHashCode() ?? 0;
     }
 
     /// <summary>
@@ -112,13 +112,7 @@ public abstract class BaseEntity
     /// </summary>
     public static bool operator ==(BaseEntity? left, BaseEntity? right)
     {
-        if (left is null && right is null)
-            return true;
-        
-        if (left is null || right is null)
-            return false;
-        
-        return left.Equals(right);
+        return Equals(left, right);
     }
 
     /// <summary>
@@ -126,6 +120,6 @@ public abstract class BaseEntity
     /// </summary>
     public static bool operator !=(BaseEntity? left, BaseEntity? right)
     {
-        return !(left == right);
+        return !Equals(left, right);
     }
 }

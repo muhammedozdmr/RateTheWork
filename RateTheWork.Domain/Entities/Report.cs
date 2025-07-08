@@ -1,5 +1,6 @@
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Events;
+using RateTheWork.Domain.Events.Report;
 using RateTheWork.Domain.Exceptions;
 
 namespace RateTheWork.Domain.Entities;
@@ -34,20 +35,20 @@ public class Report : BaseEntity
     }
 
     // Properties
-    public string? ReviewId { get; private set; } = string.Empty;
-    public string? ReporterUserId { get; private set; } = string.Empty;
-    public string? ReportReason { get; private set; } = string.Empty;
-    public string? ReportDetails { get; private set; } = string.Empty;
+    public string ReviewId { get; private set; } = string.Empty;
+    public string ReporterUserId { get; private set; } = string.Empty;
+    public string ReportReason { get; private set; } = string.Empty;
+    public string? ReportDetails { get; private set; }
     public DateTime ReportedAt { get; private set; }
-    public string? Status { get; private set; } = string.Empty;
-    public string? AdminNotes { get; private set; } = string.Empty;
-    public string? ReviewedBy { get; private set; } = string.Empty;
+    public string Status { get; private set; } = ReportStatuses.Pending;
+    public string? AdminNotes { get; private set; }
+    public string? ReviewedBy { get; private set; }
     public DateTime? ReviewedAt { get; private set; }
-    public string? ActionTaken { get; private set; } = string.Empty; // Alınan aksiyon
-    public bool IsAnonymous { get; private set; } // Anonim şikayet mi?
-    public int Priority { get; private set; } // Öncelik (1-5)
+    public string? ActionTaken { get; private set; }
+    public bool IsAnonymous { get; private set; }
+    public int Priority { get; private set; }
     public bool RequiresUrgentAction { get; private set; }
-    public string? RelatedReports { get; private set; } = string.Empty; // İlişkili diğer şikayetler
+    public string? RelatedReports { get; private set; }
 
     /// <summary>
     /// EF Core için parametresiz private constructor
@@ -57,48 +58,33 @@ public class Report : BaseEntity
     }
 
     /// <summary>
-    /// EF Core için private constructor
+    /// Yeni şikayet oluşturur (Factory method)
     /// </summary>
-    private Report(string? reviewId, string? reporterUserId, string? reportReason, string? status) : base()
-    {
-        ReviewId = reviewId;
-        ReporterUserId = reporterUserId;
-        ReportReason = reportReason;
-        Status = status;
-    }
-
-    /// <summary>
-    /// Yeni şikayet oluşturur
-    /// </summary>
-    public static Report Create
-    (
-        string reviewId
-        , string reporterUserId
-        , string reportReason
-        , string? reportDetails = null
-        , bool isAnonymous = false
-    )
+    public static Report Create(
+        string reviewId,
+        string reporterUserId,
+        string reportReason,
+        string? reportDetails = null,
+        bool isAnonymous = false)
     {
         ValidateReportReason(reportReason);
         ValidateReportDetails(reportDetails);
 
+        var priority = CalculatePriority(reportReason);
+        var requiresUrgent = DetermineUrgency(reportReason);
+
         var report = new Report
         {
-            ReviewId = reviewId ?? throw new ArgumentNullException(nameof(reviewId))
-            , ReporterUserId = reporterUserId ?? throw new ArgumentNullException(nameof(reporterUserId))
-            , ReportReason = reportReason, ReportDetails = reportDetails, ReportedAt = DateTime.UtcNow
-            , Status = ReportStatuses.Pending, IsAnonymous = isAnonymous, Priority = CalculatePriority(reportReason)
-            , RequiresUrgentAction = false
+            ReviewId = reviewId ?? throw new ArgumentNullException(nameof(reviewId)),
+            ReporterUserId = reporterUserId ?? throw new ArgumentNullException(nameof(reporterUserId)),
+            ReportReason = reportReason,
+            ReportDetails = reportDetails,
+            ReportedAt = DateTime.UtcNow,
+            Status = ReportStatuses.Pending,
+            IsAnonymous = isAnonymous,
+            Priority = priority,
+            RequiresUrgentAction = requiresUrgent
         };
-
-        // Belirli durumlar için acil işlem gerekir
-        if (reportReason == ReportReasons.Harassment ||
-            reportReason == ReportReasons.PersonalAttack ||
-            reportReason == ReportReasons.ConfidentialInfo)
-        {
-            report.RequiresUrgentAction = true;
-            report.Priority = 5; // Maksimum öncelik
-        }
 
         // Domain Event
         report.AddDomainEvent(new ReportCreatedEvent(
@@ -106,7 +92,10 @@ public class Report : BaseEntity
             reviewId,
             reporterUserId,
             reportReason,
-            report.RequiresUrgentAction
+            isAnonymous,
+            priority,
+            report.ReportedAt,
+            DateTime.UtcNow
         ));
 
         return report;
@@ -115,56 +104,54 @@ public class Report : BaseEntity
     /// <summary>
     /// Şikayeti incelemeye al
     /// </summary>
-    public void StartReview(string adminId)
+    public void StartReview(string reviewedBy)
     {
         if (Status != ReportStatuses.Pending)
-            throw new BusinessRuleException(
-                $"Sadece '{ReportStatuses.Pending}' durumundaki şikayetler incelemeye alınabilir.");
+            throw new BusinessRuleException("Sadece beklemedeki şikayetler incelemeye alınabilir.");
 
         Status = ReportStatuses.UnderReview;
-        ReviewedBy = adminId;
+        ReviewedBy = reviewedBy;
         ReviewedAt = DateTime.UtcNow;
         SetModifiedDate();
 
-        AddDomainEvent(new ReportReviewStartedEvent(Id, ReviewId, adminId));
+        // Domain Event
+        AddDomainEvent(new ReportUnderReviewEvent(
+            Id,
+            reviewedBy,
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        ));
     }
 
     /// <summary>
     /// Şikayeti çözümle
     /// </summary>
-    public void Resolve(string adminId, string actionTaken, string? adminNotes = null)
+    public void Resolve(string resolvedBy, string actionTaken, string? adminNotes = null)
     {
         if (Status != ReportStatuses.UnderReview)
             throw new BusinessRuleException("Sadece inceleme altındaki şikayetler çözümlenebilir.");
 
-        if (string.IsNullOrWhiteSpace(actionTaken))
-            throw new ArgumentNullException(nameof(actionTaken));
+        ValidateActionTaken(actionTaken);
 
         Status = ReportStatuses.Resolved;
         ActionTaken = actionTaken;
-        AdminNotes = CombineNotes(AdminNotes, adminNotes, adminId);
-
-        if (string.IsNullOrEmpty(ReviewedBy))
-        {
-            ReviewedBy = adminId;
-            ReviewedAt = DateTime.UtcNow;
-        }
-
+        AdminNotes = adminNotes;
         SetModifiedDate();
 
+        // Domain Event
         AddDomainEvent(new ReportResolvedEvent(
             Id,
-            ReviewId,
-            adminId,
+            resolvedBy,
             actionTaken,
-            ReportReason
+            DateTime.UtcNow,
+            DateTime.UtcNow
         ));
     }
 
     /// <summary>
     /// Şikayeti reddet
     /// </summary>
-    public void Dismiss(string adminId, string dismissReason)
+    public void Dismiss(string dismissedBy, string dismissReason)
     {
         if (Status == ReportStatuses.Resolved || Status == ReportStatuses.Dismissed)
             throw new BusinessRuleException("Çözümlenmiş veya reddedilmiş şikayet tekrar reddedilemez.");
@@ -173,158 +160,44 @@ public class Report : BaseEntity
             throw new ArgumentNullException(nameof(dismissReason));
 
         Status = ReportStatuses.Dismissed;
-        ActionTaken = "Şikayet reddedildi";
-        AdminNotes = CombineNotes(AdminNotes, $"Red nedeni: {dismissReason}", adminId);
-
-        if (string.IsNullOrEmpty(ReviewedBy))
-        {
-            ReviewedBy = adminId;
-            ReviewedAt = DateTime.UtcNow;
-        }
-
+        AdminNotes = dismissReason;
+        ReviewedBy = dismissedBy;
+        ReviewedAt = DateTime.UtcNow;
         SetModifiedDate();
 
-        AddDomainEvent(new ReportDismissedEvent(Id, ReviewId, adminId, dismissReason));
+        // Domain Event
+        AddDomainEvent(new ReportDismissedEvent(
+            Id,
+            dismissedBy,
+            dismissReason,
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        ));
     }
 
     /// <summary>
     /// Şikayeti üst yönetime ilet
     /// </summary>
-    public void Escalate(string adminId, string escalationReason)
+    public void Escalate(string escalatedBy, string escalationReason)
     {
-        if (Status == ReportStatuses.Resolved || Status == ReportStatuses.Dismissed)
-            throw new BusinessRuleException("Çözümlenmiş veya reddedilmiş şikayet üst yönetime iletilemez.");
+        if (Status != ReportStatuses.UnderReview)
+            throw new BusinessRuleException("Sadece inceleme altındaki şikayetler üst yönetime iletilebilir.");
 
         if (string.IsNullOrWhiteSpace(escalationReason))
             throw new ArgumentNullException(nameof(escalationReason));
 
         Status = ReportStatuses.Escalated;
-        Priority = 5; // Maksimum öncelik
-        RequiresUrgentAction = true;
-        AdminNotes = CombineNotes(AdminNotes, $"Üst yönetime iletme nedeni: {escalationReason}", adminId);
+        AdminNotes = $"Escalation: {escalationReason}";
         SetModifiedDate();
 
-        AddDomainEvent(new ReportEscalatedEvent(Id, ReviewId, adminId, escalationReason));
-    }
-
-    /// <summary>
-    /// Admin notu ekle
-    /// </summary>
-    public void AddAdminNote(string adminId, string note)
-    {
-        if (string.IsNullOrWhiteSpace(note))
-            throw new ArgumentNullException(nameof(note));
-
-        AdminNotes = CombineNotes(AdminNotes, note, adminId);
-        SetModifiedDate();
-    }
-
-    /// <summary>
-    /// İlişkili şikayet ekle
-    /// </summary>
-    public void LinkRelatedReport(string relatedReportId)
-    {
-        if (Id == relatedReportId)
-            throw new BusinessRuleException("Şikayet kendisiyle ilişkilendirilemez.");
-
-        if (string.IsNullOrWhiteSpace(RelatedReports))
-        {
-            RelatedReports = relatedReportId;
-        }
-        else
-        {
-            var reports = RelatedReports.Split(',').ToList();
-            if (!reports.Contains(relatedReportId))
-            {
-                reports.Add(relatedReportId);
-                RelatedReports = string.Join(",", reports);
-            }
-        }
-
-        SetModifiedDate();
-    }
-
-    /// <summary>
-    /// Önceliği güncelle
-    /// </summary>
-    public void UpdatePriority(int newPriority, string updatedBy, string reason)
-    {
-        if (newPriority < 1 || newPriority > 5)
-            throw new BusinessRuleException("Öncelik 1-5 arasında olmalıdır.");
-
-        if (Priority == newPriority)
-            return;
-
-        var oldPriority = Priority;
-        Priority = newPriority;
-        AdminNotes = CombineNotes(AdminNotes, $"Öncelik değiştirildi: {oldPriority} -> {newPriority}. Neden: {reason}"
-            , updatedBy);
-        SetModifiedDate();
-    }
-
-    /// <summary>
-    /// Acil işlem durumunu güncelle
-    /// </summary>
-    public void SetUrgentAction(bool isUrgent, string setBy, string reason)
-    {
-        if (RequiresUrgentAction == isUrgent)
-            return;
-
-        RequiresUrgentAction = isUrgent;
-        if (isUrgent)
-        {
-            Priority = Math.Max(Priority, 4); // En az 4 öncelik
-        }
-
-        AdminNotes = CombineNotes(AdminNotes,
-            $"Acil işlem durumu: {(isUrgent ? "EVET" : "HAYIR")}. Neden: {reason}",
-            setBy);
-        SetModifiedDate();
-    }
-
-    /// <summary>
-    /// Şikayet özetini döndür
-    /// </summary>
-    public string GetSummary()
-    {
-        var summary = $"{ReportReason}";
-
-        if (!string.IsNullOrWhiteSpace(ReportDetails))
-        {
-            var preview = ReportDetails.Length > 50
-                ? ReportDetails.Substring(0, 50) + "..."
-                : ReportDetails;
-            summary += $": {preview}";
-        }
-
-        summary += $" [{Status}]";
-
-        if (RequiresUrgentAction)
-            summary = "🚨 " + summary;
-
-        return summary;
-    }
-
-    /// <summary>
-    /// İşlem geçmişini döndür
-    /// </summary>
-    public string GetActionHistory()
-    {
-        var history = $"Şikayet Tarihi: {ReportedAt:dd.MM.yyyy HH:mm}\n";
-        history += $"Durum: {Status}\n";
-
-        if (ReviewedAt.HasValue)
-        {
-            history += $"İnceleme Tarihi: {ReviewedAt.Value:dd.MM.yyyy HH:mm}\n";
-            history += $"İnceleyen: {ReviewedBy}\n";
-        }
-
-        if (!string.IsNullOrWhiteSpace(ActionTaken))
-        {
-            history += $"Alınan Aksiyon: {ActionTaken}\n";
-        }
-
-        return history;
+        // Domain Event
+        AddDomainEvent(new ReportEscalatedEvent(
+            Id,
+            escalatedBy,
+            escalationReason,
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        ));
     }
 
     // Private helper methods
@@ -332,42 +205,53 @@ public class Report : BaseEntity
     {
         return reportReason switch
         {
-            ReportReasons.Harassment => 5, ReportReasons.PersonalAttack => 5, ReportReasons.ConfidentialInfo => 5
-            , ReportReasons.InappropriateContent => 4, ReportReasons.FalseInformation => 3, ReportReasons.Spam => 2
-            , ReportReasons.OffTopic => 1, ReportReasons.Duplicate => 1, _ => 3
+            ReportReasons.Harassment => 5,
+            ReportReasons.PersonalAttack => 5,
+            ReportReasons.ConfidentialInfo => 4,
+            ReportReasons.FalseInformation => 3,
+            ReportReasons.InappropriateContent => 3,
+            ReportReasons.Spam => 2,
+            ReportReasons.OffTopic => 1,
+            ReportReasons.Duplicate => 1,
+            _ => 2
         };
     }
 
-    private static string CombineNotes(string? existingNotes, string? newNote, string adminId)
+    private static bool DetermineUrgency(string reportReason)
     {
-        if (string.IsNullOrWhiteSpace(newNote))
-            return existingNotes ?? string.Empty;
-
-        var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm");
-        var formattedNote = $"[{timestamp}] {adminId}: {newNote}";
-
-        return string.IsNullOrWhiteSpace(existingNotes)
-            ? formattedNote
-            : $"{existingNotes}\n{formattedNote}";
+        return reportReason == ReportReasons.Harassment ||
+               reportReason == ReportReasons.PersonalAttack ||
+               reportReason == ReportReasons.ConfidentialInfo;
     }
 
     // Validation methods
-    private static void ValidateReportReason(string reason)
+    private static void ValidateReportReason(string reportReason)
     {
-        var validReasons = new[]
-        {
-            ReportReasons.InappropriateContent, ReportReasons.FalseInformation, ReportReasons.Spam
-            , ReportReasons.Harassment, ReportReasons.PersonalAttack, ReportReasons.ConfidentialInfo
-            , ReportReasons.OffTopic, ReportReasons.Duplicate, ReportReasons.Other
-        };
+        if (string.IsNullOrWhiteSpace(reportReason))
+            throw new ArgumentNullException(nameof(reportReason));
 
-        if (!validReasons.Contains(reason))
-            throw new BusinessRuleException($"Geçersiz şikayet nedeni: {reason}");
+        var validReasons = typeof(ReportReasons)
+            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Select(f => f.GetValue(null)?.ToString())
+            .Where(v => v != null)
+            .ToList();
+
+        if (!validReasons.Contains(reportReason))
+            throw new BusinessRuleException("Geçersiz şikayet nedeni.");
     }
 
-    private static void ValidateReportDetails(string? details)
+    private static void ValidateReportDetails(string? reportDetails)
     {
-        if (!string.IsNullOrWhiteSpace(details) && details.Length > 1000)
-            throw new BusinessRuleException("Şikayet detayları 1000 karakterden fazla olamaz.");
+        if (!string.IsNullOrWhiteSpace(reportDetails) && reportDetails.Length > 1000)
+            throw new BusinessRuleException("Şikayet detayı 1000 karakterden uzun olamaz.");
+    }
+
+    private static void ValidateActionTaken(string actionTaken)
+    {
+        if (string.IsNullOrWhiteSpace(actionTaken))
+            throw new ArgumentNullException(nameof(actionTaken));
+
+        if (actionTaken.Length < 10)
+            throw new BusinessRuleException("Alınan aksiyon açıklaması en az 10 karakter olmalıdır.");
     }
 }

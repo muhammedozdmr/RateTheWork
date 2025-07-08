@@ -1,15 +1,20 @@
 namespace RateTheWork.Domain.Common;
 
 /// <summary>
-/// Onay gerektiren entity'ler için base class.
-/// Company, Review gibi admin onayı gerektiren entity'ler bu sınıftan türer.
+/// Onay mekanizması gerektiren entity'ler için temel sınıf.
+/// Admin onayı bekleyen şirket, yorum vb. entity'ler bu sınıftan türer.
 /// </summary>
 public abstract class ApprovableBaseEntity : AuditableBaseEntity
 {
     /// <summary>
-    /// Entity onaylandı mı?
+    /// Onay durumu
     /// </summary>
     public bool IsApproved { get; protected set; }
+    
+    /// <summary>
+    /// Onay durumu metni (Pending, Approved, Rejected)
+    /// </summary>
+    public string ApprovalStatus { get; protected set; }
     
     /// <summary>
     /// Onaylayan kullanıcının ID'si
@@ -17,22 +22,32 @@ public abstract class ApprovableBaseEntity : AuditableBaseEntity
     public string? ApprovedBy { get; protected set; }
     
     /// <summary>
-    /// Onaylanma tarihi
+    /// Onay tarihi
     /// </summary>
     public DateTime? ApprovedAt { get; protected set; }
     
     /// <summary>
-    /// Onay notları (red nedeni, onay açıklaması vs.)
+    /// Onay notları
     /// </summary>
-    public string? ApprovalNotes { get; set; }
+    public string? ApprovalNotes { get; protected set; }
+    
+    /// <summary>
+    /// Red eden kullanıcının ID'si
+    /// </summary>
+    public string? RejectedBy { get; protected set; }
+    
+    /// <summary>
+    /// Red tarihi
+    /// </summary>
+    public DateTime? RejectedAt { get; protected set; }
+    
+    /// <summary>
+    /// Red nedeni
+    /// </summary>
+    public string? RejectionReason { get; protected set; }
 
     /// <summary>
-    /// Onay durumu (Pending, Approved, Rejected)
-    /// </summary>
-    public string ApprovalStatus { get; protected set; }
-
-    /// <summary>
-    /// Yeni approvable entity oluşturur
+    /// Yeni ApprovableBaseEntity oluşturur
     /// </summary>
     protected ApprovableBaseEntity() : base()
     {
@@ -41,55 +56,63 @@ public abstract class ApprovableBaseEntity : AuditableBaseEntity
     }
 
     /// <summary>
-    /// Varolan bir approvable entity'yi yüklerken kullanılır
+    /// Varolan bir entity'yi yüklerken kullanılır
     /// </summary>
-    protected ApprovableBaseEntity(string? id, DateTime createdAt, DateTime? modifiedAt) 
-        : base(id, createdAt, modifiedAt)
+    protected ApprovableBaseEntity(string id, DateTime createdAt, DateTime? modifiedAt, 
+        string? createdBy, string? modifiedBy, DateTime? deletedAt, string? deletedBy, bool isDeleted,
+        bool isApproved, string approvalStatus, string? approvedBy, DateTime? approvedAt, 
+        string? approvalNotes, string? rejectedBy, DateTime? rejectedAt, string? rejectionReason) 
+        : base(id, createdAt, modifiedAt, createdBy, modifiedBy, deletedAt, deletedBy, isDeleted)
     {
-        IsApproved = false;
-        ApprovalStatus = "Pending";
+        IsApproved = isApproved;
+        ApprovalStatus = approvalStatus;
+        ApprovedBy = approvedBy;
+        ApprovedAt = approvedAt;
+        ApprovalNotes = approvalNotes;
+        RejectedBy = rejectedBy;
+        RejectedAt = rejectedAt;
+        RejectionReason = rejectionReason;
     }
 
     /// <summary>
-    /// Entity'yi onaylar
+    /// Entity'yi onayla
     /// </summary>
-    /// <param name="approvedBy">Onaylayan kullanıcının ID'si</param>
-    /// <param name="notes">Onay notları (opsiyonel)</param>
     public virtual void Approve(string approvedBy, string? notes = null)
     {
         IsApproved = true;
+        ApprovalStatus = "Approved";
         ApprovedBy = approvedBy;
         ApprovedAt = DateTime.UtcNow;
         ApprovalNotes = notes;
-        ApprovalStatus = "Approved";
-        SetModifiedDate();
+        SetModifiedAudit(approvedBy);
     }
 
     /// <summary>
-    /// Entity'yi reddeder
+    /// Entity'yi reddet
     /// </summary>
-    /// <param name="rejectedBy">Reddeden kullanıcının ID'si</param>
-    /// <param name="reason">Red nedeni</param>
     public virtual void Reject(string rejectedBy, string reason)
     {
         IsApproved = false;
-        ApprovedBy = rejectedBy;
-        ApprovedAt = DateTime.UtcNow;
-        ApprovalNotes = reason;
         ApprovalStatus = "Rejected";
-        SetModifiedDate();
+        RejectedBy = rejectedBy;
+        RejectedAt = DateTime.UtcNow;
+        RejectionReason = reason;
+        SetModifiedAudit(rejectedBy);
     }
 
     /// <summary>
-    /// Onay durumunu beklemede olarak sıfırlar
+    /// Onay durumunu sıfırla (tekrar değerlendirme için)
     /// </summary>
     public virtual void ResetApproval()
     {
         IsApproved = false;
+        ApprovalStatus = "Pending";
         ApprovedBy = null;
         ApprovedAt = null;
         ApprovalNotes = null;
-        ApprovalStatus = "Pending";
+        RejectedBy = null;
+        RejectedAt = null;
+        RejectionReason = null;
         SetModifiedDate();
     }
 }

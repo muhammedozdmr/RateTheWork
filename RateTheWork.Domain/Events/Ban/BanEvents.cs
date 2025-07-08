@@ -4,7 +4,7 @@ namespace RateTheWork.Domain.Events.Ban;
 /// 1. Kullanıcı banlandı event'i
 /// </summary>
 public record UserBannedEvent(
-    string BanId,
+    string? BanId,
     string UserId,
     string AdminId,
     string Reason,
@@ -22,7 +22,7 @@ public record UserBannedEvent(
 /// 2. Ban kaldırıldı event'i
 /// </summary>
 public record UserUnbannedEvent(
-    string BanId,
+    string? BanId,
     string UserId,
     string LiftedBy,
     string LiftReason,
@@ -37,7 +37,7 @@ public record UserUnbannedEvent(
 /// 3. Ban'a itiraz edildi event'i
 /// </summary>
 public record BanAppealedEvent(
-    string BanId,
+    string? BanId,
     string UserId,
     string AppealNotes,
     DateTime AppealedAt,
@@ -51,7 +51,7 @@ public record BanAppealedEvent(
 /// 4. Otomatik ban oluştu event'i
 /// </summary>
 public record AutoBanCreatedEvent(
-    string BanId,
+    string? BanId,
     string UserId,
     string TriggerReason,
     int WarningCount,
