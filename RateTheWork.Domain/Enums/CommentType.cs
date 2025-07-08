@@ -3,40 +3,45 @@ namespace RateTheWork.Domain.Enums;
 /// <summary>
 /// Yorum türleri
 /// </summary>
-public static class CommentTypes
+public enum CommentType
 {
-    public const string SalaryAndBenefits = "Maaş & Yan Haklar";
-    public const string WorkEnvironment = "Çalışma Ortamı";
-    public const string Management = "Yönetim";
-    public const string CareerDevelopment = "Kariyer Gelişimi";
-    public const string WorkLifeBalance = "İş-Yaşam Dengesi";
-    public const string CompanyCulture = "Şirket Kültürü";
-    public const string Interview = "Mülakat Süreci";
-    public const string Other = "Diğer";
+    /// <summary>
+    /// Maaş ve yan haklar hakkında yorum
+    /// </summary>
+    SalaryAndBenefits,
     
     /// <summary>
-    /// Tüm yorum türlerini liste olarak döner
+    /// Çalışma ortamı hakkında yorum
     /// </summary>
-    public static List<string> GetAll()
-    {
-        return new List<string>
-        {
-            SalaryAndBenefits,
-            WorkEnvironment,
-            Management,
-            CareerDevelopment,
-            WorkLifeBalance,
-            CompanyCulture,
-            Interview,
-            Other
-        };
-    }
+    WorkEnvironment,
     
     /// <summary>
-    /// Geçerli bir yorum türü mü kontrol eder
+    /// Yönetim hakkında yorum
     /// </summary>
-    public static bool IsValid(string commentType)
-    {
-        return GetAll().Contains(commentType);
-    }
+    Management,
+    
+    /// <summary>
+    /// Kariyer gelişimi hakkında yorum
+    /// </summary>
+    CareerDevelopment,
+    
+    /// <summary>
+    /// İş-yaşam dengesi hakkında yorum
+    /// </summary>
+    WorkLifeBalance,
+    
+    /// <summary>
+    /// Şirket kültürü hakkında yorum
+    /// </summary>
+    CompanyCulture,
+    
+    /// <summary>
+    /// Mülakat süreci hakkında yorum
+    /// </summary>
+    InterviewProcess,
+    
+    /// <summary>
+    /// Diğer konular hakkında yorum
+    /// </summary>
+    Other
 }

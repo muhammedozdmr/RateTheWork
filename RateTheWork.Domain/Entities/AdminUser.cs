@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using RateTheWork.Domain.Common;
+using RateTheWork.Domain.Constants;
+using RateTheWork.Domain.Enums;
 using RateTheWork.Domain.Events;
 using RateTheWork.Domain.Events.AdminUser;
 using RateTheWork.Domain.Exceptions;
@@ -15,7 +17,7 @@ public class AdminUser : AuditableBaseEntity
     public string Username { get; private set; } = string.Empty;
     public string HashedPassword { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
-    public string Role { get; private set; } = string.Empty;
+    public AdminRole Role { get; private set; }
     public bool IsActive { get; private set; } = true;
     public int FailedLoginAttempts { get; private set; } = 0;
     public DateTime? LastLoginAt { get; private set; }
@@ -41,12 +43,13 @@ public class AdminUser : AuditableBaseEntity
         string username,
         string email,
         string hashedPassword,
-        string role,
+        AdminRole role,
         string createdByAdminId)
     {
+        var roleString = role.ToString();
         ValidateUsername(username);
         ValidateEmail(email);
-        ValidateRole(role);
+        ValidateRole(roleString);
 
         var adminUser = new AdminUser
         {
@@ -65,7 +68,7 @@ public class AdminUser : AuditableBaseEntity
             adminUser.Id,
             username,
             email,
-            role,
+            roleString,
             createdByAdminId,
             DateTime.UtcNow
         ));
@@ -148,11 +151,11 @@ public class AdminUser : AuditableBaseEntity
     {
         ValidateRole(newRole);
 
-        if (Role == newRole)
+        if (Role.ToString() == newRole)
             throw new BusinessRuleException("Yeni rol mevcut rol ile aynı.");
 
-        var oldRole = Role;
-        Role = newRole;
+        var oldRole = Role.ToString();
+        Role = Enum.Parse<AdminRole>(newRole);
         SetModifiedAudit(changedBy);
 
         // Domain Event

@@ -148,31 +148,32 @@ public class User : AuditableBaseEntity, IAggregateRoot
         return user;
     }
     
-    /// <summary>
-    /// CSV/Excel import'tan kullanıcı oluşturur
-    /// </summary>
-    public static User CreateFromImport(Dictionary<string, string> importData, IEncryptionService encryptionService)
-    {
-        // Import verilerini validate et
-        if (!importData.ContainsKey("email") || !importData.ContainsKey("tcno"))
-            throw new BusinessRuleException("Zorunlu alanlar eksik.");
-
-        var user = new User
-        {
-            Email = importData["email"].ToLowerInvariant(),
-            AnonymousUsername = GenerateAnonymousUsername(),
-            HashedPassword = GenerateTemporaryPassword(),
-            EncryptedFirstName = encryptionService.Encrypt(importData.GetValueOrDefault("firstName", "")),
-            EncryptedLastName = encryptionService.Encrypt(importData.GetValueOrDefault("lastName", "")),
-            EncryptedTcIdentityNumber = encryptionService.Encrypt(importData["tcno"]),
-            // ... diğer alanlar
-        };
-
-        // Import event'i
-        user.AddDomainEvent(new UserImportedEvent(user.Id, "BulkImport", DateTime.UtcNow));
-
-        return user;
-    }
+    //TODO: Bu factory metodu yapmayı unutma eventini de yap 
+    // /// <summary>
+    // /// CSV/Excel import'tan kullanıcı oluşturur
+    // /// </summary>
+    // public static User CreateFromImport(Dictionary<string, string> importData, IEncryptionService encryptionService)
+    // {
+    //     // Import verilerini validate et
+    //     if (!importData.ContainsKey("email") || !importData.ContainsKey("tcno"))
+    //         throw new BusinessRuleException("Zorunlu alanlar eksik.");
+    //
+    //     var user = new User
+    //     {
+    //         Email = importData["email"].ToLowerInvariant(),
+    //         AnonymousUsername = GenerateAnonymousUsername(),
+    //         HashedPassword = GenerateTemporaryPassword(),
+    //         EncryptedFirstName = encryptionService.Encrypt(importData.GetValueOrDefault("firstName", "")),
+    //         EncryptedLastName = encryptionService.Encrypt(importData.GetValueOrDefault("lastName", "")),
+    //         EncryptedTcIdentityNumber = encryptionService.Encrypt(importData["tcno"]),
+    //         // ... diğer alanlar
+    //     };
+    //
+    //     // Import event'i
+    //     user.AddDomainEvent(new UserImportedEvent(user.Id, "BulkImport", DateTime.UtcNow));
+    //
+    //     return user;
+    // }
     
     /// <summary>
     /// Sosyal medya login'den kullanıcı oluşturur

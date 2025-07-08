@@ -4,7 +4,7 @@ namespace RateTheWork.Domain.Events.Badge;
 /// 1. Rozet oluşturuldu event'i
 /// </summary>
 public record BadgeCreatedEvent(
-    string BadgeId,
+    string? BadgeId,
     string Name,
     string Type,
     string Rarity,
@@ -19,7 +19,7 @@ public record BadgeCreatedEvent(
 /// 2. Rozet aktifleştirildi event'i
 /// </summary>
 public record BadgeActivatedEvent(
-    string BadgeId,
+    string? BadgeId,
     string BadgeName,
     string ActivatedBy,
     DateTime ActivatedAt,
@@ -33,7 +33,7 @@ public record BadgeActivatedEvent(
 /// 3. Rozet deaktive edildi event'i
 /// </summary>
 public record BadgeDeactivatedEvent(
-    string BadgeId,
+    string? BadgeId,
     string BadgeName,
     string DeactivatedBy,
     string Reason,

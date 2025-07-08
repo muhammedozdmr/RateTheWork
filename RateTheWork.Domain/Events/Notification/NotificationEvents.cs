@@ -4,7 +4,7 @@ namespace RateTheWork.Domain.Events.Notification;
 /// 1. Bildirim oluşturuldu event'i
 /// </summary>
 public record NotificationCreatedEvent(
-    string NotificationId,
+    string? NotificationId,
     string UserId,
     string Type,
     string Title,
@@ -20,7 +20,7 @@ public record NotificationCreatedEvent(
 /// 2. Bildirim okundu event'i
 /// </summary>
 public record NotificationReadEvent(
-    string NotificationId,
+    string? NotificationId,
     string UserId,
     DateTime ReadAt,
     DateTime OccurredOn = default

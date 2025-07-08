@@ -3,10 +3,31 @@ namespace RateTheWork.Domain.Enums;
 /// <summary>
 /// Admin rolleri
 /// </summary>
-public static class AdminRoles
+public enum AdminRole
 {
-    public const string SuperAdmin = "SuperAdmin";
-    public const string Moderator = "Moderator";
-    public const string ContentManager = "ContentManager";
-    public const string Support = "Support";
+    /// <summary>
+    /// Süper admin - Tüm yetkiler
+    /// </summary>
+    SuperAdmin,
+    
+    /// <summary>
+    /// Admin - Yönetici yetkiler
+    /// </summary>
+    Admin,
+    
+    /// <summary>
+    /// Moderatör - İçerik yönetimi
+    /// </summary>
+    Moderator,
+    
+    /// <summary>
+    /// İçerik yöneticisi - Sadece içerik onaylama
+    /// </summary>
+    ContentManager,
+    
+    /// <summary>
+    /// Destek - Sadece okuma ve rapor alma
+    /// </summary>
+    Support
 }
+

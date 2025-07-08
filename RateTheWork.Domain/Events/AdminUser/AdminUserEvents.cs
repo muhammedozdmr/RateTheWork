@@ -4,7 +4,7 @@ namespace RateTheWork.Domain.Events.AdminUser;
 /// 1. Admin kullanıcı oluşturuldu event'i
 /// </summary>
 public record AdminUserCreatedEvent(
-    string AdminUserId,
+    string? AdminUserId,
     string Username,
     string Email,
     string Role,
@@ -20,7 +20,7 @@ public record AdminUserCreatedEvent(
 /// 2. Admin giriş yaptı event'i
 /// </summary>
 public record AdminLoginEvent(
-    string AdminUserId,
+    string? AdminUserId,
     string IpAddress,
     string UserAgent,
     DateTime LoginAt,
@@ -48,7 +48,7 @@ public record AdminFailedLoginEvent(
 /// 4. Admin hesabı kilitlendi event'i
 /// </summary>
 public record AdminAccountLockedEvent(
-    string AdminUserId,
+    string? AdminUserId,
     DateTime LockedUntil,
     string Reason,
     DateTime LockedAt,
@@ -62,7 +62,7 @@ public record AdminAccountLockedEvent(
 /// 5. Admin rolü değiştirildi event'i
 /// </summary>
 public record AdminRoleChangedEvent(
-    string AdminUserId,
+    string? AdminUserId,
     string OldRole,
     string NewRole,
     string ChangedBy,

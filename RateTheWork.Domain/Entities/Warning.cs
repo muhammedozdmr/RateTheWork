@@ -1,13 +1,5 @@
 using RateTheWork.Domain.Common;
-using RateTheWork.Domain.Events;
 using RateTheWork.Domain.Events.Warning;
-using RateTheWork.Domain.Exceptions;
-
-namespace RateTheWork.Domain.Entities;
-
-// RateTheWork.Domain/Entities/Warning.cs
-using RateTheWork.Domain.Common;
-using RateTheWork.Domain.Events;
 using RateTheWork.Domain.Exceptions;
 
 namespace RateTheWork.Domain.Entities;

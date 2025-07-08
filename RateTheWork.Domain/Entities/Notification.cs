@@ -54,18 +54,10 @@ public class Notification : BaseEntity
         public const string TermsUpdated = "System.TermsUpdated";
     }
 
-    // Notification Priority
-    public enum NotificationPriority
-    {
-        Low,      // Düşük öncelik - rozet kazanma vb.
-        Normal,   // Normal - çoğu bildirim
-        High,     // Yüksek - uyarılar vb.
-        Critical  // Kritik - ban, güvenlik vb.
-    }
 
     // Properties
     public string UserId { get; private set; } = string.Empty;
-    public string Type { get; private set; } = string.Empty;
+    public NotificationType Type { get; private set; }
     public string Title { get; private set; } = string.Empty;
     public string Message { get; private set; } = string.Empty;
     public bool IsRead { get; private set; } = false;
@@ -94,11 +86,11 @@ public class Notification : BaseEntity
     /// </summary>
     public static Notification Create(
         string userId,
-        string type,
-        string title,
-        string message,
-        NotificationPriority priority = NotificationPriority.Normal,
-        NotificationChannel channels = NotificationChannel.InApp,
+        NotificationType type,
+        string? title = null,
+        string? message = null,
+        NotificationPriority? priority = null,
+        NotificationChannel? channels = null,
         string? relatedEntityType = null,
         string? relatedEntityId = null,
         string? actionUrl = null,
@@ -106,18 +98,23 @@ public class Notification : BaseEntity
         Dictionary<string, object>? data = null,
         int? expirationDays = null)
     {
-        ValidateType(type);
-        ValidateTitle(title);
-        ValidateMessage(message);
+        // Varsayılan değerleri al
+        var actualTitle = title ?? type.GetDefaultTitle();
+        var actualMessage = message ?? $"{type.GetDefaultTitle()} bildirimi";
+        var actualPriority = priority ?? type.GetDefaultPriority();
+        var actualChannels = channels ?? type.GetDefaultChannels();
+
+        ValidateTitle(actualTitle);
+        ValidateMessage(actualMessage);
 
         var notification = new Notification
         {
             UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
             Type = type,
-            Title = title,
-            Message = message,
-            Priority = priority,
-            Channels = channels,
+            Title = actualTitle,
+            Message = actualMessage,
+            Priority = actualPriority,
+            Channels = actualChannels,
             RelatedEntityType = relatedEntityType,
             RelatedEntityId = relatedEntityId,
             ActionUrl = actionUrl,
@@ -130,9 +127,9 @@ public class Notification : BaseEntity
         notification.AddDomainEvent(new NotificationCreatedEvent(
             notification.Id,
             userId,
-            type,
-            title,
-            priority.ToString(),
+            type.ToString(),
+            actualTitle,
+            actualPriority.ToString(),
             DateTime.UtcNow,
             DateTime.UtcNow
         ));
@@ -140,16 +137,17 @@ public class Notification : BaseEntity
         return notification;
     }
 
+
     /// <summary>
     /// Toplu bildirim oluşturur (Factory method)
     /// </summary>
     public static List<Notification> CreateBulk(
         string[] userIds,
-        string type,
-        string title,
-        string message,
-        NotificationPriority priority = NotificationPriority.Normal,
-        NotificationChannel channels = NotificationChannel.InApp)
+        NotificationType type,
+        string? title = null,
+        string? message = null,
+        NotificationPriority? priority = null,
+        NotificationChannel? channels = null)
     {
         if (userIds == null || userIds.Length == 0)
             throw new ArgumentException("En az bir kullanıcı ID'si gerekli.", nameof(userIds));
@@ -164,10 +162,11 @@ public class Notification : BaseEntity
         // Bulk notification event - ilk notification'a ekle
         if (notifications.Any())
         {
+            var firstNotification = notifications.First();
             notifications.First().AddDomainEvent(new BulkNotificationSentEvent(
                 userIds,
-                type,
-                title,
+                type.ToString(),
+                firstNotification.Title,
                 userIds.Length,
                 DateTime.UtcNow,
                 DateTime.UtcNow

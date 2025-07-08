@@ -20,7 +20,7 @@ public record CompanyCreatedEvent(
 /// 2. Şirket onaylandı event'i
 /// </summary>
 public record CompanyApprovedEvent(
-    string CompanyId,
+    string? CompanyId,
     string ApprovedBy,
     string? Notes,
     DateTime ApprovedAt,
@@ -34,7 +34,7 @@ public record CompanyApprovedEvent(
 /// 3. Şirket reddedildi event'i
 /// </summary>
 public record CompanyRejectedEvent(
-    string CompanyId,
+    string? CompanyId,
     string RejectedBy,
     string Reason,
     DateTime RejectedAt,
@@ -48,7 +48,7 @@ public record CompanyRejectedEvent(
 /// 4. Şirket bilgileri güncellendi event'i
 /// </summary>
 public record CompanyInfoUpdatedEvent(
-    string CompanyId,
+    string? CompanyId,
     string[] UpdatedFields,
     string UpdatedBy,
     DateTime UpdatedAt,
@@ -62,7 +62,7 @@ public record CompanyInfoUpdatedEvent(
 /// 5. Şirket logosu güncellendi event'i
 /// </summary>
 public record CompanyLogoUpdatedEvent(
-    string CompanyId,
+    string? CompanyId,
     string LogoUrl,
     DateTime UpdatedAt,
     DateTime OccurredOn = default
