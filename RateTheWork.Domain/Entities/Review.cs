@@ -1,4 +1,5 @@
 using RateTheWork.Domain.Common;
+using RateTheWork.Domain.Constants;
 using RateTheWork.Domain.Enums;
 using RateTheWork.Domain.Events;
 using RateTheWork.Domain.Events.Review;
@@ -79,6 +80,78 @@ public class Review : AuditableBaseEntity, IAggregateRoot
         ));
 
         return review;
+    }
+    
+    /// <summary>
+    /// Taslak yorum oluşturur (henüz gönderilmemiş)
+    /// </summary>
+    public static Review CreateDraft(string companyId, string userId, string commentType)
+    {
+        var review = new Review
+        {
+            CompanyId = companyId,
+            UserId = userId,
+            CommentType = commentType,
+            CommentText = string.Empty,
+            OverallRating = 0, // Henüz puanlanmamış
+            IsActive = false, // Draft olduğu için inactive
+            // IsDraft = true // Eğer böyle bir property varsa
+        };
+
+        review.AddDomainEvent(new ReviewDraftCreatedEvent(review.Id, userId, companyId, DateTime.UtcNow));
+
+        return review;
+    }
+
+    /// <summary>
+    /// Mevcut yorumdan yeni yorum oluşturur (farklı bir yorum tipi için)
+    /// </summary>
+    public static Review CreateFromExisting(Review existingReview, string newCommentType)
+    {
+        if (existingReview.CommentType == newCommentType)
+            throw new BusinessRuleException("Aynı tip için kopyalama yapılamaz.");
+    
+        var review = new Review
+        {
+            CompanyId = existingReview.CompanyId,
+            UserId = existingReview.UserId,
+            CommentType = newCommentType,
+            CommentText = string.Empty, // Yeni yorum metni girilmeli
+            OverallRating = existingReview.OverallRating, // Aynı puan ile başla
+            IsActive = true
+        };
+    
+        review.AddDomainEvent(new ReviewCreatedFromTemplateEvent(
+            review.Id, 
+            existingReview.Id, 
+            newCommentType, 
+            DateTime.UtcNow
+        ));
+    
+        return review;
+    }
+
+    /// <summary>
+    /// Minimum bilgi ile hızlı yorum oluşturur
+    /// </summary>
+    public static Review CreateQuick(string companyId, string userId, decimal rating)
+    {
+        var review = Create(
+            companyId,
+            userId,
+            "WorkEnvironment", // Default yorum tipi
+            rating,
+            GenerateMinimumComment() // Minimum karakter sayısını karşılayan otomatik metin
+        );
+
+        return review;
+    }
+
+    private static string GenerateMinimumComment()
+    {
+        return "Bu şirkette çalışma deneyimim genel olarak olumlu/olumsuz geçti. " +
+               "Çalışma ortamı ve iş arkadaşları açısından değerlendirdiğimde, " +
+               "şirketin güçlü ve geliştirilmesi gereken yönleri bulunmaktadır."; // 50+ karakter
     }
 
     /// <summary>

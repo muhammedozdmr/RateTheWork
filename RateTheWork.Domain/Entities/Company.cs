@@ -92,6 +92,95 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
 
         return company;
     }
+    
+    //TODO: Factory metodları genişlet burayı düzenle
+    
+    // /// <summary>
+    // /// KKB/MERSİS verilerinden şirket oluşturur
+    // /// </summary>
+    // public static Company CreateFromOfficialData(OfficialCompanyData officialData)
+    // {
+    //     var company = new Company
+    //     {
+    //         Name = officialData.Name,
+    //         TaxId = officialData.TaxId,
+    //         MersisNo = officialData.MersisNo,
+    //         Sector = MapNaceCodeToSector(officialData.NaceCode),
+    //         Address = officialData.RegisteredAddress,
+    //         PhoneNumber = officialData.Phone ?? "Belirtilmemiş",
+    //         Email = officialData.Email ?? $"info@{GenerateDomainFromName(officialData.Name)}",
+    //         WebsiteUrl = officialData.Website ?? $"https://www.{GenerateDomainFromName(officialData.Name)}",
+    //         IsApproved = true, // Resmi kaynaklardan geldiği için otomatik onaylı
+    //         ApprovalStatus = "AutoApproved",
+    //         ApprovedBy = "SYSTEM",
+    //         ApprovedAt = DateTime.UtcNow
+    //     };
+    //
+    //     company.AddDomainEvent(new CompanyImportedFromOfficialSourceEvent(
+    //         company.Id,
+    //         "KKB/MERSIS",
+    //         DateTime.UtcNow
+    //     ));
+    //
+    //     return company;
+    // }
+    //
+    // /// <summary>
+    // /// Kullanıcı önerisi ile şirket oluşturur
+    // /// </summary>
+    // public static Company CreateFromUserSuggestion(
+    //     string suggestedByUserId,
+    //     string name,
+    //     string sector,
+    //     string city)
+    // {
+    //     var company = new Company
+    //     {
+    //         Name = name,
+    //         TaxId = "PENDING-VERIFICATION",
+    //         MersisNo = "PENDING-VERIFICATION",
+    //         Sector = sector,
+    //         Address = $"{city}, Türkiye",
+    //         PhoneNumber = "Belirtilmemiş",
+    //         Email = "pending@verification.com",
+    //         WebsiteUrl = "https://pending-verification.com",
+    //         IsApproved = false,
+    //         ApprovalStatus = "PendingUserSuggestion"
+    //     };
+    //
+    //     company.SetCreatedAudit(suggestedByUserId);
+    //     company.AddDomainEvent(new CompanySuggestedByUserEvent(
+    //         company.Id,
+    //         suggestedByUserId,
+    //         name,
+    //         DateTime.UtcNow
+    //     ));
+    //
+    //     return company;
+    // }
+    //
+    // private static string MapNaceCodeToSector(string naceCode) 
+    // {
+    //     // NACE kodlarını sektörlere map'le
+    //     return naceCode.StartsWith("62") ? "Teknoloji" : 
+    //            naceCode.StartsWith("64") ? "Finans" : 
+    //            "Diğer";
+    // }
+    //
+    // private static string GenerateDomainFromName(string companyName)
+    // {
+    //     return companyName
+    //         .ToLowerInvariant()
+    //         .Replace(" ", "")
+    //         .Replace(".", "")
+    //         .Replace(",", "")
+    //         .Replace("ş", "s")
+    //         .Replace("ç", "c")
+    //         .Replace("ğ", "g")
+    //         .Replace("ü", "u")
+    //         .Replace("ö", "o")
+    //         .Replace("ı", "i") + ".com.tr";
+    // }
 
     /// <summary>
     /// Şirket bilgilerini günceller

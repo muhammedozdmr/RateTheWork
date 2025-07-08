@@ -4,6 +4,7 @@ using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Events;
 using RateTheWork.Domain.Events.User;
 using RateTheWork.Domain.Exceptions;
+using RateTheWork.Domain.Services;
 
 namespace RateTheWork.Domain.Entities;
 
@@ -119,6 +120,103 @@ public class User : AuditableBaseEntity, IAggregateRoot
 
         return user;
     }
+    
+    /// <summary>
+    /// Test için basitleştirilmiş kullanıcı oluşturur
+    /// </summary>
+    public static User CreateForTesting(string email, string username)
+    {
+        var user = new User
+        {
+            Email = email.ToLowerInvariant(),
+            AnonymousUsername = username,
+            HashedPassword = "test-hash",
+            EncryptedFirstName = "encrypted-test",
+            EncryptedLastName = "encrypted-test",
+            EncryptedTcIdentityNumber = "encrypted-12345678901",
+            EncryptedAddress = "encrypted-test-address",
+            EncryptedCity = "encrypted-istanbul",
+            EncryptedDistrict = "encrypted-kadikoy",
+            EncryptedPhoneNumber = "encrypted-5551234567",
+            Gender = "PreferNotToSay",
+            EncryptedBirthDate = "encrypted-2000-01-01",
+            Profession = "Test",
+            EmailHash = GenerateHash(email.ToLowerInvariant()),
+            TcIdentityHash = GenerateHash("encrypted-12345678901")
+        };
+
+        return user;
+    }
+    
+    /// <summary>
+    /// CSV/Excel import'tan kullanıcı oluşturur
+    /// </summary>
+    public static User CreateFromImport(Dictionary<string, string> importData, IEncryptionService encryptionService)
+    {
+        // Import verilerini validate et
+        if (!importData.ContainsKey("email") || !importData.ContainsKey("tcno"))
+            throw new BusinessRuleException("Zorunlu alanlar eksik.");
+
+        var user = new User
+        {
+            Email = importData["email"].ToLowerInvariant(),
+            AnonymousUsername = GenerateAnonymousUsername(),
+            HashedPassword = GenerateTemporaryPassword(),
+            EncryptedFirstName = encryptionService.Encrypt(importData.GetValueOrDefault("firstName", "")),
+            EncryptedLastName = encryptionService.Encrypt(importData.GetValueOrDefault("lastName", "")),
+            EncryptedTcIdentityNumber = encryptionService.Encrypt(importData["tcno"]),
+            // ... diğer alanlar
+        };
+
+        // Import event'i
+        user.AddDomainEvent(new UserImportedEvent(user.Id, "BulkImport", DateTime.UtcNow));
+
+        return user;
+    }
+    
+    /// <summary>
+    /// Sosyal medya login'den kullanıcı oluşturur
+    /// </summary>
+    public static User CreateFromSocialLogin(string provider, string providerId, string email, string? name)
+    {
+        var user = new User
+        {
+            Email = email.ToLowerInvariant(),
+            AnonymousUsername = GenerateAnonymousUsername(),
+            HashedPassword = GenerateRandomPassword(), // Sosyal login için random
+            EncryptedFirstName = "encrypted-" + (name?.Split(' ').FirstOrDefault() ?? "User"),
+            EncryptedLastName = "encrypted-" + (name?.Split(' ').LastOrDefault() ?? "User"),
+            // Diğer alanlar default/empty
+            EncryptedTcIdentityNumber = "encrypted-pending",
+            EncryptedAddress = "encrypted-pending",
+            EncryptedCity = "encrypted-pending",
+            EncryptedDistrict = "encrypted-pending",
+            EncryptedPhoneNumber = "encrypted-pending",
+            Gender = "PreferNotToSay",
+            EncryptedBirthDate = "encrypted-pending",
+            Profession = "Belirtilmemiş",
+            IsEmailVerified = true // Sosyal medya'dan geldiği için verified
+        };
+
+        user.EmailHash = GenerateHash(email.ToLowerInvariant());
+        
+        // Social login event
+        user.AddDomainEvent(new UserRegisteredViaSocialEvent(user.Id, provider, providerId, DateTime.UtcNow));
+
+        return user;
+    }
+    
+    // Helper methods
+    private static string GenerateAnonymousUsername()
+    {
+        var adjectives = new[] { "Gizli", "Anonim", "Özel", "Saklı", "Bilinmeyen" };
+        var nouns = new[] { "Kullanıcı", "Yorumcu", "Üye", "Kişi", "Değerlendirici" };
+        var random = new Random();
+        return $"{adjectives[random.Next(adjectives.Length)]}{nouns[random.Next(nouns.Length)]}{random.Next(1000, 9999)}";
+    }
+
+    private static string GenerateTemporaryPassword() => $"Temp-{Guid.NewGuid():N}";
+    private static string GenerateRandomPassword() => $"Social-{Guid.NewGuid():N}";
 
     /// <summary>
     /// Email doğrulamasını tamamlar

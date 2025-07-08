@@ -4,7 +4,7 @@ namespace RateTheWork.Domain.Events.Review;
 /// 1. Yorum oluşturuldu event'i
 /// </summary>
 public record ReviewCreatedEvent(
-    string ReviewId,
+    string? ReviewId,
     string UserId,
     string CompanyId,
     string CommentType,
@@ -21,7 +21,7 @@ public record ReviewCreatedEvent(
 /// 2. Yorum güncellendi event'i
 /// </summary>
 public record ReviewUpdatedEvent(
-    string ReviewId,
+    string? ReviewId,
     string UpdatedBy,
     string EditReason,
     int EditCount,
@@ -36,7 +36,7 @@ public record ReviewUpdatedEvent(
 /// 3. Yorum belge yüklendi event'i
 /// </summary>
 public record ReviewDocumentUploadedEvent(
-    string ReviewId,
+    string? ReviewId,
     string DocumentUrl,
     DateTime UploadedAt,
     DateTime OccurredOn = default
@@ -49,7 +49,7 @@ public record ReviewDocumentUploadedEvent(
 /// 4. Yorum doğrulandı event'i
 /// </summary>
 public record ReviewVerifiedEvent(
-    string ReviewId,
+    string? ReviewId,
     string VerifiedBy,
     DateTime VerifiedAt,
     DateTime OccurredOn = default
@@ -62,7 +62,7 @@ public record ReviewVerifiedEvent(
 /// 5. Yorum gizlendi event'i
 /// </summary>
 public record ReviewHiddenEvent(
-    string ReviewId,
+    string? ReviewId,
     string? HiddenBy,
     string Reason,
     bool IsAutoHidden,
@@ -77,11 +77,39 @@ public record ReviewHiddenEvent(
 /// 6. Yorum aktifleştirildi event'i
 /// </summary>
 public record ReviewActivatedEvent(
-    string ReviewId,
+    string? ReviewId,
     string ActivatedBy,
     DateTime ActivatedAt,
     DateTime OccurredOn = default
 ) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 7. Mevcut yorumdan yeni yorum oluşturur (farklı bir yorum tipi için)
+/// </summary>
+
+public record ReviewCreatedFromTemplateEvent(
+    string? ReviewId
+    , string? ExistingReviewId
+    , string CommentType
+    , DateTime UploadedAt
+    , DateTime OccurredOn = default) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 8. Taslak yorum oluşturur (henüz gönderilmemiş)
+/// </summary>
+
+public record ReviewDraftCreatedEvent(
+    string? ReviewId
+    , string UserId
+    , string CompanyId
+    ,  DateTime CreatedAt
+    , DateTime OccurredOn = default) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
 }

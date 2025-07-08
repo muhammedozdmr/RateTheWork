@@ -4,7 +4,7 @@ namespace RateTheWork.Domain.Events.Company;
 /// 1. Şirket oluşturuldu event'i
 /// </summary>
 public record CompanyCreatedEvent(
-    string CompanyId,
+    string? CompanyId,
     string Name,
     string TaxId,
     string MersisNo,
@@ -75,7 +75,7 @@ public record CompanyLogoUpdatedEvent(
 /// 6. Şirket puanı güncellendi event'i
 /// </summary>
 public record CompanyRatingUpdatedEvent(
-    string CompanyId,
+    string? CompanyId,
     decimal OldRating,
     decimal NewRating,
     int TotalReviews,

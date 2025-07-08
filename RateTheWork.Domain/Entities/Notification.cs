@@ -1,6 +1,9 @@
 using System.Text.Json;
 using RateTheWork.Domain.Common;
+using RateTheWork.Domain.Constants;
+using RateTheWork.Domain.Enums;
 using RateTheWork.Domain.Events;
+using RateTheWork.Domain.Events.Notification;
 using RateTheWork.Domain.Exceptions;
 
 namespace RateTheWork.Domain.Entities;
@@ -173,6 +176,83 @@ public class Notification : BaseEntity
 
         return notifications;
     }
+    
+    //TODO: Burayı yapmayı unutma factory metodları genişlet
+    
+    // /// <summary>
+    // /// Sistem duyurusu oluşturur (tüm kullanıcılara)
+    // /// </summary>
+    // public static List<Notification> CreateSystemAnnouncement(
+    //     string[] allUserIds,
+    //     string title,
+    //     string message,
+    //     DateTime? expiresAt = null)
+    // {
+    //     return allUserIds.Select(userId => Create(
+    //         userId,
+    //         NotificationTypes.SystemAnnouncement,
+    //         title,
+    //         message,
+    //         NotificationPriority.High,
+    //         NotificationChannel.All, // Tüm kanallardan gönder
+    //         expirationDays: expiresAt.HasValue ? 
+    //             (int)(expiresAt.Value - DateTime.UtcNow).TotalDays : 
+    //             DomainConstants.Notification.DefaultExpirationDays
+    //     )).ToList();
+    // }
+    //
+    // /// <summary>
+    // /// Template'den bildirim oluşturur
+    // /// </summary>
+    // public static Notification CreateFromTemplate(
+    //     string userId,
+    //     NotificationTemplate template,
+    //     Dictionary<string, string> parameters)
+    // {
+    //     // Template'deki placeholder'ları doldur
+    //     var title = ReplacePlaceholders(template.Title, parameters);
+    //     var message = ReplacePlaceholders(template.Message, parameters);
+    //
+    //     return Create(
+    //         userId,
+    //         template.Type,
+    //         title,
+    //         message,
+    //         template.Priority,
+    //         template.Channels,
+    //         data: parameters.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value)
+    //     );
+    // }
+    //
+    // /// <summary>
+    // /// Zamanlı bildirim oluşturur (ileride gönderilecek)
+    // /// </summary>
+    // public static ScheduledNotification CreateScheduled(
+    //     string userId,
+    //     string type,
+    //     string title,
+    //     string message,
+    //     DateTime scheduledFor,
+    //     NotificationChannel channels = NotificationChannel.InApp)
+    // {
+    //     var notification = Create(userId, type, title, message, channels: channels);
+    //     
+    //     return new ScheduledNotification
+    //     {
+    //         Notification = notification,
+    //         ScheduledFor = scheduledFor,
+    //         Status = "Pending"
+    //     };
+    // }
+
+    private static string ReplacePlaceholders(string template, Dictionary<string, string> parameters)
+    {
+        foreach (var param in parameters)
+        {
+            template = template.Replace($"{{{param.Key}}}", param.Value);
+        }
+        return template;
+    }
 
     /// <summary>
     /// Bildirimi okundu olarak işaretle
@@ -212,7 +292,7 @@ public class Notification : BaseEntity
     /// </summary>
     public void MarkSmsSent()
     {
-        if (!Channels.HasFlag(NotificationChannel.SMS))
+        if (!Channels.HasFlag(NotificationChannel.Sms))
             throw new BusinessRuleException("Bu bildirim SMS kanalını içermiyor.");
 
         IsSmsSent = true;
