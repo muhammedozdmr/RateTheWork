@@ -1,4 +1,5 @@
 using RateTheWork.Domain.Common;
+using RateTheWork.Domain.Enums;
 using RateTheWork.Domain.Events;
 using RateTheWork.Domain.Events.Badge;
 using RateTheWork.Domain.Exceptions;
@@ -10,35 +11,11 @@ namespace RateTheWork.Domain.Entities;
 /// </summary>
 public class Badge : BaseEntity
 {
-    // Badge Types
-    public enum BadgeType
-    {
-        FirstReview,        // İlk yorum
-        ActiveReviewer,     // Aktif yorumcu (10+ yorum)
-        TrustedReviewer,    // Güvenilir yorumcu (5+ doğrulanmış yorum)
-        TopContributor,     // En çok katkıda bulunan (50+ yorum)
-        CompanyExplorer,    // Farklı şirketlerde yorum yapan (10+ şirket)
-        DetailedReviewer,   // Detaylı yorumlar yazan (ortalama 500+ karakter)
-        HelpfulReviewer,    // Faydalı yorumlar (upvote oranı %80+)
-        Anniversary,        // Platform yıldönümü
-        SpecialEvent        // Özel etkinlik rozeti
-    }
-
-    // Badge Rarity Levels
-    public enum BadgeRarity
-    {
-        Common,      // Herkes kazanabilir
-        Uncommon,    // Biraz çaba gerektirir
-        Rare,        // Zor kazanılır
-        Epic,        // Çok zor kazanılır
-        Legendary    // Efsanevi seviye
-    }
-
     // Properties
     public string Name { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
     public string IconUrl { get; private set; } = string.Empty;
-    public string Criteria { get; private set; } = string.Empty;
+    public string? Criteria { get; private set; } = string.Empty;
     public BadgeType Type { get; private set; }
     public BadgeRarity Rarity { get; private set; }
     public int RequiredCount { get; private set; }

@@ -29,6 +29,10 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     public DateTime? LastEditedAt { get; private set; }
     public string? EditReason { get; private set; }
     public int EditCount { get; private set; } = 0;
+    public decimal HelpfulnessScore { get; private set; } = 0; // Faydalılık skoru
+    public DateTime? UpdatedAt { get; private set; } // Güncelleme zamanı
+    public string? TargetType { get; private set; } // Hedef tipi (örn: "Company", "Branch")
+    public string? TargetId { get; private set; } // Hedef ID'si
 
     /// <summary>
     /// EF Core için parametresiz private constructor

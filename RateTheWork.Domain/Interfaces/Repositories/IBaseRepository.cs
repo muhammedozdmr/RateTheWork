@@ -10,6 +10,8 @@ namespace RateTheWork.Domain.Interfaces.Repositories;
 /// <typeparam name="T">Entity tipi (BaseEntity'den türemeli)</typeparam>
 public interface IBaseRepository<T> where T : BaseEntity
 {
+    // ============ READ OPERATIONS ============
+    
     /// <summary>
     /// ID'ye göre entity getirir
     /// </summary>
@@ -38,19 +40,49 @@ public interface IBaseRepository<T> where T : BaseEntity
     Task<T?> GetFirstOrDefaultAsync(Expression<Func<T, bool>> predicate);
 
     /// <summary>
+    /// Include ile birlikte entity getirir (navigation property'ler için)
+    /// </summary>
+    /// <param name="predicate">Filtreleme koşulu</param>
+    /// <param name="includes">Include edilecek property'ler</param>
+    /// <returns>Entity listesi</returns>
+    Task<IReadOnlyList<T>> GetWithIncludesAsync(
+        Expression<Func<T, bool>>? predicate,
+        params Expression<Func<T, object>>[] includes);
+
+    /// <summary>
+    /// Sayfalı veri getirir
+    /// </summary>
+    /// <param name="predicate">Filtreleme koşulu (null ise tümü)</param>
+    /// <param name="pageNumber">Sayfa numarası (1'den başlar)</param>
+    /// <param name="pageSize">Sayfa başına kayıt sayısı</param>
+    /// <param name="orderBy">Sıralama fonksiyonu (null ise Id'ye göre)</param>
+    /// <param name="ascending">Artan sıralama mı? (default: true)</param>
+    /// <returns>Sayfalı sonuç ve toplam kayıt sayısı</returns>
+    Task<(IReadOnlyList<T> items, int totalCount)> GetPagedAsync(
+        Expression<Func<T, bool>>? predicate = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        Expression<Func<T, object>>? orderBy = null,
+        bool ascending = true);
+
+    // ============ AGGREGATE OPERATIONS ============
+    
+    /// <summary>
     /// Belirli koşula uyan entity sayısını getirir
     /// </summary>
     /// <param name="predicate">Filtreleme koşulu</param>
     /// <returns>Entity sayısı</returns>
-    Task<int> GetCountAsync(Expression<Func<T, bool>> predicate);
+    Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null);
 
     /// <summary>
     /// Belirli koşula uyan en az bir entity var mı kontrol eder
     /// </summary>
     /// <param name="predicate">Filtreleme koşulu</param>
     /// <returns>Entity var mı?</returns>
-    Task<bool> AnyAsync(Expression<Func<T, bool>> predicate);
+    Task<bool> AnyAsync(Expression<Func<T, bool>>? predicate = null);
 
+    // ============ CREATE OPERATIONS ============
+    
     /// <summary>
     /// Yeni entity ekler
     /// </summary>
@@ -64,65 +96,38 @@ public interface IBaseRepository<T> where T : BaseEntity
     /// <param name="entities">Eklenecek entity listesi</param>
     Task AddRangeAsync(IEnumerable<T> entities);
 
+    // ============ UPDATE OPERATIONS ============
+    
     /// <summary>
-    /// Entity günceller
+    /// Entity'yi günceller
     /// </summary>
     /// <param name="entity">Güncellenecek entity</param>
-    void Update(T entity);
-
+    /// <returns>Güncellenen entity</returns>
+    Task<T> UpdateAsync(T entity);
+    
     /// <summary>
-    /// Birden fazla entity günceller
+    /// Birden fazla entity'yi günceller
     /// </summary>
     /// <param name="entities">Güncellenecek entity listesi</param>
-    void UpdateRange(IEnumerable<T> entities);
+    Task UpdateRangeAsync(IEnumerable<T> entities);
 
+    // ============ DELETE OPERATIONS ============
+    
     /// <summary>
-    /// Entity siler
+    /// Entity'yi siler
     /// </summary>
     /// <param name="entity">Silinecek entity</param>
-    void Delete(T entity);
-
-    /// <summary>
-    /// Birden fazla entity siler
-    /// </summary>
-    /// <param name="entities">Silinecek entity listesi</param>
-    void DeleteRange(IEnumerable<T> entities);
-
+    Task DeleteAsync(T entity);
+    
     /// <summary>
     /// ID'ye göre entity siler
     /// </summary>
     /// <param name="id">Silinecek entity'nin ID'si</param>
     Task DeleteByIdAsync(string id);
-
+    
     /// <summary>
-    /// Sayfalı veri getirir
+    /// Birden fazla entity'yi siler
     /// </summary>
-    /// <param name="predicate">Filtreleme koşulu</param>
-    /// <param name="pageNumber">Sayfa numarası</param>
-    /// <param name="pageSize">Sayfa başına kayıt sayısı</param>
-    /// <param name="orderBy">Sıralama fonksiyonu</param>
-    /// <param name="ascending">Artan sıralama mı?</param>
-    /// <returns>Sayfalı entity listesi</returns>
-    Task<IReadOnlyList<T>> GetPagedAsync(
-        Expression<Func<T, bool>>? predicate,
-        int pageNumber,
-        int pageSize,
-        Expression<Func<T, object>>? orderBy = null,
-        bool ascending = true);
-
-    /// <summary>
-    /// Include ile birlikte entity getirir (navigation property'ler için)
-    /// </summary>
-    /// <param name="predicate">Filtreleme koşulu</param>
-    /// <param name="includes">Include edilecek property'ler</param>
-    /// <returns>Entity listesi</returns>
-    Task<IReadOnlyList<T>> GetWithIncludesAsync(
-        Expression<Func<T, bool>>? predicate,
-        params Expression<Func<T, object>>[] includes);
-
-    /// <summary>
-    /// IQueryable döner (advanced sorgular için)
-    /// </summary>
-    /// <returns>IQueryable<T></returns>
-    IQueryable<T> GetQueryable();
+    /// <param name="entities">Silinecek entity listesi</param>
+    Task DeleteRangeAsync(IEnumerable<T> entities);
 }
