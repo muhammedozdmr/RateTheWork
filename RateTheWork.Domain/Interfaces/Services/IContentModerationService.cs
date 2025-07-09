@@ -21,6 +21,26 @@ public interface IContentModerationService
     /// <param name="toLanguage">Hedef dil</param>
     /// <returns>Çevrilmiş içerik</returns>
     Task<string> TranslateContentAsync(string content, string fromLanguage, string toLanguage);
+    
+    /// <summary>
+    /// İçerik özetler
+    /// </summary>
+    Task<string> SummarizeContentAsync(string content, int maxLength = 200);
+    
+    /// <summary>
+    /// Duygu analizi yapar
+    /// </summary>
+    Task<SentimentAnalysisResult> AnalyzeSentimentAsync(string content);
+    
+    /// <summary>
+    /// Anahtar kelimeleri çıkarır
+    /// </summary>
+    Task<List<string>> ExtractKeywordsAsync(string content, int maxKeywords = 10);
+    
+    /// <summary>
+    /// İçeriği kategorize eder
+    /// </summary>
+    Task<List<ContentCategory>> CategorizeContentAsync(string content);
 }
 
 /// <summary>

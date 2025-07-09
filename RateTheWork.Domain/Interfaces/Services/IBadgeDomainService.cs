@@ -21,4 +21,14 @@ public interface IBadgeDomainService
     /// Rozet kriterlerini kontrol eder
     /// </summary>
     Task<bool> CheckBadgeCriteriaAsync(string userId, Badge badge);
+    
+    /// <summary>
+    /// Kullanıcının rozet ilerlemesini hesaplar
+    /// </summary>
+    Task<Dictionary<string, BadgeProgress>> GetUserBadgeProgressAsync(string userId);
+    
+    /// <summary>
+    /// Rozet puanlarını hesaplar
+    /// </summary>
+    Task<int> CalculateUserBadgePointsAsync(string userId);
 }

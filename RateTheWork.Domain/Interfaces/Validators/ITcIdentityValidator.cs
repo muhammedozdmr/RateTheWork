@@ -9,9 +9,4 @@ public interface ITcIdentityValidator : IDomainValidator<string>
     /// TC Kimlik numarası algoritma kontrolü
     /// </summary>
     bool IsValidFormat(string tcIdentity);
-    
-    /// <summary>
-    /// MERNİS doğrulaması (opsiyonel)
-    /// </summary>
-    Task<bool> VerifyWithMernisAsync(string tcIdentity, string name, string surname, int birthYear);
 }
