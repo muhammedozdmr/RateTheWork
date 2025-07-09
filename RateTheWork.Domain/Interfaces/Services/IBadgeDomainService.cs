@@ -1,6 +1,6 @@
 using RateTheWork.Domain.Entities;
 
-namespace RateTheWork.Domain.Services;
+namespace RateTheWork.Domain.Interfaces.Services;
 
 /// <summary>
 /// Rozet işlemleri için domain service interface'i

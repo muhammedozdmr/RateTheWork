@@ -1,4 +1,4 @@
-namespace RateTheWork.Domain.Services;
+namespace RateTheWork.Domain.Interfaces.Services;
 
 /// <summary>
 /// Yorum işlemleri için domain service interface'i

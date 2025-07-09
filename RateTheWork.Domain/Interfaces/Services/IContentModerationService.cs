@@ -1,4 +1,4 @@
-namespace RateTheWork.Domain.Services;
+namespace RateTheWork.Domain.Interfaces.Services;
 
 /// <summary>
 /// İçerik moderasyon servisi - AI ile yorum içeriğini kontrol eder

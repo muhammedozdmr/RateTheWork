@@ -1,4 +1,4 @@
-namespace RateTheWork.Domain.Services;
+namespace RateTheWork.Domain.Interfaces.Services;
 
 public interface IVoteService
 {
