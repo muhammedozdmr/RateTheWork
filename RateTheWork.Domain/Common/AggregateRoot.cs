@@ -1,4 +1,5 @@
 using RateTheWork.Domain.Events;
+using RateTheWork.Domain.Interfaces.Common;
 
 namespace RateTheWork.Domain.Common;
 

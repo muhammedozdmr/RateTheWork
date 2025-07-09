@@ -1,4 +1,4 @@
-namespace RateTheWork.Domain.Common;
+namespace RateTheWork.Domain.Interfaces.Common;
 
 /// <summary>
 /// Aggregate Root marker interface
