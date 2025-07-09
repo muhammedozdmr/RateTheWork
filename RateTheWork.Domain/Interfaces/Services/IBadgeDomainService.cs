@@ -25,7 +25,7 @@ public interface IBadgeDomainService
     /// <summary>
     /// Kullanıcının rozet ilerlemesini hesaplar
     /// </summary>
-    Task<Dictionary<string, BadgeProgress>> GetUserBadgeProgressAsync(string userId);
+    Task<Dictionary<string?, BadgeProgress>> GetUserBadgeProgressAsync(string userId);
     
     /// <summary>
     /// Rozet puanlarını hesaplar

@@ -1,3 +1,5 @@
+using RateTheWork.Domain.Entities;
+
 namespace RateTheWork.Domain.Interfaces.Services;
 
 /// <summary>
@@ -33,7 +35,7 @@ public interface IReviewDomainService
     /// <summary>
     /// Benzer yorumları bulur (duplicate kontrolü için)
     /// </summary>
-    Task<List<string>> FindSimilarReviewsAsync(string userId, string commentText);
+    Task<List<string?>> FindSimilarReviewsAsync(string userId, string commentText);
     
     /// <summary>
     /// Yorum trendlerini analiz eder

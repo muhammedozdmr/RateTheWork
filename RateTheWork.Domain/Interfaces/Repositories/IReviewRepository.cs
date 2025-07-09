@@ -1,6 +1,6 @@
 using RateTheWork.Domain.Entities;
 
-namespace RateTheWork.Domain.Interfaces;
+namespace RateTheWork.Domain.Interfaces.Repositories;
 
 public interface IReviewRepository : IBaseRepository<Review>
 {

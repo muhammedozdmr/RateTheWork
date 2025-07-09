@@ -1,3 +1,5 @@
+using RateTheWork.Domain.Entities;
+
 namespace RateTheWork.Domain.Interfaces.Services;
 
 /// <summary>

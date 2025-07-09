@@ -4,6 +4,7 @@ using RateTheWork.Domain.Enums;
 using RateTheWork.Domain.Events;
 using RateTheWork.Domain.Events.Review;
 using RateTheWork.Domain.Exceptions;
+using RateTheWork.Domain.Interfaces.Common;
 
 namespace RateTheWork.Domain.Entities;
 

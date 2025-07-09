@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using RateTheWork.Domain.Common;
 
-namespace RateTheWork.Domain.Interfaces;
+namespace RateTheWork.Domain.Interfaces.Repositories;
 
 /// <summary>
 /// Tüm repository'lerin temel interface'i.

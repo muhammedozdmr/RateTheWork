@@ -1,6 +1,7 @@
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Events.Company;
 using RateTheWork.Domain.Exceptions;
+using RateTheWork.Domain.Interfaces.Common;
 
 namespace RateTheWork.Domain.Entities;
 

@@ -4,6 +4,7 @@ using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Events;
 using RateTheWork.Domain.Events.User;
 using RateTheWork.Domain.Exceptions;
+using RateTheWork.Domain.Interfaces.Common;
 using RateTheWork.Domain.Services;
 
 namespace RateTheWork.Domain.Entities;

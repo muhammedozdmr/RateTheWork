@@ -1,6 +1,6 @@
 using RateTheWork.Domain.Entities;
 
-namespace RateTheWork.Domain.Interfaces;
+namespace RateTheWork.Domain.Interfaces.Repositories;
 
 /// <summary>
 /// Unit of Work pattern implementasyonu için interface.
