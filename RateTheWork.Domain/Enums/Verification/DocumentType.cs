@@ -1,4 +1,4 @@
-namespace RateTheWork.Domain.Enums;
+namespace RateTheWork.Domain.Enums.Verification;
 
 /// <summary>
 /// Belge türleri

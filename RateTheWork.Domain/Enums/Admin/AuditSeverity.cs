@@ -1,4 +1,4 @@
-namespace RateTheWork.Domain.Enums;
+namespace RateTheWork.Domain.Enums.Admin;
 
 /// <summary>
 /// Audit log seviye

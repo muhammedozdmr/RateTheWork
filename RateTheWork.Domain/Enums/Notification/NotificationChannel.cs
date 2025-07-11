@@ -1,4 +1,4 @@
-namespace RateTheWork.Domain.Enums;
+namespace RateTheWork.Domain.Enums.Notification;
 
 /// <summary>
 /// Bildirim kanalları - Flags enum olarak tanımlanmıştır, birden fazla kanal seçilebilir

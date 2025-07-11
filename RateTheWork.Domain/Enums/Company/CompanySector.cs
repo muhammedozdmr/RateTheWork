@@ -1,4 +1,4 @@
-namespace RateTheWork.Domain.Enums;
+namespace RateTheWork.Domain.Enums.Company;
 
 /// <summary>
 /// Şirket sektörleri
