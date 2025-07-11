@@ -1,3 +1,5 @@
+using RateTheWork.Domain.Enums;
+
 namespace RateTheWork.Domain.Events.Notification;
 
 /// <summary>
@@ -37,6 +39,20 @@ public record BulkNotificationSentEvent(
     string Type,
     string Title,
     int TotalCount,
+    DateTime SentAt,
+    DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 4. Bildirim gönderildi event'i
+/// </summary>
+public record NotificationSentEvent(
+    string NotificationId,
+    string UserId,
+    NotificationChannel Channel,
     DateTime SentAt,
     DateTime OccurredOn = default
 ) : IDomainEvent

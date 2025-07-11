@@ -1,4 +1,4 @@
-namespace RateTheWork.Domain.Entities;
+namespace RateTheWork.Domain.ValueObject;
 
 /// <summary>
 /// Kullanıcı davranış skoru

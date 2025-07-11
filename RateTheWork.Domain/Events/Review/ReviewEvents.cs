@@ -113,3 +113,31 @@ public record ReviewDraftCreatedEvent(
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
 }
+
+/// <summary>
+/// 9. Yorum faydalılık skoru güncellendi event'i
+/// </summary>
+public record ReviewHelpfulnessUpdatedEvent(
+    string ReviewId,
+    decimal NewScore,
+    decimal OldScore,
+    DateTime UpdatedAt,
+    DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 10. Yorum oy sayıları güncellendi event'i
+/// </summary>
+public record ReviewVoteCountsUpdatedEvent(
+    string ReviewId,
+    int Upvotes,
+    int Downvotes,
+    DateTime UpdatedAt,
+    DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}

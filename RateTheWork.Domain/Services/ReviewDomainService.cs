@@ -4,6 +4,7 @@ using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces;
 using RateTheWork.Domain.Interfaces.Repositories;
 using RateTheWork.Domain.Interfaces.Services;
+using RateTheWork.Domain.ValueObject;
 
 namespace RateTheWork.Domain.Services;
 

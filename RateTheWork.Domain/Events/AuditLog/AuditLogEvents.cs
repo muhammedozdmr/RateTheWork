@@ -1,3 +1,5 @@
+using RateTheWork.Domain.Enums;
+
 namespace RateTheWork.Domain.Events.AuditLog;
 
 /// <summary>
@@ -28,6 +30,22 @@ public record CriticalActionPerformedEvent(
     string EntityId,
     string Details,
     DateTime PerformedAt,
+    DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// Kritik audit log kaydedildi event'i
+/// </summary>
+public record CriticalAuditLogCreatedEvent(
+    string AuditLogId,
+    string AdminUserId,
+    string ActionType,
+    string EntityType,
+    string EntityId,
+    AuditSeverity Severity,
     DateTime OccurredOn = default
 ) : IDomainEvent
 {

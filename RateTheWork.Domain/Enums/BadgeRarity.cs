@@ -1,32 +1,32 @@
 namespace RateTheWork.Domain.Enums;
 
 /// <summary>
-/// Rozet nadirlik seviyesi
+/// Rozet nadirlik seviyeleri
 /// </summary>
 public enum BadgeRarity
 {
     /// <summary>
-    /// Herkes kazanabilir
+    /// Yaygın rozet
     /// </summary>
     Common,
     
     /// <summary>
-    /// Biraz çaba gerektirir
-    /// </summary>
-    Uncommon,
-    
-    /// <summary>
-    /// Zor kazanılır
+    /// Nadir rozet
     /// </summary>
     Rare,
     
     /// <summary>
-    /// Çok zor kazanılır
+    /// Çok nadir rozet
     /// </summary>
     Epic,
     
     /// <summary>
-    /// Efsanevi seviye
+    /// Efsanevi rozet
     /// </summary>
-    Legendary
+    Legendary,
+    
+    /// <summary>
+    /// Özel/Benzersiz rozet
+    /// </summary>
+    Unique
 }

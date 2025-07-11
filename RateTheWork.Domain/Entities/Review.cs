@@ -1,7 +1,5 @@
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Constants;
-using RateTheWork.Domain.Enums;
-using RateTheWork.Domain.Events;
 using RateTheWork.Domain.Events.Review;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Common;
@@ -331,6 +329,18 @@ public class Review : AuditableBaseEntity, IAggregateRoot
             activatedBy,
             DateTime.UtcNow
         ));
+    }
+    
+    // HelpfulnessScore güncelleme metodu
+    public void UpdateHelpfulnessScore(decimal score)
+    {
+        if (score < 0 || score > 100)
+            throw new ArgumentException("Helpfulness score must be between 0 and 100");
+            
+        HelpfulnessScore = score;
+        UpdatedAt = DateTime.UtcNow;
+        
+        AddDomainEvent(new ReviewHelpfulnessUpdatedEvent(Id, score));
     }
 
     /// <summary>
