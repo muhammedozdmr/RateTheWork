@@ -1,4 +1,4 @@
-namespace RateTheWork.Domain.ValueObject;
+namespace RateTheWork.Domain.ValueObjects;
 
 /// <summary>
 /// Yorum trendleri

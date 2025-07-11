@@ -1,4 +1,4 @@
-namespace RateTheWork.Domain.Interfaces.Policies;
+namespace RateTheWork.Domain.Interfaces.Strategies;
 
 /// <summary>
 /// Puanlama strategy interface'i

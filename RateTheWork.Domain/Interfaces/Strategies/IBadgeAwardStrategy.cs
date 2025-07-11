@@ -1,6 +1,6 @@
 using RateTheWork.Domain.Entities;
 
-namespace RateTheWork.Domain.Interfaces.Policies;
+namespace RateTheWork.Domain.Interfaces.Strategies;
 
 /// <summary>
 /// Rozet kazanma strategy interface'i
