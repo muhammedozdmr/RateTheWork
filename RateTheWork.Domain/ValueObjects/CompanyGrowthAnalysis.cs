@@ -1,4 +1,4 @@
-namespace RateTheWork.Domain.Entities;
+namespace RateTheWork.Domain.ValueObjects;
 
 /// <summary>
 /// Şirket büyüme analizi

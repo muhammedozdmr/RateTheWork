@@ -1,4 +1,4 @@
-namespace RateTheWork.Domain.Entities;
+namespace RateTheWork.Domain.ValueObjects;
 
 /// <summary>
 /// Detaylı moderasyon analizi
