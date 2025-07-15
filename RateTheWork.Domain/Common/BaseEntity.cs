@@ -1,3 +1,4 @@
+using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Events;
 
 namespace RateTheWork.Domain.Common;
@@ -13,7 +14,7 @@ public abstract class BaseEntity
     /// <summary>
     /// Entity'nin benzersiz kimliği (GUID)
     /// </summary>
-    public string? Id { get; }
+    public ReviewVote Id { get; }
     
     /// <summary>
     /// Entity'nin oluşturulma tarihi

@@ -1,4 +1,5 @@
 using RateTheWork.Domain.Enums;
+using RateTheWork.Domain.Enums.Notification;
 
 namespace RateTheWork.Domain.Events.Notification;
 

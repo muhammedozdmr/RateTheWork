@@ -1,4 +1,5 @@
 using RateTheWork.Domain.Enums;
+using RateTheWork.Domain.Enums.User;
 
 namespace RateTheWork.Domain.Interfaces.Services;
 

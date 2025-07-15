@@ -1,6 +1,5 @@
 using RateTheWork.Domain.Common;
-using RateTheWork.Domain.Enums;
-using RateTheWork.Domain.Events;
+using RateTheWork.Domain.Enums.Badge;
 using RateTheWork.Domain.Events.Badge;
 using RateTheWork.Domain.Exceptions;
 

@@ -1,3 +1,6 @@
+using RateTheWork.Domain.Exceptions;
+using RateTheWork.Domain.Interfaces.ValueObjects;
+
 namespace RateTheWork.Domain.ValueObjects;
 
 /// <summary>

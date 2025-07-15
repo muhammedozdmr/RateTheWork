@@ -1,4 +1,4 @@
-using RateTheWork.Domain.Enums;
+using RateTheWork.Domain.Enums.Admin;
 
 namespace RateTheWork.Domain.Events.AuditLog;
 

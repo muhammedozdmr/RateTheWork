@@ -2,6 +2,7 @@ using System.Text.Json;
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Constants;
 using RateTheWork.Domain.Enums;
+using RateTheWork.Domain.Enums.Notification;
 using RateTheWork.Domain.Events;
 using RateTheWork.Domain.Events.Notification;
 using RateTheWork.Domain.Exceptions;

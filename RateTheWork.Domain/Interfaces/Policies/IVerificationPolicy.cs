@@ -1,4 +1,5 @@
 using RateTheWork.Domain.Enums;
+using RateTheWork.Domain.Enums.Verification;
 
 namespace RateTheWork.Domain.Interfaces.Policies;
 

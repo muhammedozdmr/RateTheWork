@@ -1,14 +1,11 @@
 using RateTheWork.Domain.Constants;
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Exceptions;
-using RateTheWork.Domain.Interfaces;
 using RateTheWork.Domain.Interfaces.Repositories;
 using RateTheWork.Domain.Interfaces.Services;
-using RateTheWork.Domain.ValueObject;
+using RateTheWork.Domain.ValueObjects;
 
 namespace RateTheWork.Domain.Services;
-
-//TODO: HelpfulnessScore ve updateasync yok baserepodan türüyor
 
 /// <summary>
 /// Yorum işlemleri için domain service implementasyonu

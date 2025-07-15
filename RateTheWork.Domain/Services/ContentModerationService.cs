@@ -1,8 +1,7 @@
 using System.Text.RegularExpressions;
-using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Interfaces.Security;
 using RateTheWork.Domain.Interfaces.Services;
-using RateTheWork.Domain.ValueObject;
+using RateTheWork.Domain.ValueObjects;
 using ModerationDetails = RateTheWork.Domain.Interfaces.Services.ModerationDetails;
 using ModerationResult = RateTheWork.Domain.Interfaces.Services.ModerationResult;
 

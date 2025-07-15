@@ -2,7 +2,7 @@ using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Repositories;
 using RateTheWork.Domain.Interfaces.Services;
-using RateTheWork.Domain.ValueObject;
+using RateTheWork.Domain.ValueObjects;
 
 namespace RateTheWork.Domain.Services;
 

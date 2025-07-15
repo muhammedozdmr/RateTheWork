@@ -1,9 +1,10 @@
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Enums;
+using RateTheWork.Domain.Enums.Notification;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Repositories;
 using RateTheWork.Domain.Interfaces.Services;
-using RateTheWork.Domain.ValueObject;
+using RateTheWork.Domain.ValueObjects;
 
 namespace RateTheWork.Domain.Services;
 
@@ -166,7 +167,7 @@ public class VoteService : IVoteService
             result[reviewId] = new VoteStatus
             {
                 HasVoted = vote != null,
-                IsUpvote = vote?.IsUpvote,
+                IsUpvote = vote.IsUpvote,
                 VotedAt = vote?.CreatedAt
             };
         }

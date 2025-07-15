@@ -1,4 +1,5 @@
 using RateTheWork.Domain.Entities;
+using RateTheWork.Domain.ValueObjects;
 
 namespace RateTheWork.Domain.Interfaces.Services;
 

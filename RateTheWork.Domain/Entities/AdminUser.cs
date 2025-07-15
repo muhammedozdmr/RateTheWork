@@ -1,8 +1,7 @@
 using System.Security.Cryptography;
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Constants;
-using RateTheWork.Domain.Enums;
-using RateTheWork.Domain.Events;
+using RateTheWork.Domain.Enums.Admin;
 using RateTheWork.Domain.Events.AdminUser;
 using RateTheWork.Domain.Exceptions;
 
