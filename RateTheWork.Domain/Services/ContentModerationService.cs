@@ -464,7 +464,8 @@ public class ContentModerationService : IContentModerationService
         if (content.Contains(".") || content.Contains(",")) score += 0.1;
 
         // Tekrarlayan karakter kontrolü
-        if (_suspiciousPatterns[3].IsMatch(content)) score -= 0.3;
+        if (Regex.IsMatch(content, @"(.)\1{4,}")) score -= 0.3;
+        if (content.Contains(_suspiciousPatterns[3])) score -= 0.2;
 
         return Math.Clamp(score, 0, 1);
     }
