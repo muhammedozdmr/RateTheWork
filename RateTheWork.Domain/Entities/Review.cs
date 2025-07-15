@@ -42,13 +42,15 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     /// <summary>
     /// Yeni yorum oluşturur (Factory method)
     /// </summary>
-    public static Review Create(
-        string companyId,
-        string userId,
-        string commentType,
-        decimal overallRating,
-        string commentText,
-        string? documentUrl = null)
+    public static Review Create
+    (
+        string companyId
+        , string userId
+        , string commentType
+        , decimal overallRating
+        , string commentText
+        , string? documentUrl = null
+    )
     {
         // Validasyonlar
         ValidateRating(overallRating);
@@ -57,18 +59,10 @@ public class Review : AuditableBaseEntity, IAggregateRoot
 
         var review = new Review
         {
-            CompanyId = companyId ?? throw new ArgumentNullException(nameof(companyId)),
-            UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
-            CommentType = commentType,
-            OverallRating = overallRating,
-            CommentText = commentText,
-            DocumentUrl = documentUrl,
-            IsDocumentVerified = false,
-            IsActive = true,
-            Upvotes = 0,
-            Downvotes = 0,
-            ReportCount = 0,
-            EditCount = 0
+            CompanyId = companyId ?? throw new ArgumentNullException(nameof(companyId))
+            , UserId = userId ?? throw new ArgumentNullException(nameof(userId)), CommentType = commentType
+            , OverallRating = overallRating, CommentText = commentText, DocumentUrl = documentUrl
+            , IsDocumentVerified = false, IsActive = true, Upvotes = 0, Downvotes = 0, ReportCount = 0, EditCount = 0
         };
 
         // Domain Event
@@ -84,7 +78,7 @@ public class Review : AuditableBaseEntity, IAggregateRoot
 
         return review;
     }
-    
+
     /// <summary>
     /// Taslak yorum oluşturur (henüz gönderilmemiş)
     /// </summary>
@@ -92,12 +86,10 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     {
         var review = new Review
         {
-            CompanyId = companyId,
-            UserId = userId,
-            CommentType = commentType,
-            CommentText = string.Empty,
-            OverallRating = 0, // Henüz puanlanmamış
-            IsActive = false, // Draft olduğu için inactive
+            CompanyId = companyId, UserId = userId, CommentType = commentType, CommentText = string.Empty
+            , OverallRating = 0, // Henüz puanlanmamış
+            IsActive = false
+            , // Draft olduğu için inactive
             // IsDraft = true // Eğer böyle bir property varsa
         };
 
@@ -113,24 +105,23 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     {
         if (existingReview.CommentType == newCommentType)
             throw new BusinessRuleException("Aynı tip için kopyalama yapılamaz.");
-    
+
         var review = new Review
         {
-            CompanyId = existingReview.CompanyId,
-            UserId = existingReview.UserId,
-            CommentType = newCommentType,
-            CommentText = string.Empty, // Yeni yorum metni girilmeli
-            OverallRating = existingReview.OverallRating, // Aynı puan ile başla
+            CompanyId = existingReview.CompanyId, UserId = existingReview.UserId, CommentType = newCommentType
+            , CommentText = string.Empty, // Yeni yorum metni girilmeli
+            OverallRating = existingReview.OverallRating
+            , // Aynı puan ile başla
             IsActive = true
         };
-    
+
         review.AddDomainEvent(new ReviewCreatedFromTemplateEvent(
-            review.Id, 
-            existingReview.Id, 
-            newCommentType, 
+            review.Id,
+            existingReview.Id,
+            newCommentType,
             DateTime.UtcNow
         ));
-    
+
         return review;
     }
 
@@ -165,10 +156,12 @@ public class Review : AuditableBaseEntity, IAggregateRoot
         // Düzenleme süresi kontrolü
         var hoursSinceCreation = (DateTime.UtcNow - CreatedAt).TotalHours;
         if (hoursSinceCreation > DomainConstants.Review.MaxEditHours)
-            throw new BusinessRuleException($"Yorum oluşturulduktan {DomainConstants.Review.MaxEditHours} saat sonra düzenlenemez.");
+            throw new BusinessRuleException(
+                $"Yorum oluşturulduktan {DomainConstants.Review.MaxEditHours} saat sonra düzenlenemez.");
 
         if (EditCount >= DomainConstants.Review.MaxEditCount)
-            throw new BusinessRuleException($"Bir yorum en fazla {DomainConstants.Review.MaxEditCount} kez düzenlenebilir.");
+            throw new BusinessRuleException(
+                $"Bir yorum en fazla {DomainConstants.Review.MaxEditCount} kez düzenlenebilir.");
 
         ValidateCommentText(newCommentText);
         ValidateEditReason(editReason);
@@ -330,17 +323,27 @@ public class Review : AuditableBaseEntity, IAggregateRoot
             DateTime.UtcNow
         ));
     }
-    
+
     // HelpfulnessScore güncelleme metodu
     public void UpdateHelpfulnessScore(decimal score)
     {
+        var oldScore = HelpfulnessScore; // Eski skoru sakla
+        HelpfulnessScore = score;
+        SetModifiedDate();
+
         if (score < 0 || score > 100)
             throw new ArgumentException("Helpfulness score must be between 0 and 100");
-            
+
         HelpfulnessScore = score;
         UpdatedAt = DateTime.UtcNow;
-        
-        AddDomainEvent(new ReviewHelpfulnessUpdatedEvent(Id, score));
+
+        if (Id != null)
+            AddDomainEvent(new ReviewHelpfulnessUpdatedEvent(
+                Id,
+                oldScore,
+                score,
+                DateTime.UtcNow,
+                DateTime.UtcNow));
     }
 
     /// <summary>
@@ -353,7 +356,7 @@ public class Review : AuditableBaseEntity, IAggregateRoot
             return 0;
 
         var baseScore = (decimal)Upvotes / totalVotes * 100;
-        
+
         // Doğrulanmış yorumlar için bonus
         if (IsDocumentVerified)
             baseScore *= 1.2m;
@@ -365,7 +368,8 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     private static void ValidateRating(decimal rating)
     {
         if (rating < DomainConstants.Review.MinRating || rating > DomainConstants.Review.MaxRating)
-            throw new BusinessRuleException($"Puan {DomainConstants.Review.MinRating} ile {DomainConstants.Review.MaxRating} arasında olmalıdır.");
+            throw new BusinessRuleException(
+                $"Puan {DomainConstants.Review.MinRating} ile {DomainConstants.Review.MaxRating} arasında olmalıdır.");
 
         // 0.5'lik artışlarla sınırla
         if (rating % 0.5m != 0)
@@ -378,10 +382,12 @@ public class Review : AuditableBaseEntity, IAggregateRoot
             throw new ArgumentNullException(nameof(commentText));
 
         if (commentText.Length < DomainConstants.Review.MinCommentLength)
-            throw new BusinessRuleException($"Yorum en az {DomainConstants.Review.MinCommentLength} karakter olmalıdır.");
+            throw new BusinessRuleException(
+                $"Yorum en az {DomainConstants.Review.MinCommentLength} karakter olmalıdır.");
 
         if (commentText.Length > DomainConstants.Review.MaxCommentLength)
-            throw new BusinessRuleException($"Yorum en fazla {DomainConstants.Review.MaxCommentLength} karakter olabilir.");
+            throw new BusinessRuleException(
+                $"Yorum en fazla {DomainConstants.Review.MaxCommentLength} karakter olabilir.");
     }
 
     private static void ValidateCommentType(string commentType)
@@ -389,7 +395,8 @@ public class Review : AuditableBaseEntity, IAggregateRoot
         if (string.IsNullOrWhiteSpace(commentType))
             throw new ArgumentNullException(nameof(commentType));
 
-        var validTypes = new[] { "Salary", "WorkEnvironment", "CareerGrowth", "Benefits", "Management", "WorkLifeBalance" };
+        var validTypes = new[]
+            { "Salary", "WorkEnvironment", "CareerGrowth", "Benefits", "Management", "WorkLifeBalance" };
         if (!validTypes.Contains(commentType))
             throw new BusinessRuleException("Geçersiz yorum türü.");
     }

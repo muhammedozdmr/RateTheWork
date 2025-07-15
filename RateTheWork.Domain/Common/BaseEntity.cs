@@ -14,7 +14,7 @@ public abstract class BaseEntity
     /// <summary>
     /// Entity'nin benzersiz kimliği (GUID)
     /// </summary>
-    public ReviewVote Id { get; }
+    public string Id { get; }
     
     /// <summary>
     /// Entity'nin oluşturulma tarihi

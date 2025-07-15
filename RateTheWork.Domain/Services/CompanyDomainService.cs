@@ -6,8 +6,6 @@ using RateTheWork.Domain.ValueObjects;
 
 namespace RateTheWork.Domain.Services;
 
-//TODO: company entityde verify metadata targettype vs vs gibi proplar yok ayrıca baserepositoryde updateasync yok
-
 /// <summary>
 /// Şirket işlemleri için domain service implementasyonu
 /// </summary>
@@ -41,6 +39,7 @@ public class CompanyDomainService : ICompanyDomainService
                 var isValidTaxNumber = await ValidateTaxNumberAsync(company.TaxId);
                 if (isValidTaxNumber)
                 {
+                    //TODO: Verif metodunu kontol et
                     company.Verify("Vergi numarası doğrulandı");
                     await _unitOfWork.Companies.UpdateAsync(company);
                 }
@@ -55,6 +54,7 @@ public class CompanyDomainService : ICompanyDomainService
                 var isValidMersis = await ValidateMersisNumberAsync(company.MersisNo);
                 if (isValidMersis)
                 {
+                    //TODO: verify metodunu kontol et
                     company.Verify("MERSİS numarası doğrulandı");
                     await _unitOfWork.Companies.UpdateAsync(company);
                 }
@@ -69,6 +69,7 @@ public class CompanyDomainService : ICompanyDomainService
                 var isDomainVerified = await ValidateDomainOwnershipAsync(company.WebsiteUrl, company.Id);
                 if (isDomainVerified)
                 {
+                    //TODO: verify metodunu kontol et 4 parametre istiyor
                     company.Verify("Web sitesi sahipliği doğrulandı");
                     await _unitOfWork.Companies.UpdateAsync(company);
                 }
@@ -310,9 +311,11 @@ public class CompanyDomainService : ICompanyDomainService
 
         // Benzer büyüklükteki şirketleri önceliklendir
         var employeeCountRange = company.EmployeeCount * 0.5;
+        
+        //TODO: 0 çıkma ihtimailinden dolayı abs metdou işlemiyor
         var similarSizeCompetitors = competitors
-            .Where(c => Math.Abs(c.EmployeeCount - company.EmployeeCount) <= employeeCountRange)
-            .OrderBy(c => Math.Abs(c.EmployeeCount - company.EmployeeCount))
+            .Where(c => Math.Abs((double)(c.EmployeeCount - company.EmployeeCount)!) <= employeeCountRange)
+            .OrderBy(c => Math.Abs((double)(c.EmployeeCount - company.EmployeeCount)!))
             .Take(maxResults)
             .ToList();
 

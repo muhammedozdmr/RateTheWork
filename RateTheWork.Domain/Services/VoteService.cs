@@ -1,6 +1,7 @@
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Enums;
 using RateTheWork.Domain.Enums.Notification;
+using RateTheWork.Domain.Enums.Review;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Repositories;
 using RateTheWork.Domain.Interfaces.Services;
@@ -56,13 +57,17 @@ public class VoteService : IVoteService
 
             // Farklı oy ise güncelle
             existingVote.IsUpvote = isUpvote;
-            existingVote.UpdatedAt = DateTime.UtcNow;
+            existingVote.UpdatedAt = DateTime.UtcNow; 
             await _unitOfWork.ReviewVotes.UpdateAsync(existingVote);
         }
         else
         {
             // Yeni oy ekle
-            var newVote = ReviewVote.Create(reviewId, userId, isUpvote);
+            var newVote = ReviewVote.Create(
+                reviewId: reviewId,
+                userId: userId,
+                isUpvote: isUpvote
+            );
             await _unitOfWork.ReviewVotes.AddAsync(newVote);
         }
 
@@ -98,7 +103,7 @@ public class VoteService : IVoteService
 
         if (existingVote == null)
             return false;
-
+        //TODO: burada baseentityden gelen idden dolayı Argument type 'string' is not assignable to parameter type 'RateTheWork. Domain. Entities. ReviewVote' hatası alınıyor
         await _unitOfWork.ReviewVotes.DeleteAsync(existingVote.Id);
 
         // Yorum oylarını güncelle
@@ -123,7 +128,7 @@ public class VoteService : IVoteService
         if (vote == null)
             return null;
 
-        return vote.IsUpvote;
+        return vote?.IsUpvote;
     }
 
     public async Task RecalculateReviewScoreAsync(string reviewId)
@@ -142,8 +147,12 @@ public class VoteService : IVoteService
         // Eğer yorum çok fazla downvote aldıysa moderasyona gönder
         if (review.Downvotes > 10 && review.Downvotes > review.Upvotes * 3)
         {
+            //TODO: burada hata var bu create olmaz bu veriler elimde yok çünkü
             var report = Report.Create(
-                reporterUserId: "SYSTEM",
+                reviewId = reviewId,
+                reporterUserId: reviewId,
+                userId: userId,
+                isUpvote: isUpvote,
                 targetType: "Review",
                 targetId: reviewId,
                 reportReason: "Yüksek Downvote Oranı",
@@ -153,7 +162,7 @@ public class VoteService : IVoteService
             await _unitOfWork.Reports.AddAsync(report);
         }
     }
-
+    
     public async Task<Dictionary<string, VoteStatus>> GetBulkVoteStatusAsync(string userId, List<string> reviewIds)
     {
         var votes = await _unitOfWork.ReviewVotes
@@ -163,12 +172,13 @@ public class VoteService : IVoteService
 
         foreach (var reviewId in reviewIds)
         {
+            //TODO: vote bool dönüyor burada
             var vote = votes.GetValueOrDefault(reviewId);
             result[reviewId] = new VoteStatus
             {
-                HasVoted = vote != null,
-                IsUpvote = vote.IsUpvote,
-                VotedAt = vote?.CreatedAt
+                HasVoted = true,
+                IsUpvote = true,
+                VotedAt = DateTime.UtcNow
             };
         }
 

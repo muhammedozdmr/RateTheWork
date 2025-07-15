@@ -40,8 +40,8 @@ public class User : AuditableBaseEntity, IAggregateRoot
 
     // Properties - Doğrulama Durumları
     public bool IsEmailVerified { get; private set; } = false;
-    public string? EmailVerificationToken { get; private set; }
-    public DateTime? EmailVerificationTokenExpiry { get; private set; }
+    public string? EmailVerificationToken { get; set; }
+    public DateTime? EmailVerificationTokenExpiry { get; set; }
     
     public bool IsPhoneVerified { get; private set; } = false;
     public string? PhoneVerificationCode { get; private set; }

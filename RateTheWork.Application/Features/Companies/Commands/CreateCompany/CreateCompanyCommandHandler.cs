@@ -5,6 +5,7 @@ using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Enums;
 using RateTheWork.Domain.Interfaces;
+using RateTheWork.Domain.Interfaces.Repositories;
 
 namespace RateTheWork.Application.Features.Companies.Commands.CreateCompany;
 /// <summary>
@@ -145,16 +146,17 @@ public class CreateCompanyCommandHandler : IRequestHandler<CreateCompanyCommand,
             throw new BusinessRuleException("MERSIS_EXISTS", "Bu MERSİS numarası ile kayıtlı bir şirket zaten mevcut.");
         }
 
+        //TODO: prevate constructordan dolayı atama yapamıyorum
         // 5. Yeni şirket oluştur
-        var company = new Company(
-            name: request.Name.Trim(),
-            taxId: request.TaxId.Trim(),
-            mersisNo: request.MersisNo.Trim(),
-            sector: request.Sector,
-            address: request.Address.Trim(),
-            phoneNumber: request.PhoneNumber.Trim(),
-            email: request.Email.Trim().ToLowerInvariant(),
-            websiteUrl: request.WebsiteUrl.Trim()
+        var company = new Company.Create(
+            name = request.Name.Trim(),
+            taxId = request.TaxId.Trim(),
+            mersisNo = request.MersisNo.Trim(),
+            sector = request.Sector,
+            address = request.Address.Trim(),
+            phoneNumber = request.PhoneNumber.Trim(),
+            email = request.Email.Trim().ToLowerInvariant(),
+            websiteUrl = request.WebsiteUrl.Trim()
         );
 
         // 6. Opsiyonel alanları set et

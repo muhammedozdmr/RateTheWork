@@ -195,6 +195,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         // 6. Password Hash'le - BCrypt kullanarak güvenli hash
         var hashedPassword = _passwordHashingService.HashPassword(request.Password);
 
+        //TODO: private const sorunu        
         // 7. User Entity Oluştur
         var user = new User(
             anonymousUsername: anonymousUsername,

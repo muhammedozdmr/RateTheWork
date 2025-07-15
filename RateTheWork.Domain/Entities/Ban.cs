@@ -46,6 +46,8 @@ public class Ban : BaseEntity
     public bool IsAppealable { get; private set; } = true;
     public DateTime? AppealDeadline { get; private set; }
     public string? AppealNotes { get; private set; }
+    public string? TargetType { get; private set; }
+    public string? TargetId { get; private set; }
 
     /// <summary>
     /// EF Core için parametresiz private constructor

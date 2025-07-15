@@ -2,6 +2,7 @@ using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Events.Company;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Common;
+using RateTheWork.Domain.ValueObjects;
 
 namespace RateTheWork.Domain.Entities;
 
@@ -69,15 +70,15 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     
     // ========== SOSYAL MEDYA ==========
     
-    public string? LinkedInUrl { get; private set; }
-    public string? XUrl { get; private set; }
-    public string? InstagramUrl { get; private set; }
-    public string? FacebookUrl { get; private set; }
+    public string? LinkedInUrl { get; set; }
+    public string? XUrl { get; set; }
+    public string? InstagramUrl { get; set; }
+    public string? FacebookUrl { get; set; }
     public string? YouTubeUrl { get; private set; }
     
     // ========== GÖRSELLER VE MEDYA ==========
     
-    public string? LogoUrl { get; private set; }
+    public string? LogoUrl { get; set; }
     public string? CoverImageUrl { get; private set; }
     public List<string> GalleryImages { get; private set; } = new();
     public string? CompanyVideo { get; private set; }
@@ -94,8 +95,12 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     public decimal AverageRating { get; private set; } = 0;
     public int TotalReviewCount { get; private set; } = 0;
     public DateTime? LastReviewDate { get; private set; }
+    
+    //TODO: 2 ayrı meta data propu var 1. si bu
+    public Dictionary<string, object> Metadata { get; set; } = new();
     public Dictionary<string, decimal> RatingBreakdown { get; private set; } = new(); // Kategori bazlı puanlar
     public Dictionary<string, int> ReviewCountByType { get; private set; } = new(); // Yorum tipi bazlı sayılar
+    public CompanyReviewStatistics ReviewStatistics { get; set; } = new();
     
     // ========== DOĞRULAMA BİLGİLERİ ==========
     
@@ -104,7 +109,10 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     public string? VerifiedBy { get; private set; }
     public string? VerificationMethod { get; private set; }
     public string? VerificationNotes { get; private set; }
+    
+    //TODO: 2. meta data propu bu
     public Dictionary<string, object>? VerificationMetadata { get; private set; }
+    public DateTime? UpdatedAt { get; set; }
     
     // ========== RİSK VE DEĞERLENDİRME ==========
     

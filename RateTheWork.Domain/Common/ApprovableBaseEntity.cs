@@ -9,7 +9,7 @@ public abstract class ApprovableBaseEntity : AuditableBaseEntity
     /// <summary>
     /// Onay durumu
     /// </summary>
-    public bool IsApproved { get; protected set; }
+    public bool IsApproved { get; set; }
     
     /// <summary>
     /// Onay durumu metni (Pending, Approved, Rejected)

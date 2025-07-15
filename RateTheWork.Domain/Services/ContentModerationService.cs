@@ -7,8 +7,6 @@ using ModerationResult = RateTheWork.Domain.Interfaces.Services.ModerationResult
 
 namespace RateTheWork.Domain.Services;
 
-//TODO: SuggestedCorrections bu prop yok
-
 /// <summary>
 /// İçerik moderasyon servisi - Domain katmanı implementasyonu
 /// Not: Gerçek AI entegrasyonu Infrastructure katmanında olacak
@@ -71,6 +69,7 @@ public class ContentModerationService : IContentModerationService
             result.IsApproved = false;
             result.RejectionReason = "Yorum en fazla 5000 karakter olabilir";
             result.DetectedIssues.Add("too_long");
+            //TODO: Add yapamıyorum halbuki set private değil !!
             result.SuggestedCorrections.Add("Lütfen yorumunuzu kısaltın");
             return result;
         }

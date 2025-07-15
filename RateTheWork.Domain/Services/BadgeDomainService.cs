@@ -152,9 +152,9 @@ public class BadgeDomainService : IBadgeDomainService
         }
     }
 
-    public async Task<Dictionary<string?, BadgeProgress>> GetUserBadgeProgressAsync(string userId)
+    public async Task<Dictionary<string, BadgeProgress>> GetUserBadgeProgressAsync(string userId)
     {
-        var progress = new Dictionary<string?, BadgeProgress>();
+        var progress = new Dictionary<string, BadgeProgress>();
         var allBadges = await _unitOfWork.Badges.GetAllAsync();
         var userBadges = await _unitOfWork.UserBadges.GetAsync(ub => ub.UserId == userId);
         var earnedBadgeIds = userBadges.Select(ub => ub.BadgeId).ToHashSet();

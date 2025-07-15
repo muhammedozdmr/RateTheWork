@@ -59,6 +59,8 @@ public enum NotificationType
     /// </summary>
     ReviewReceivedVote,
     
+    ReviewReceivesVote = ReviewReceivedVote, // Alias olarak da ekle
+    
     /// <summary>
     /// Yorumunuz yanıt aldı
     /// </summary>
@@ -78,6 +80,8 @@ public enum NotificationType
     /// Yorumunuz tekrar aktif edildi
     /// </summary>
     ReviewActivated,
+    
+    
     
     // ========== Document Notifications ==========
     

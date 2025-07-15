@@ -9,7 +9,7 @@ public abstract class AuditableBaseEntity : BaseEntity
     /// <summary>
     /// Entity'yi oluşturan kullanıcının ID'si
     /// </summary>
-    public string? CreatedBy { get; protected set; }
+    public string? CreatedBy { get; set; }
     
     /// <summary>
     /// Entity'yi son güncelleyen kullanıcının ID'si

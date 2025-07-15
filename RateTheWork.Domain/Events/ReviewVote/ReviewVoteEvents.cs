@@ -1,3 +1,5 @@
+using RateTheWork.Domain.Enums.Review;
+
 namespace RateTheWork.Domain.Events.ReviewVote;
 
 /// <summary>
@@ -48,4 +50,15 @@ public record ReviewVoteCountsUpdatedEvent(
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
 }
+
+/// <summary>
+/// 4.ssss
+/// </summary>
+public record ReviewVoteCastEvent(
+    string VoteId,
+    string ReviewId,
+    string UserId,
+    VoteType VoteType,
+    DateTime OccurredOn
+) : IDomainEvent;
 

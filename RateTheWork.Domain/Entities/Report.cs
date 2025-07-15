@@ -49,6 +49,8 @@ public class Report : BaseEntity
     public int Priority { get; private set; }
     public bool RequiresUrgentAction { get; private set; }
     public string? RelatedReports { get; private set; }
+    public string TargetType { get; private set; } = string.Empty;
+    public string TargetId { get; private set; } = string.Empty;
 
     /// <summary>
     /// EF Core için parametresiz private constructor
