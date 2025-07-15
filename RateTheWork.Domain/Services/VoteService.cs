@@ -386,8 +386,11 @@ public class VoteService : IVoteService
     {
         var cutoffDate = DateTime.UtcNow.AddHours(-hours);
     
-        return await _unitOfWork.ReviewVotes
+        var votes = await _unitOfWork.ReviewVotes
             .GetAsync(v => v.ReviewId == reviewId && v.CreatedAt > cutoffDate);
+    
+        // IReadOnlyList'i List'e dönüştür
+        return votes.ToList();
     }
 
 }
