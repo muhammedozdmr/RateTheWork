@@ -40,7 +40,7 @@ namespace RateTheWork.Domain.ValueObjects;
         /// <summary>
         /// Moderasyon detayları
         /// </summary>
-        public Interfaces.Services.ModerationDetails Details { get; }
+        public ModerationDetails Details { get; }
 
         public ModerationResult(
             bool isApproved, 
@@ -54,7 +54,7 @@ namespace RateTheWork.Domain.ValueObjects;
         {
             IsApproved = isApproved;
             Reason = reason ?? throw new ArgumentNullException(nameof(reason));
-            Details = details;
+            Details = details ?? throw new ArgumentNullException(nameof(details));
             FlaggedWords = flaggedWords ?? new List<string>();
             ConfidenceScore = Math.Clamp(confidenceScore, 0, 1);
             CategoryScores = categoryScores ?? new Dictionary<string, double>();

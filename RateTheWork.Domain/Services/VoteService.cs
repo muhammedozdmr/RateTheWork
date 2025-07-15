@@ -375,5 +375,19 @@ public class VoteService : IVoteService
 
         return false;
     }
+    
+    /// <summary>
+    /// Belirtilen süre içindeki oyları getirir
+    /// </summary>
+    /// <param name="reviewId">Yorum ID'si</param>
+    /// <param name="hours">Kaç saat geriye bakılacağı</param>
+    /// <returns>Belirtilen süre içindeki oylar</returns>
+    private async Task<List<ReviewVote>> GetRecentVotesAsync(string reviewId, int hours)
+    {
+        var cutoffDate = DateTime.UtcNow.AddHours(-hours);
+    
+        return await _unitOfWork.ReviewVotes
+            .GetAsync(v => v.ReviewId == reviewId && v.CreatedAt > cutoffDate);
+    }
 
 }

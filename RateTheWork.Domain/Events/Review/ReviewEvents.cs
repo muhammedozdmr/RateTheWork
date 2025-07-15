@@ -141,3 +141,18 @@ public record ReviewVoteCountsUpdatedEvent(
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
 }
+
+/// <summary>
+/// 11. Yorum şirket ID'si güncellendi event'i (şirket birleşmeleri için)
+/// </summary>
+public record ReviewCompanyUpdatedEvent(
+    string ReviewId,
+    string OldCompanyId,
+    string NewCompanyId,
+    string UpdatedBy,
+    DateTime UpdatedAt,
+    DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}

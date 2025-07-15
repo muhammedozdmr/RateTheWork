@@ -1,4 +1,5 @@
 using RateTheWork.Domain.Common;
+using RateTheWork.Domain.Enums.Company;
 using RateTheWork.Domain.Events.Company;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Common;
@@ -28,7 +29,7 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     public int EstablishedYear { get; private set; }
     public string? Description { get; private set; }
     public bool IsActive { get; private set; } = true;
-    public DateTime DeactivatedAt { get; private set; }
+    public DateTime? DeactivatedAt { get; private set; }
     public string? DeactivationReason { get; private set; } = string.Empty;
     
     // ========== SEKTÖR VE KATEGORİ ==========
@@ -131,6 +132,8 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     
     public int BranchCount { get; private set; } = 1;
     public List<CompanyBranch> Branches { get; private set; } = new();
+    
+    public ApprovalStatus ApprovalStatus { get; private set; }
 
     /// <summary>
     /// EF Core için parametresiz private constructor
@@ -422,7 +425,6 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
             ApprovedAt = DateTime.UtcNow;
             ApprovedBy = verifiedBy;
             
-            //TODO: burada ApprovalStatusun Approved diye propu yok !
             ApprovalStatus = ApprovalStatus.Approved;
         }
 

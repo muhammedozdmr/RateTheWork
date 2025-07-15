@@ -318,3 +318,16 @@ public record CompanySubsidiaryAddedEvent(
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
 }
+
+/// <summary>
+/// 22. Şirket ID'si güncellendi event'i
+/// </summary>
+public record CompanyIdUpdatedEvent(
+    string OldCompanyId,
+    string NewCompanyId,
+    DateTime UpdatedAt,
+    DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
