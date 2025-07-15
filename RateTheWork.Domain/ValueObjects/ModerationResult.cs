@@ -49,19 +49,20 @@ namespace RateTheWork.Domain.ValueObjects;
         
         public ModerationDetails? Details { get; set; }
 
-        private ModerationResult(
+        public ModerationResult(
             bool isApproved, 
             string reason, 
             List<string> flaggedWords,
             double confidenceScore,
-            Dictionary<string, double> categoryScores, List<ModerationDetails> details
+            Dictionary<string, double> categoryScores
+            ,ModerationDetails details
             , List<string>? suggestedCorrections = null,
             string moderationType = "Auto")
         {
             IsApproved = isApproved;
-            Reason = reason ?? throw new ArgumentNullException(nameof(reason));
+            RejectionReason = reason ?? throw new ArgumentNullException(nameof(reason));
             Details = details;
-            FlaggedWords = flaggedWords ?? new List<string>();
+            DetectedIssues = flaggedWords ?? new List<string>();
             ConfidenceScore = Math.Clamp(confidenceScore, 0, 1);
             CategoryScores = categoryScores ?? new Dictionary<string, double>();
             SuggestedCorrections = suggestedCorrections ?? new List<string>();
@@ -72,6 +73,8 @@ namespace RateTheWork.Domain.ValueObjects;
         /// <summary>
         /// Onaylanmış içerik için factory method
         /// </summary>
+        
+        //TODO: 8 parametre düzelt
         public static ModerationResult CreateApproved(
             string reason = "İçerik uygun",
             double confidenceScore = 1.0,
@@ -82,7 +85,8 @@ namespace RateTheWork.Domain.ValueObjects;
                 reason, 
                 new List<string>(), 
                 confidenceScore,
-                categoryScores ?? new Dictionary<string, double>()
+                categoryScores ?? new Dictionary<string, double>(),
+                
             );
         }
 
@@ -186,10 +190,10 @@ namespace RateTheWork.Domain.ValueObjects;
                 return false;
 
             return IsApproved == other.IsApproved &&
-                   Reason == other.Reason &&
+                   RejectionReason == other.RejectionReason &&
                    ConfidenceScore == other.ConfidenceScore &&
                    ModerationType == other.ModerationType &&
-                   FlaggedWords.SequenceEqual(other.FlaggedWords) &&
+                   DetectedIssues.SequenceEqual(other.DetectedIssues) &&
                    CategoryScores.SequenceEqual(other.CategoryScores) &&
                    SuggestedCorrections.SequenceEqual(other.SuggestedCorrections);
         }
@@ -200,11 +204,11 @@ namespace RateTheWork.Domain.ValueObjects;
             {
                 var hash = 17;
                 hash = hash * 23 + IsApproved.GetHashCode();
-                hash = hash * 23 + Reason.GetHashCode();
+                hash = hash * 23 + RejectionReason.GetHashCode();
                 hash = hash * 23 + ConfidenceScore.GetHashCode();
                 hash = hash * 23 + ModerationType.GetHashCode();
                 
-                foreach (var word in FlaggedWords)
+                foreach (var word in DetectedIssues)
                 {
                     hash = hash * 23 + word.GetHashCode();
                 }

@@ -150,11 +150,9 @@ public class VoteService : IVoteService
             //TODO: burada hata var bu create olmaz targetType ve targetId metadata bu veriler elimde yok çünkü atama yapamıyorum
             var report = Report.Create(
                 reporterUserId: "SYSTEM",
-                targetType: "Review",
-                targetId: reviewId,
                 reportReason: ReportReasons.HighDownvoteRatio,
                 reportDetails: $"Yorum {review.Downvotes} downvote aldı (upvote: {review.Upvotes}). Otomatik sistem raporu.",
-                metadata: new Dictionary<string, object>
+                new Dictionary<string, object>
                 {
                     ["AutoDetected"] = true,
                     ["DownvoteCount"] = review.Downvotes,

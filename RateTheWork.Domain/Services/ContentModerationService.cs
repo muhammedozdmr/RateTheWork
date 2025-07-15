@@ -3,7 +3,6 @@ using RateTheWork.Domain.Interfaces.Security;
 using RateTheWork.Domain.Interfaces.Services;
 using RateTheWork.Domain.ValueObjects;
 using ModerationDetails = RateTheWork.Domain.Interfaces.Services.ModerationDetails;
-using ModerationResult = RateTheWork.Domain.Interfaces.Services.ModerationResult;
 
 namespace RateTheWork.Domain.Services;
 
@@ -42,7 +41,7 @@ public class ContentModerationService : IContentModerationService
         var result = new ModerationResult
         {
             IsApproved = true,
-            Details = new ModerationDetails()
+            Details = new ValueObjects.ModerationDetails()
         };
 
         // Boş içerik kontrolü
