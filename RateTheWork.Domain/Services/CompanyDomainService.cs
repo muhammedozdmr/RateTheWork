@@ -1,4 +1,5 @@
 using RateTheWork.Domain.Entities;
+using RateTheWork.Domain.Enums.Verification;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Repositories;
 using RateTheWork.Domain.Interfaces.Services;
@@ -39,8 +40,10 @@ public class CompanyDomainService : ICompanyDomainService
                 var isValidTaxNumber = await ValidateTaxNumberAsync(company.TaxId);
                 if (isValidTaxNumber)
                 {
-                    //TODO: Verif metodunu kontol et
-                    company.Verify("Vergi numarası doğrulandı");
+                    //TODO: Verif metodunu kontol et Arguments mismatch hatası var
+                    company.Verify(
+                        verificationMethod: VerificationMethod.Mersis,
+                        verificationNotes: "Email doğrulaması başarılı");
                     await _unitOfWork.Companies.UpdateAsync(company);
                 }
                 return isValidTaxNumber;

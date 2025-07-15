@@ -1,6 +1,6 @@
 using RateTheWork.Domain.Entities;
-using RateTheWork.Domain.Enums;
 using RateTheWork.Domain.Enums.Notification;
+using RateTheWork.Domain.Enums.Report;
 using RateTheWork.Domain.Enums.Review;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Repositories;
@@ -147,19 +147,45 @@ public class VoteService : IVoteService
         // Eğer yorum çok fazla downvote aldıysa moderasyona gönder
         if (review.Downvotes > 10 && review.Downvotes > review.Upvotes * 3)
         {
-            //TODO: burada hata var bu create olmaz bu veriler elimde yok çünkü
+            //TODO: burada hata var bu create olmaz targetType ve targetId metadata bu veriler elimde yok çünkü atama yapamıyorum
             var report = Report.Create(
-                reviewId = reviewId,
-                reporterUserId: reviewId,
-                userId: userId,
-                isUpvote: isUpvote,
+                reporterUserId: "SYSTEM",
                 targetType: "Review",
                 targetId: reviewId,
-                reportReason: "Yüksek Downvote Oranı",
-                reportDetails: $"Yorum {review.Downvotes} downvote aldı (upvote: {review.Upvotes}). Otomatik sistem raporu."
+                reportReason: ReportReasons.HighDownvoteRatio,
+                reportDetails: $"Yorum {review.Downvotes} downvote aldı (upvote: {review.Upvotes}). Otomatik sistem raporu.",
+                metadata: new Dictionary<string, object>
+                {
+                    ["AutoDetected"] = true,
+                    ["DownvoteCount"] = review.Downvotes,
+                    ["UpvoteCount"] = review.Upvotes,
+                    ["DetectionType"] = "HighDownvoteRatio"
+                }
             );
             
             await _unitOfWork.Reports.AddAsync(report);
+            
+            if (review.Upvotes > 50)
+            {
+                var isSuspicious = await CheckVoteManipulation(reviewId);
+                if (isSuspicious)
+                {
+                    var report = Report.Create(
+                        reporterUserId: "SYSTEM",
+                        targetType: "Review",
+                        targetId: reviewId,
+                        reportReason: ReportReason.VoteManipulation,
+                        reportDetails: "Şüpheli oylama paterni tespit edildi.",
+                        metadata: new Dictionary<string, object>
+                        {
+                            ["AutoDetected"] = true,
+                            ["DetectionType"] = "VoteManipulation"
+                        }
+                    );
+
+                    await _unitOfWork.Reports.AddAsync(report);
+                }
+            }
         }
     }
     

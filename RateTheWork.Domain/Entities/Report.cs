@@ -1,5 +1,5 @@
 using RateTheWork.Domain.Common;
-using RateTheWork.Domain.Events;
+using RateTheWork.Domain.Enums.Report;
 using RateTheWork.Domain.Events.Report;
 using RateTheWork.Domain.Exceptions;
 
@@ -10,29 +10,6 @@ namespace RateTheWork.Domain.Entities;
 /// </summary>
 public class Report : BaseEntity
 {
-    // Report Reasons
-    public static class ReportReasons
-    {
-        public const string InappropriateContent = "Uygunsuz İçerik";
-        public const string FalseInformation = "Yanlış/Yanıltıcı Bilgi";
-        public const string Spam = "Spam";
-        public const string Harassment = "Taciz/Zorbalık";
-        public const string PersonalAttack = "Kişisel Saldırı";
-        public const string ConfidentialInfo = "Gizli Bilgi İçeriyor";
-        public const string OffTopic = "Konu Dışı";
-        public const string Duplicate = "Mükerrer İçerik";
-        public const string Other = "Diğer";
-    }
-
-    // Report Status
-    public static class ReportStatuses
-    {
-        public const string Pending = "Beklemede";
-        public const string UnderReview = "İnceleniyor";
-        public const string Resolved = "Çözümlendi";
-        public const string Dismissed = "Reddedildi";
-        public const string Escalated = "Üst Yönetime İletildi";
-    }
 
     // Properties
     public string ReviewId { get; private set; } = string.Empty;
@@ -40,7 +17,7 @@ public class Report : BaseEntity
     public string ReportReason { get; private set; } = string.Empty;
     public string? ReportDetails { get; private set; }
     public DateTime ReportedAt { get; private set; }
-    public string Status { get; private set; } = ReportStatuses.Pending;
+    public ReportStatus Status { get; set; } = ReportStatus.Pending;
     public string? AdminNotes { get; private set; }
     public string? ReviewedBy { get; private set; }
     public DateTime? ReviewedAt { get; private set; }
@@ -82,7 +59,7 @@ public class Report : BaseEntity
             ReportReason = reportReason,
             ReportDetails = reportDetails,
             ReportedAt = DateTime.UtcNow,
-            Status = ReportStatuses.Pending,
+            Status = ReportStatus.Pending,
             IsAnonymous = isAnonymous,
             Priority = priority,
             RequiresUrgentAction = requiresUrgent
@@ -108,10 +85,10 @@ public class Report : BaseEntity
     /// </summary>
     public void StartReview(string reviewedBy)
     {
-        if (Status != ReportStatuses.Pending)
+        if (Status != ReportStatus.Pending)
             throw new BusinessRuleException("Sadece beklemedeki şikayetler incelemeye alınabilir.");
 
-        Status = ReportStatuses.UnderReview;
+        Status = ReportStatus.UnderReview;
         ReviewedBy = reviewedBy;
         ReviewedAt = DateTime.UtcNow;
         SetModifiedDate();
@@ -130,12 +107,12 @@ public class Report : BaseEntity
     /// </summary>
     public void Resolve(string resolvedBy, string actionTaken, string? adminNotes = null)
     {
-        if (Status != ReportStatuses.UnderReview)
+        if (Status != ReportStatus.UnderReview)
             throw new BusinessRuleException("Sadece inceleme altındaki şikayetler çözümlenebilir.");
 
         ValidateActionTaken(actionTaken);
 
-        Status = ReportStatuses.Resolved;
+        Status = ReportStatus.Resolved;
         ActionTaken = actionTaken;
         AdminNotes = adminNotes;
         SetModifiedDate();
@@ -155,13 +132,13 @@ public class Report : BaseEntity
     /// </summary>
     public void Dismiss(string dismissedBy, string dismissReason)
     {
-        if (Status == ReportStatuses.Resolved || Status == ReportStatuses.Dismissed)
+        if (Status == ReportStatus.Resolved || Status == ReportStatus.Dismissed)
             throw new BusinessRuleException("Çözümlenmiş veya reddedilmiş şikayet tekrar reddedilemez.");
 
         if (string.IsNullOrWhiteSpace(dismissReason))
             throw new ArgumentNullException(nameof(dismissReason));
 
-        Status = ReportStatuses.Dismissed;
+        Status = ReportStatus.Dismissed;
         AdminNotes = dismissReason;
         ReviewedBy = dismissedBy;
         ReviewedAt = DateTime.UtcNow;
@@ -182,13 +159,13 @@ public class Report : BaseEntity
     /// </summary>
     public void Escalate(string escalatedBy, string escalationReason)
     {
-        if (Status != ReportStatuses.UnderReview)
+        if (Status != ReportStatus.UnderReview)
             throw new BusinessRuleException("Sadece inceleme altındaki şikayetler üst yönetime iletilebilir.");
 
         if (string.IsNullOrWhiteSpace(escalationReason))
             throw new ArgumentNullException(nameof(escalationReason));
 
-        Status = ReportStatuses.Escalated;
+        Status = ReportStatus.Escalated;
         AdminNotes = $"Escalation: {escalationReason}";
         SetModifiedDate();
 
@@ -205,25 +182,26 @@ public class Report : BaseEntity
     // Private helper methods
     private static int CalculatePriority(string reportReason)
     {
+        //TODO: Cannot convert expression of type 'RateTheWork. Domain. Enums. Report. ReportReasons' to type 'string' bu hatayı düzelt
         return reportReason switch
         {
-            ReportReasons.Harassment => 5,
-            ReportReasons.PersonalAttack => 5,
-            ReportReasons.ConfidentialInfo => 4,
-            ReportReasons.FalseInformation => 3,
-            ReportReasons.InappropriateContent => 3,
+            ReportReasons.Harassment => 3,
+            ReportReasons.PersonalAttack => 4,
+            ReportReasons.ConfidentialInfo => 5,
+            ReportReasons.FalseInformation => 1,
+            ReportReasons.InappropriateContent => 0,
             ReportReasons.Spam => 2,
-            ReportReasons.OffTopic => 1,
-            ReportReasons.Duplicate => 1,
-            _ => 2
+            ReportReasons.OffTopic => 6,
+            ReportReasons.Duplicate => 7,
+            _ => 8
         };
     }
 
     private static bool DetermineUrgency(string reportReason)
     {
-        return reportReason == ReportReasons.Harassment ||
-               reportReason == ReportReasons.PersonalAttack ||
-               reportReason == ReportReasons.ConfidentialInfo;
+        return reportReason == ReportReasons.Harassment.ToString() ||
+               reportReason == ReportReasons.PersonalAttack.ToString() ||
+               reportReason == ReportReasons.ConfidentialInfo.ToString();
     }
 
     // Validation methods
