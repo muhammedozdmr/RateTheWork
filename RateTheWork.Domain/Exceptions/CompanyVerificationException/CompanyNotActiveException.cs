@@ -5,11 +5,25 @@ namespace RateTheWork.Domain.Exceptions.CompanyVerificationException;
 /// </summary>
 public class CompanyNotActiveException : DomainException
 {
-    public Guid CompanyId { get; }
+    public string CompanyId { get; }
     public string CompanyStatus { get; }
 
-    public CompanyNotActiveException(Guid companyId, string companyStatus)
-        : base($"Company is not active. Current status: '{companyStatus}'.")
+    public CompanyNotActiveException(string message)
+        : base(message)
+    {
+        CompanyId = string.Empty;
+        CompanyStatus = "Unknown";
+    }
+
+    public CompanyNotActiveException(string companyId, string companyStatus)
+        : base($"Company '{companyId}' is not active. Current status: {companyStatus}")
+    {
+        CompanyId = companyId;
+        CompanyStatus = companyStatus;
+    }
+
+    public CompanyNotActiveException(string companyId, string companyStatus, string message)
+        : base(message)
     {
         CompanyId = companyId;
         CompanyStatus = companyStatus;

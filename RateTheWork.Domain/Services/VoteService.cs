@@ -25,7 +25,7 @@ public class VoteService : IVoteService
         _reviewDomainService = reviewDomainService;
     }
 
-    public async Task<bool> AddOrUpdateVoteAsync(string userId, string reviewId, bool isUpvote)
+    public async Task<bool> AddOrUpdateVoteAsync(string userId, string reviewId, bool isUpvote, VoteSource voteSource)
     {
         // Kullanıcı kontrolü
         var user = await _unitOfWork.Users.GetByIdAsync(userId);
@@ -64,9 +64,10 @@ public class VoteService : IVoteService
         {
             // Yeni oy ekle
             var newVote = ReviewVote.Create(
-                reviewId: reviewId,
-                userId: userId,
-                isUpvote: isUpvote
+                userId,
+                reviewId,
+                isUpvote,
+                voteSource
             );
             await _unitOfWork.ReviewVotes.AddAsync(newVote);
         }
@@ -103,8 +104,7 @@ public class VoteService : IVoteService
 
         if (existingVote == null)
             return false;
-        //TODO: burada baseentityden gelen idden dolayı Argument type 'string' is not assignable to parameter type 'RateTheWork. Domain. Entities. ReviewVote' hatası alınıyor
-        await _unitOfWork.ReviewVotes.DeleteAsync(existingVote.Id);
+        await _unitOfWork.ReviewVotes.DeleteAsync(existingVote);
 
         // Yorum oylarını güncelle
         await UpdateReviewVoteCounts(reviewId);
@@ -119,14 +119,10 @@ public class VoteService : IVoteService
 
         return (upvotes, downvotes);
     }
-
     public async Task<bool?> GetUserVoteAsync(string userId, string reviewId)
     {
         var vote = await _unitOfWork.ReviewVotes
             .GetUserVoteForReviewAsync(userId, reviewId);
-
-        if (vote == null)
-            return null;
 
         return vote?.IsUpvote;
     }
@@ -134,57 +130,61 @@ public class VoteService : IVoteService
     public async Task RecalculateReviewScoreAsync(string reviewId)
     {
         var review = await _unitOfWork.Reviews.GetByIdAsync(reviewId);
-        if (review == null)
-            throw new EntityNotFoundException(nameof(Review), reviewId);
+            if (review == null)
+                throw new EntityNotFoundException(nameof(Review), reviewId);
 
-        // Review vote count'larını güncelle
-        await _unitOfWork.Reviews.UpdateReviewVoteCountsAsync(reviewId);
+            // Review vote count'larını güncelle
+            await _unitOfWork.Reviews.UpdateReviewVoteCountsAsync(reviewId);
 
-        // Güncel review'u tekrar getir
-        review = await _unitOfWork.Reviews.GetByIdAsync(reviewId);
-        if (review == null) return;
+            // Güncel review'u tekrar getir
+            review = await _unitOfWork.Reviews.GetByIdAsync(reviewId);
+            if (review == null) return;
 
-        // Eğer yorum çok fazla downvote aldıysa moderasyona gönder
-        if (review.Downvotes > 10 && review.Downvotes > review.Upvotes * 3)
-        {
-            //TODO: burada hata var bu create olmaz targetType ve targetId metadata bu veriler elimde yok çünkü atama yapamıyorum
-            var report = Report.Create(
-                reporterUserId: "SYSTEM",
-                reportReason: ReportReasons.HighDownvoteRatio,
-                reportDetails: $"Yorum {review.Downvotes} downvote aldı (upvote: {review.Upvotes}). Otomatik sistem raporu.",
-                new Dictionary<string, object>
-                {
-                    ["AutoDetected"] = true,
-                    ["DownvoteCount"] = review.Downvotes,
-                    ["UpvoteCount"] = review.Upvotes,
-                    ["DetectionType"] = "HighDownvoteRatio"
-                }
-            );
-            
-            await _unitOfWork.Reports.AddAsync(report);
-            
+            // Eğer yorum çok fazla downvote aldıysa moderasyona gönder
+            if (review.Downvotes > 10 && review.Downvotes > review.Upvotes * 3)
+            {
+                var downvoteReport = Report.Create(
+                    reporterUserId: "SYSTEM",
+                    targetType: "Review",
+                    targetId: reviewId,
+                    reportReason: ReportReasons.HighDownvoteRatio,
+                    reportDetails: $"Yorum {review.Downvotes} downvote aldı (upvote: {review.Upvotes}). Otomatik sistem raporu.",
+                    metadata: new Dictionary<string, object>
+                    {
+                        ["AutoDetected"] = true,
+                        ["DownvoteCount"] = review.Downvotes,
+                        ["UpvoteCount"] = review.Upvotes,
+                        ["DetectionType"] = "HighDownvoteRatio"
+                    }
+                );
+                
+                await _unitOfWork.Reports.AddAsync(downvoteReport);
+            }
+
+            // Eğer yorum çok fazla upvote aldıysa kalite kontrolü yap
             if (review.Upvotes > 50)
             {
                 var isSuspicious = await CheckVoteManipulation(reviewId);
                 if (isSuspicious)
                 {
-                    var report = Report.Create(
+                    var manipulationReport = Report.Create(
                         reporterUserId: "SYSTEM",
                         targetType: "Review",
                         targetId: reviewId,
-                        reportReason: ReportReason.VoteManipulation,
-                        reportDetails: "Şüpheli oylama paterni tespit edildi.",
+                        reportReason: ReportReasons.VoteManipulation,
+                        reportDetails: "Şüpheli oylama paterni tespit edildi. [Oy Manipülasyonu Şüphesi]",
                         metadata: new Dictionary<string, object>
                         {
                             ["AutoDetected"] = true,
-                            ["DetectionType"] = "VoteManipulation"
+                            ["UpvoteCount"] = review.Upvotes,
+                            ["DetectionType"] = "VoteManipulation",
+                            ["SuspicionLevel"] = "High"
                         }
                     );
 
-                    await _unitOfWork.Reports.AddAsync(report);
+                    await _unitOfWork.Reports.AddAsync(manipulationReport);
                 }
             }
-        }
     }
     
     public async Task<Dictionary<string, VoteStatus>> GetBulkVoteStatusAsync(string userId, List<string> reviewIds)
@@ -273,6 +273,107 @@ public class VoteService : IVoteService
         {
             // Badge service'i çağır
             // TODO: BadgeDomainService inject edilip çağrılacak
+            // await _badgeDomainService.AwardBadgeAsync(userId, BadgeType.HelpfulReviewer);
         }
     }
+    
+    public async Task<bool> ToggleVoteAsync(string userId, string reviewId, bool isUpvote)
+        {
+            // Kullanıcı kendi yorumuna oy veremez
+            var review = await _unitOfWork.Reviews.GetByIdAsync(reviewId);
+            if (review == null)
+                throw new EntityNotFoundException(nameof(Review), reviewId);
+
+            if (review.UserId == userId)
+                throw new BusinessRuleException("Kendi yorumunuza oy veremezsiniz.");
+
+            // Mevcut oyu kontrol et
+            var existingVote = await _unitOfWork.ReviewVotes
+                .GetUserVoteForReviewAsync(userId, reviewId);
+
+            if (existingVote != null)
+            {
+                if (existingVote.IsUpvote == isUpvote)
+                {
+                    // Aynı yönde oy varsa, oyu kaldır (toggle)
+                    await _unitOfWork.ReviewVotes.DeleteAsync(existingVote);
+                    await UpdateReviewVoteCounts(reviewId);
+                    return false; // Oy kaldırıldı
+                }
+                else
+                {
+                    // Farklı yönde oy varsa, güncelle
+                    existingVote.UpdateVoteType(isUpvote);
+                    await _unitOfWork.ReviewVotes.UpdateAsync(existingVote);
+                    await UpdateReviewVoteCounts(reviewId);
+                    return true; // Oy güncellendi
+                }
+            }
+            else
+            {
+                // Yeni oy oluştur
+                var newVote = ReviewVote.Create(
+                    userId: userId,
+                    reviewId: reviewId,
+                    isUpvote: isUpvote,
+                    source: VoteSource.Direct
+                );
+                
+                await _unitOfWork.ReviewVotes.AddAsync(newVote);
+                await UpdateReviewVoteCounts(reviewId);
+                
+                // Badge kontrolü
+                await CheckHelpfulReviewerBadge(review.UserId, review.Upvotes + (isUpvote ? 1 : 0), 
+                    review.Downvotes + (!isUpvote ? 1 : 0));
+                
+                return true; // Yeni oy eklendi
+            }
+        }
+    
+    public async Task<bool> CheckVoteManipulation(string reviewId)
+    {
+        // Son 24 saatteki oyları kontrol et
+        //TODO: bu metod yok !
+        var recentVotes = await GetRecentVotesAsync(reviewId, 24);
+
+        // Hızlı oy artışı kontrolü - 24 saatte 20'den fazla oy şüpheli
+        if (recentVotes.Count > 20)
+            return true;
+
+        // Aynı IP'den çoklu oy kontrolü (IP bilgisi varsa)
+        var ipGroups = recentVotes
+            .Where(v => !string.IsNullOrEmpty(v.IpAddress))
+            .GroupBy(v => v.IpAddress)
+            .Where(g => g.Count() > 3); // Aynı IP'den 3'ten fazla oy
+
+        if (ipGroups.Any())
+            return true;
+
+        // Yeni hesaplardan gelen oy oranı kontrolü
+        var voterIds = recentVotes.Select(v => v.UserId).Distinct().ToList();
+        if (!voterIds.Any()) return false;
+
+        var voters = await _unitOfWork.Users.GetAsync(u => voterIds.Contains(u.Id));
+            
+        var newAccountVotes = voters.Count(u => (DateTime.UtcNow - u.CreatedAt).TotalDays < 7);
+        var newAccountRatio = voters.Any() ? (double)newAccountVotes / voters.Count() : 0;
+
+        // %80'den fazla oy yeni hesaplardan geliyorsa şüpheli
+        if (newAccountRatio > 0.8)
+            return true;
+
+        // Oy verme hızı kontrolü - 1 saatte 10'dan fazla oy
+        var hourlyVotes = recentVotes
+            .Where(v => (DateTime.UtcNow - v.VotedAt).TotalHours <= 1)
+            .Count();
+
+        if (hourlyVotes > 10)
+            return true;
+
+        // Pattern analizi - Aynı kullanıcı grubunun birbirine oy vermesi
+        // TODO: Daha gelişmiş pattern analizi eklenebilir
+
+        return false;
+    }
+
 }

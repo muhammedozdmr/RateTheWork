@@ -44,6 +44,46 @@ public interface IContentModerationService
     /// İçeriği kategorize eder
     /// </summary>
     Task<List<ContentCategory>> CategorizeContentAsync(string content);
+    
+    /// <summary>
+    /// Yorum içeriğini kontrol eder
+    /// </summary>
+    Task<ModerationResult> ModerateReviewAsync(string commentText, string commentType);
+        
+    /// <summary>
+    /// Şirket bilgilerini kontrol eder
+    /// </summary>
+    Task<ModerationResult> ModerateCompanyInfoAsync(string companyName, string? description = null);
+        
+    /// <summary>
+    /// Kullanıcı adını kontrol eder
+    /// </summary>
+    Task<ModerationResult> ModerateUsernameAsync(string username);
+        
+    /// <summary>
+    /// Toplu içerik kontrolü yapar
+    /// </summary>
+    Task<List<ModerationResult>> ModerateBulkAsync(List<string> contents);
+        
+    /// <summary>
+    /// İçeriği temizler ve düzeltir
+    /// </summary>
+    Task<string> SanitizeContentAsync(string content);
+        
+    /// <summary>
+    /// Spam kontrolü yapar
+    /// </summary>
+    Task<bool> IsSpamAsync(string content, string userId);
+        
+    /// <summary>
+    /// Kelime filtreleme yapar
+    /// </summary>
+    List<string> FilterProhibitedWords(string content);
+        
+    /// <summary>
+    /// İçerik skorunu hesaplar
+    /// </summary>
+    double CalculateContentScore(string content);
 }
 
 

@@ -1,4 +1,5 @@
 using RateTheWork.Domain.Entities;
+using RateTheWork.Domain.Enums.Review;
 using RateTheWork.Domain.ValueObjects;
 
 namespace RateTheWork.Domain.Interfaces.Services;
@@ -11,7 +12,7 @@ public interface IVoteService
     /// <summary>
     /// Oy ekler veya günceller
     /// </summary>
-    Task<bool> AddOrUpdateVoteAsync(string userId, string reviewId, bool isUpvote);
+    Task<bool> AddOrUpdateVoteAsync(string userId, string reviewId, bool isUpvote, VoteSource voteSource);
     
     /// <summary>
     /// Oyu kaldırır

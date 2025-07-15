@@ -28,6 +28,8 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     public int EstablishedYear { get; private set; }
     public string? Description { get; private set; }
     public bool IsActive { get; private set; } = true;
+    public DateTime DeactivatedAt { get; private set; }
+    public string? DeactivationReason { get; private set; } = string.Empty;
     
     // ========== SEKTÖR VE KATEGORİ ==========
     
@@ -95,8 +97,6 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     public decimal AverageRating { get; private set; } = 0;
     public int TotalReviewCount { get; private set; } = 0;
     public DateTime? LastReviewDate { get; private set; }
-    
-    //TODO: 2 ayrı meta data propu var 1. si bu
     public Dictionary<string, object> Metadata { get; set; } = new();
     public Dictionary<string, decimal> RatingBreakdown { get; private set; } = new(); // Kategori bazlı puanlar
     public Dictionary<string, int> ReviewCountByType { get; private set; } = new(); // Yorum tipi bazlı sayılar
@@ -109,8 +109,6 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     public string? VerifiedBy { get; private set; }
     public string? VerificationMethod { get; private set; }
     public string? VerificationNotes { get; private set; }
-    
-    //TODO: 2. meta data propu bu
     public Dictionary<string, object>? VerificationMetadata { get; private set; }
     public DateTime? UpdatedAt { get; set; }
     
@@ -137,8 +135,14 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     /// <summary>
     /// EF Core için parametresiz private constructor
     /// </summary>
+    private Company(CompanyReviewStatistics reviewStatistics) : base()
+    {
+        ReviewStatistics = reviewStatistics;
+    }
+
     private Company() : base()
     {
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -369,6 +373,24 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     }
 
     /// <summary>
+    /// Şirket ID'sini günceller (merge işlemleri için)
+    /// </summary>
+    public void UpdateCompanyId(string newCompanyId)
+    {
+        if (string.IsNullOrWhiteSpace(newCompanyId))
+            throw new ArgumentNullException(nameof(newCompanyId));
+        
+        if (newCompanyId == Id)
+            throw new BusinessRuleException("Yeni ID mevcut ID ile aynı olamaz.");
+        
+        var oldId = Id;
+        // ID güncelleme BaseEntity'de protected olduğu için reflection veya başka yöntem gerekebilir
+        // Alternatif: Merge işlemi için özel bir metod kullanılabilir
+    
+        AddDomainEvent(new CompanyIdUpdatedEvent(oldId, newCompanyId, DateTime.UtcNow));
+    }
+    
+    /// <summary>
     /// Şirketi doğrular
     /// </summary>
     public void Verify(
@@ -379,6 +401,12 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     {
         if (IsVerified)
             throw new InvalidOperationException("Şirket zaten doğrulanmış.");
+        
+        if (string.IsNullOrWhiteSpace(verifiedBy))
+            throw new ArgumentNullException(nameof(verifiedBy));
+        
+        if (string.IsNullOrWhiteSpace(verificationMethod))
+            throw new ArgumentNullException(nameof(verificationMethod));
             
         IsVerified = true;
         VerifiedAt = DateTime.UtcNow;
@@ -386,10 +414,29 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
         VerificationMethod = verificationMethod;
         VerificationNotes = verificationNotes;
         VerificationMetadata = metadata;
+        
+        // Eğer henüz onaylanmamışsa otomatik onayla
+        if (!IsApproved)
+        {
+            IsApproved = true;
+            ApprovedAt = DateTime.UtcNow;
+            ApprovedBy = verifiedBy;
+            
+            //TODO: burada ApprovalStatusun Approved diye propu yok !
+            ApprovalStatus = ApprovalStatus.Approved;
+        }
+
+        
         SetModifiedDate();
         
         // Domain event
-        AddDomainEvent(new CompanyVerifiedEvent(Id, verificationMethod, verifiedBy,DateTime.UtcNow));
+        // Domain event
+        AddDomainEvent(new CompanyVerifiedEvent(
+            Id,
+            verifiedBy,
+            verificationMethod,
+            DateTime.UtcNow
+        ));
     }
 
     /// <summary>
@@ -476,6 +523,69 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
             <= 1000 => "Large",
             _ => "Enterprise"
         };
+    }
+    
+    /// <summary>
+    /// Şirketi pasifleştirir
+    /// </summary>
+    public void Deactivate(string reason)
+    {
+        if (!IsActive)
+            throw new BusinessRuleException("Şirket zaten pasif durumda.");
+        
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ArgumentNullException(nameof(reason), "Pasifleştirme nedeni belirtilmelidir.");
+
+        IsActive = false;
+        DeactivatedAt = DateTime.UtcNow;
+        DeactivationReason = reason;
+        SetModifiedDate();
+    
+        // Domain Event
+        AddDomainEvent(new CompanyDeactivatedEvent(Id, "SYSTEM",reason, DateTime.UtcNow));
+    }
+
+    /// <summary>
+    /// Şirketi tekrar aktifleştirir
+    /// </summary>
+    public void Reactivate(string reactivatedBy)
+    {
+        if (IsActive)
+            throw new BusinessRuleException("Şirket zaten aktif durumda.");
+        
+        IsActive = true;
+        //TODO: deactivated tarihini null yapamayız buna başka birşey yapmamız lazım
+        DeactivatedAt = null;
+        DeactivationReason = string.Empty;
+        SetModifiedDate();
+    
+        // Domain Event
+        AddDomainEvent(new CompanyReactivatedEvent(Id, "SYSTEM", reactivatedBy,DateTime.UtcNow));
+    }
+
+    /// <summary>
+    /// Metadata ekler veya günceller
+    /// </summary>
+    public void AddMetadata(string key, object value)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+            throw new ArgumentNullException(nameof(key));
+        
+        Metadata ??= new Dictionary<string, object>();
+        Metadata[key] = value;
+        SetModifiedDate();
+    }
+
+    /// <summary>
+    /// Metadata siler
+    /// </summary>
+    public void RemoveMetadata(string key)
+    {
+        if (Metadata?.ContainsKey(key) == true)
+        {
+            Metadata.Remove(key);
+            SetModifiedDate();
+        }
     }
 
     // Validation methods

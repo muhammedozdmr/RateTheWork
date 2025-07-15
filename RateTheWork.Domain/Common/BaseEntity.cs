@@ -14,8 +14,8 @@ public abstract class BaseEntity
     /// <summary>
     /// Entity'nin benzersiz kimliği (GUID)
     /// </summary>
-    public string Id { get; }
-    
+    public string Id { get; init; }
+
     /// <summary>
     /// Entity'nin oluşturulma tarihi
     /// </summary>

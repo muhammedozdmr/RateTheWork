@@ -3,7 +3,7 @@ namespace RateTheWork.Domain.ValueObjects;
   /// <summary>
     /// İçerik moderasyon sonucunu temsil eden value object
     /// </summary>
-    public sealed class ModerationResult
+    public sealed class ModerationResult : ValueObject
     {
         /// <summary>
         /// İçerik onaylandı mı?
@@ -13,12 +13,12 @@ namespace RateTheWork.Domain.ValueObjects;
         /// <summary>
         /// Moderasyon sonuç nedeni
         /// </summary>
-        public string? RejectionReason { get; set; }
+        public string? Reason { get; set; }
         
         /// <summary>
         /// Tespit edilen sorunlu kelimeler
         /// </summary>
-        public List<string> DetectedIssues { get; set; } = new();
+        public List<string> FlaggedWords { get; }
         
         public double ToxicityScore { get; set; }
         
@@ -35,19 +35,12 @@ namespace RateTheWork.Domain.ValueObjects;
         /// <summary>
         /// Önerilen düzeltmeler
         /// </summary>
-        public List<string> SuggestedCorrections { get; set; } = new();
+        public List<string> SuggestedCorrections { get;  } 
         
         /// <summary>
-        /// Moderasyon zamanı
+        /// Moderasyon detayları
         /// </summary>
-        public DateTime ModeratedAt { get; }
-        
-        /// <summary>
-        /// Moderasyon tipi (Auto, Manual, Hybrid)
-        /// </summary>
-        public string ModerationType { get; }
-        
-        public ModerationDetails? Details { get; set; }
+        public Interfaces.Services.ModerationDetails Details { get; }
 
         public ModerationResult(
             bool isApproved, 
@@ -57,36 +50,37 @@ namespace RateTheWork.Domain.ValueObjects;
             Dictionary<string, double> categoryScores
             ,ModerationDetails details
             , List<string>? suggestedCorrections = null,
-            string moderationType = "Auto")
+            string? moderationType = null)
         {
             IsApproved = isApproved;
-            RejectionReason = reason ?? throw new ArgumentNullException(nameof(reason));
+            Reason = reason ?? throw new ArgumentNullException(nameof(reason));
             Details = details;
-            DetectedIssues = flaggedWords ?? new List<string>();
+            FlaggedWords = flaggedWords ?? new List<string>();
             ConfidenceScore = Math.Clamp(confidenceScore, 0, 1);
             CategoryScores = categoryScores ?? new Dictionary<string, double>();
             SuggestedCorrections = suggestedCorrections ?? new List<string>();
-            ModeratedAt = DateTime.UtcNow;
-            ModerationType = moderationType;
         }
 
         /// <summary>
         /// Onaylanmış içerik için factory method
         /// </summary>
-        
-        //TODO: 8 parametre düzelt
         public static ModerationResult CreateApproved(
             string reason = "İçerik uygun",
             double confidenceScore = 1.0,
             Dictionary<string, double>? categoryScores = null)
         {
+            var details = ModerationDetails.CreateAutomatic(
+                new List<string> { "Content passed all checks" },
+                "AI"
+            );
+
             return new ModerationResult(
                 true, 
                 reason, 
                 new List<string>(), 
                 confidenceScore,
                 categoryScores ?? new Dictionary<string, double>(),
-                
+                details
             );
         }
 
@@ -100,12 +94,18 @@ namespace RateTheWork.Domain.ValueObjects;
             Dictionary<string, double>? categoryScores = null,
             List<string>? suggestedCorrections = null)
         {
+            var details = ModerationDetails.CreateAutomatic(
+                flaggedWords.Select(w => $"Flagged word: {w}").ToList(),
+                "AI"
+            );
+
             return new ModerationResult(
                 false, 
                 reason, 
                 flaggedWords, 
                 confidenceScore,
                 categoryScores ?? new Dictionary<string, double>(),
+                details,
                 suggestedCorrections
             );
         }
@@ -118,16 +118,22 @@ namespace RateTheWork.Domain.ValueObjects;
             List<string> flaggedWords,
             double confidenceScore = 0.5,
             Dictionary<string, double>? categoryScores = null,
-            List<ModerationDetails> suggestedCorrections = null)
+            List<string>? suggestedCorrections = null)
         {
+            var details = ModerationDetails.CreateAutomatic(
+                new List<string> { "Requires manual review" },
+                "AI",
+                reason
+            );
+
             return new ModerationResult(
                 false,
                 $"[Manuel İnceleme Gerekli] {reason}",
                 flaggedWords,
                 confidenceScore,
                 categoryScores ?? new Dictionary<string, double>(),
-                suggestedCorrections,
-                "Manual"
+                details,
+                suggestedCorrections
             );
         }
 
@@ -139,6 +145,7 @@ namespace RateTheWork.Domain.ValueObjects;
             string reason,
             List<string> flaggedWords,
             List<string> suggestedCorrections,
+            ModerationDetails details,
             double confidenceScore = 0.7,
             Dictionary<string, double>? categoryScores = null)
         {
@@ -148,7 +155,7 @@ namespace RateTheWork.Domain.ValueObjects;
                 flaggedWords,
                 confidenceScore,
                 categoryScores ?? new Dictionary<string, double>(),
-                suggestedCorrections
+                details
             );
         }
 
@@ -159,7 +166,6 @@ namespace RateTheWork.Domain.ValueObjects;
         {
             if (IsApproved) return "None";
             
-            // En yüksek kategori skoruna göre ciddiyet belirle
             var maxScore = CategoryScores.Any() ? CategoryScores.Values.Max() : ConfidenceScore;
             
             return maxScore switch
@@ -183,17 +189,16 @@ namespace RateTheWork.Domain.ValueObjects;
             return "Önerilen düzeltmeler:\n" + string.Join("\n- ", SuggestedCorrections);
         }
 
-        // Value Object equality implementasyonu
         public override bool Equals(object? obj)
         {
             if (obj is not ModerationResult other)
                 return false;
 
             return IsApproved == other.IsApproved &&
-                   RejectionReason == other.RejectionReason &&
+                   Reason == other.Reason &&
                    ConfidenceScore == other.ConfidenceScore &&
                    ModerationType == other.ModerationType &&
-                   DetectedIssues.SequenceEqual(other.DetectedIssues) &&
+                   FlaggedWords.SequenceEqual(other.FlaggedWords) &&
                    CategoryScores.SequenceEqual(other.CategoryScores) &&
                    SuggestedCorrections.SequenceEqual(other.SuggestedCorrections);
         }
@@ -204,11 +209,11 @@ namespace RateTheWork.Domain.ValueObjects;
             {
                 var hash = 17;
                 hash = hash * 23 + IsApproved.GetHashCode();
-                hash = hash * 23 + RejectionReason.GetHashCode();
+                hash = hash * 23 + Reason.GetHashCode();
                 hash = hash * 23 + ConfidenceScore.GetHashCode();
                 hash = hash * 23 + ModerationType.GetHashCode();
                 
-                foreach (var word in DetectedIssues)
+                foreach (var word in FlaggedWords)
                 {
                     hash = hash * 23 + word.GetHashCode();
                 }
@@ -242,5 +247,26 @@ namespace RateTheWork.Domain.ValueObjects;
         public static bool operator !=(ModerationResult? left, ModerationResult? right)
         {
             return !(left == right);
+        }
+        
+        /// <summary>
+        /// Moderasyon zamanını döndürür (geriye uyumluluk)
+        /// </summary>
+        public DateTime ModeratedAt => Details.ModeratedAt;
+
+        /// <summary>
+        /// Moderasyon tipini döndürür (geriye uyumluluk)
+        /// </summary>
+        public string ModerationType => Details.ModerationType;
+
+        protected override IEnumerable<object> GetEqualityComponents()
+        {
+            yield return IsApproved;
+            yield return Reason;
+            yield return string.Join(",", FlaggedWords.OrderBy(x => x));
+            yield return ConfidenceScore;
+            yield return string.Join(",", CategoryScores.OrderBy(x => x.Key).Select(x => $"{x.Key}:{x.Value}"));
+            yield return Details;
+            yield return string.Join(",", SuggestedCorrections.OrderBy(x => x));
         }
     }

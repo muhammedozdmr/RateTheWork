@@ -203,6 +203,39 @@ public class Review : AuditableBaseEntity, IAggregateRoot
             DateTime.UtcNow
         ));
     }
+    
+    /// <summary>
+    /// Yorumun şirket ID'sini günceller (şirket birleşme işlemleri için)
+    /// </summary>
+    public void UpdateCompanyId(string newCompanyId)
+    {
+        if (string.IsNullOrWhiteSpace(newCompanyId))
+            throw new ArgumentNullException(nameof(newCompanyId));
+        
+        if (newCompanyId == CompanyId)
+            throw new BusinessRuleException("Yeni şirket ID'si mevcut ID ile aynı olamaz.");
+    
+        var oldCompanyId = CompanyId;
+        CompanyId = newCompanyId;
+    
+        // Eğer TargetType Company ise, TargetId'yi de güncelle
+        if (TargetType == "Company")
+        {
+            TargetId = newCompanyId;
+        }
+    
+        SetModifiedDate();
+    
+        // Domain Event
+        //TODO: Eventi tamamla
+        AddDomainEvent(new ReviewCompanyUpdatedEvent(
+            Id,
+            oldCompanyId,
+            newCompanyId,
+            UserId,
+            DateTime.UtcNow
+        ));
+    }
 
     /// <summary>
     /// Belgeyi doğrula

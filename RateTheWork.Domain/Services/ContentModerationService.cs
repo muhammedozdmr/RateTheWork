@@ -18,10 +18,14 @@ public class ContentModerationService : IContentModerationService
     private readonly HashSet<string> _prohibitedWords = new(StringComparer.OrdinalIgnoreCase)
     {
         // Gerçek uygulamada bunlar configuration'dan gelecek
-        "spam", "reklam", "link", "http", "www", ".com", "kazanç", "tıkla"
+        // Küfür ve hakaret içeren kelimeler
+        "küfür1", "küfür2", "hakaret1",
+        
+        //Spam kelimeler
+        "spam", "reklam", "link", "http", "www", ".com", "kazanç", "tıkla", "bedava", "ücretsiz para"
     };
 
-    // Kişisel bilgi pattern'leri
+    // Kişisel bilgi pattern'leri - Şüpheli pattern'ler
     private readonly List<Regex> _personalInfoPatterns = new()
     {
         new Regex(@"\b\d{11}\b", RegexOptions.Compiled), // TC Kimlik
@@ -48,8 +52,8 @@ public class ContentModerationService : IContentModerationService
         if (string.IsNullOrWhiteSpace(content))
         {
             result.IsApproved = false;
-            result.RejectionReason = "İçerik boş olamaz";
-            result.DetectedIssues.Add("empty_content");
+            result.Reason = "İçerik boş olamaz";
+            result.FlaggedWords.Add("empty_content");
             return result;
         }
 
@@ -57,8 +61,8 @@ public class ContentModerationService : IContentModerationService
         if (content.Length < 50)
         {
             result.IsApproved = false;
-            result.RejectionReason = "Yorum en az 50 karakter olmalıdır";
-            result.DetectedIssues.Add("too_short");
+            result.Reason = "Yorum en az 50 karakter olmalıdır";
+            result.FlaggedWords.Add("too_short");
             result.SuggestedCorrections.Add("Lütfen yorumunuzu daha detaylı yazın");
             return result;
         }
@@ -66,8 +70,8 @@ public class ContentModerationService : IContentModerationService
         if (content.Length > 5000)
         {
             result.IsApproved = false;
-            result.RejectionReason = "Yorum en fazla 5000 karakter olabilir";
-            result.DetectedIssues.Add("too_long");
+            result.Reason = "Yorum en fazla 5000 karakter olabilir";
+            result.FlaggedWords.Add("too_long");
             //TODO: Add yapamıyorum halbuki set private değil !!
             result.SuggestedCorrections.Add("Lütfen yorumunuzu kısaltın");
             return result;
@@ -79,8 +83,8 @@ public class ContentModerationService : IContentModerationService
         if (spamScore > 0.7)
         {
             result.IsApproved = false;
-            result.RejectionReason = "İçerik spam olarak tespit edildi";
-            result.DetectedIssues.Add("spam_detected");
+            result.Reason = "İçerik spam olarak tespit edildi";
+            result.FlaggedWords.Add("spam_detected");
         }
 
         // Kişisel bilgi kontrolü
@@ -89,8 +93,8 @@ public class ContentModerationService : IContentModerationService
         if (personalInfoScore > 0.5)
         {
             result.IsApproved = false;
-            result.RejectionReason = "İçerikte kişisel bilgiler tespit edildi";
-            result.DetectedIssues.Add("personal_info_detected");
+            result.Reason = "İçerikte kişisel bilgiler tespit edildi";
+            result.FlaggedWords.Add("personal_info_detected");
             result.SuggestedCorrections.Add("Lütfen kişisel bilgileri kaldırın (TC Kimlik, telefon, email vb.)");
         }
 
@@ -100,8 +104,8 @@ public class ContentModerationService : IContentModerationService
         if (profanityScore > 0.3)
         {
             result.IsApproved = false;
-            result.RejectionReason = "İçerikte uygunsuz ifadeler tespit edildi";
-            result.DetectedIssues.Add("prohibited_words");
+            result.Reason = "İçerikte uygunsuz ifadeler tespit edildi";
+            result.FlaggedWords.Add("prohibited_words");
         }
 
         // Tekrarlayan karakter kontrolü
@@ -109,8 +113,8 @@ public class ContentModerationService : IContentModerationService
         {
             result.Details.SpamScore = Math.Max(result.Details.SpamScore, 0.8);
             result.IsApproved = false;
-            result.RejectionReason = "İçerikte aşırı tekrar tespit edildi";
-            result.DetectedIssues.Add("excessive_repetition");
+            result.Reason = "İçerikte aşırı tekrar tespit edildi";
+            result.FlaggedWords.Add("excessive_repetition");
             result.SuggestedCorrections.Add("Lütfen gereksiz tekrarları kaldırın");
         }
 
@@ -119,12 +123,12 @@ public class ContentModerationService : IContentModerationService
         if (capsRatio > 0.5)
         {
             result.Details.PersonalAttackScore = 0.5;
-            result.DetectedIssues.Add("excessive_caps");
+            result.FlaggedWords.Add("excessive_caps");
             result.Details.SuggestedActions.Add("Lütfen büyük harf kullanımını azaltın");
             if (capsRatio > 0.8)
             {
                 result.IsApproved = false;
-                result.RejectionReason = "Aşırı büyük harf kullanımı tespit edildi";
+                result.Reason = "Aşırı büyük harf kullanımı tespit edildi";
             }
         }
 
@@ -134,8 +138,8 @@ public class ContentModerationService : IContentModerationService
         if (attackScore > 0.5)
         {
             result.IsApproved = false;
-            result.RejectionReason = "İçerikte saldırgan ifadeler tespit edildi";
-            result.DetectedIssues.Add("personal_attack");
+            result.Reason = "İçerikte saldırgan ifadeler tespit edildi";
+            result.FlaggedWords.Add("personal_attack");
             result.SuggestedCorrections.Add("Lütfen yapıcı bir dil kullanın");
         }
 
@@ -295,6 +299,223 @@ public class ContentModerationService : IContentModerationService
         return categories;
     }
 
+    public async Task<ModerationResult> ModerateReviewAsync(string commentText, string commentType)
+    {
+         if (string.IsNullOrWhiteSpace(commentText))
+            {
+                return ModerationResult.CreateRejected(
+                    "Yorum metni boş olamaz",
+                    new List<string>(),
+                    1.0
+                );
+            }
+
+            var flaggedWords = FilterProhibitedWords(commentText);
+            var contentScore = CalculateContentScore(commentText);
+            var categoryScores = await AnalyzeCategoryScoresAsync(commentText);
+
+            // Yasaklı kelime kontrolü
+            if (flaggedWords.Any())
+            {
+                return ModerationResult.CreateRejected(
+                    "Uygunsuz içerik tespit edildi",
+                    flaggedWords,
+                    0.9,
+                    categoryScores,
+                    new List<string> 
+                    { 
+                        "Lütfen uygunsuz kelimeleri kaldırın",
+                        "Profesyonel bir dil kullanın"
+                    }
+                );
+            }
+
+            // Spam kontrolü
+            if (await IsSpamPatternAsync(commentText))
+            {
+                return ModerationResult.CreateRejected(
+                    "Spam içerik tespit edildi",
+                    new List<string> { "spam pattern" },
+                    0.8,
+                    categoryScores,
+                    new List<string> 
+                    { 
+                        "Reklam içeriği kaldırın",
+                        "Kişisel bilgileri paylaşmayın"
+                    }
+                );
+            }
+
+            // Çok kısa yorum kontrolü
+            if (commentText.Length < 50)
+            {
+                return ModerationResult.CreatePendingReview(
+                    "Yorum çok kısa",
+                    new List<string>(),
+                    0.5,
+                    categoryScores,
+                    new List<string> 
+                    { 
+                        $"En az 50 karakter yazın (Mevcut: {commentText.Length})"
+                    }
+                );
+            }
+
+            // Başarılı
+            return ModerationResult.CreateApproved(
+                "İçerik uygun",
+                contentScore,
+                categoryScores
+            );
+    }
+
+    public async Task<ModerationResult> ModerateCompanyInfoAsync(string companyName, string? description = null)
+    {
+        var flaggedWords = FilterProhibitedWords(companyName);
+        if (description != null)
+        {
+            flaggedWords.AddRange(FilterProhibitedWords(description));
+        }
+
+        if (flaggedWords.Any())
+        {
+            return ModerationResult.CreateRejected(
+                "Şirket bilgilerinde uygunsuz içerik",
+                flaggedWords.Distinct().ToList(),
+                0.9,
+                null,
+                new List<string> { "Şirket adı ve açıklaması profesyonel olmalıdır" }
+            );
+        }
+
+        // Sahte şirket kontrolü
+        if (IsSuspiciousCompanyName(companyName))
+        {
+            return ModerationResult.CreatePendingReview(
+                "Şüpheli şirket adı",
+                new List<string>(),
+                0.6
+            );
+        }
+
+        return ModerationResult.CreateApproved("Şirket bilgileri uygun");
+    }
+
+    public async Task<ModerationResult> ModerateUsernameAsync(string username)
+    {
+        var flaggedWords = FilterProhibitedWords(username);
+            
+        if (flaggedWords.Any())
+        {
+            return ModerationResult.CreateRejected(
+                "Kullanıcı adında uygunsuz içerik",
+                flaggedWords,
+                1.0,
+                null,
+                new List<string> { "Lütfen farklı bir kullanıcı adı seçin" }
+            );
+        }
+
+        // Özel karakter kontrolü
+        if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_-]+$"))
+        {
+            return ModerationResult.CreateRejected(
+                "Geçersiz karakterler",
+                new List<string> { "special characters" },
+                0.8,
+                null,
+                new List<string> { "Sadece harf, rakam, tire ve alt çizgi kullanın" }
+            );
+        }
+
+        return ModerationResult.CreateApproved("Kullanıcı adı uygun");
+    }
+
+    public async Task<List<ModerationResult>> ModerateBulkAsync(List<string> contents)
+    {
+        var results = new List<ModerationResult>();
+            
+        foreach (var content in contents)
+        {
+            var result = await ModerateReviewAsync(content, "bulk");
+            results.Add(result);
+        }
+            
+        return results;
+    }
+
+    public async Task<string> SanitizeContentAsync(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return string.Empty;
+
+        // HTML tag'leri temizle
+        content = Regex.Replace(content, @"<[^>]+>", string.Empty);
+            
+        // Çoklu boşlukları temizle
+        content = Regex.Replace(content, @"\s+", " ");
+            
+        // Script injection'ı önle
+        content = content.Replace("<script", "&lt;script")
+            .Replace("javascript:", "")
+            .Replace("onclick", "")
+            .Replace("onerror", "");
+            
+        return content.Trim();
+    }
+
+    public async Task<bool> IsSpamAsync(string content, string userId)
+    {
+        // Kullanıcının son yorumlarını kontrol et
+        // TODO: Repository üzerinden kullanıcının son yorumlarını al
+            
+        // Spam pattern kontrolü
+        return await IsSpamPatternAsync(content);
+    }
+
+    public List<string> FilterProhibitedWords(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return new List<string>();
+
+        var lowerContent = content.ToLowerInvariant();
+        var foundWords = new List<string>();
+
+        foreach (var word in _prohibitedWords)
+        {
+            if (lowerContent.Contains(word))
+            {
+                foundWords.Add(word);
+            }
+        }
+
+        return foundWords.Distinct().ToList();
+    }
+
+    public double CalculateContentScore(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return 0;
+
+        double score = 1.0;
+
+        // Uzunluk skoru
+        if (content.Length < 50) score -= 0.3;
+        else if (content.Length > 500) score += 0.1;
+
+        // Büyük harf oranı
+        var upperRatio = (double)content.Count(char.IsUpper) / content.Length;
+        if (upperRatio > 0.5) score -= 0.2;
+
+        // Noktalama işareti kullanımı
+        if (content.Contains(".") || content.Contains(",")) score += 0.1;
+
+        // Tekrarlayan karakter kontrolü
+        if (_suspiciousPatterns[3].IsMatch(content)) score -= 0.3;
+
+        return Math.Clamp(score, 0, 1);
+    }
+
     // Private helper methods
     private async Task<double> CalculateSpamScoreAsync(string content)
     {
@@ -426,5 +647,57 @@ public class ContentModerationService : IContentModerationService
     {
         var stopWords = new[] { "ve", "veya", "ile", "için", "ama", "ancak", "çünkü", "ki", "da", "de" };
         return stopWords.Contains(word);
+    }
+    
+    private async Task<bool> IsSpamPatternAsync(string content)
+    {
+        var lowerContent = content.ToLowerInvariant();
+
+        // URL sayısı kontrolü
+        var urlCount = _suspiciousPatterns[2].Matches(content).Count;
+        if (urlCount > 2) return true;
+
+        // Telefon numarası kontrolü
+        if (_suspiciousPatterns[0].IsMatch(content)) return true;
+
+        // Email kontrolü
+        if (_suspiciousPatterns[1].IsMatch(content)) return true;
+
+        // Spam kelimeleri
+        var spamKeywords = new[] { "tıkla", "kazanç", "bedava", "ücretsiz", "fırsat" };
+        var spamCount = spamKeywords.Count(keyword => lowerContent.Contains(keyword));
+        if (spamCount >= 2) return true;
+
+        return false;
+    }
+
+    private bool IsSuspiciousCompanyName(string companyName)
+    {
+        var suspicious = new[] { "test", "deneme", "fake", "sahte", "xxx" };
+        var lower = companyName.ToLowerInvariant();
+            
+        return suspicious.Any(s => lower.Contains(s));
+    }
+
+    private async Task<Dictionary<string, double>> AnalyzeCategoryScoresAsync(string content)
+    {
+        // Gerçek uygulamada AI/ML modeli kullanılır
+        // Şimdilik basit bir scoring
+        var scores = new Dictionary<string, double>
+        {
+            ["toxicity"] = 0.1,
+            ["spam"] = 0.2,
+            ["coherence"] = 0.8,
+            ["relevance"] = 0.7
+        };
+
+        // Basit analiz
+        if (FilterProhibitedWords(content).Any())
+            scores["toxicity"] = 0.8;
+
+        if (await IsSpamPatternAsync(content))
+            scores["spam"] = 0.9;
+
+        return scores;
     }
 }

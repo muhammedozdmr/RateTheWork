@@ -462,7 +462,11 @@ public class CompanyDomainService : ICompanyDomainService
 
             // Merge işlemi öncesi kontroller
             if (!primaryCompany.IsActive || !secondaryCompany.IsActive)
-                throw new CompanyNotActiveException("Sadece aktif şirketler birleştirilebilir.");
+                throw new CompanyNotActiveException(
+                    secondaryCompany.Id,
+                    secondaryCompany.IsActive ? "Active" : "Inactive",
+                    "Sadece aktif şirketler birleştirilebilir."
+                );
 
             // Transaction başlat
             await _unitOfWork.BeginTransactionAsync();
@@ -503,6 +507,8 @@ public class CompanyDomainService : ICompanyDomainService
                 throw;
             }
         }
+     
+     
 
     // Private helper methods
     private bool IsValidLinkedInUrl(string url)

@@ -35,6 +35,34 @@ public class ReviewVote : BaseEntity
     {
     }
     
+    /// <summary>
+    /// Oy tipini günceller
+    /// </summary>
+    public void UpdateVoteType(bool isUpvote)
+    {
+        if (IsUpvote == isUpvote)
+            return; // Aynı yönde ise değişiklik yok
+                
+        IsUpvote = isUpvote;
+        VoteType = isUpvote ? VoteType.Upvote : VoteType.Downvote;
+        WasChanged = true;
+        LastChangedAt = DateTime.UtcNow;
+        ChangeCount++;
+        UpdatedAt = DateTime.UtcNow;
+        SetModifiedDate();
+            
+        // Domain Event
+        AddDomainEvent(new ReviewVoteChangedEvent(
+            Id,
+            UserId,
+            ReviewId,
+            !isUpvote, // Eski değer
+            isUpvote,  // Yeni değer
+            ChangeCount++,
+            DateTime.UtcNow
+        ));
+    }
+    
     public void UpdateVote(bool isUpvote)
     {
         IsUpvote = isUpvote;
@@ -46,24 +74,40 @@ public class ReviewVote : BaseEntity
     /// Yeni oy oluşturur (Factory method)
     /// </summary>
     public static ReviewVote Create(
-        string reviewId, 
-        string userId, 
+        string userId,
+        string reviewId,
         bool isUpvote,
+        VoteSource source,
         string? targetType = "Review",
-        string? targetId = null)
+        string? targetId = null,
+        string? ipAddress = null,
+        string? userAgent = null,
+        bool isVerifiedUser = false,
+        int userReputationAtTime = 0)
     {
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new ArgumentNullException(nameof(userId));
+                
+        if (string.IsNullOrWhiteSpace(reviewId))
+            throw new ArgumentNullException(nameof(reviewId));
+            
         var vote = new ReviewVote
         {
-            ReviewId = reviewId,
             UserId = userId,
-            VoteType = isUpvote ? VoteType.Upvote : VoteType.Downvote,
+            ReviewId = reviewId,
             IsUpvote = isUpvote,
+            VoteType = isUpvote ? VoteType.Upvote : VoteType.Downvote,
             VotedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            TargetType = targetType,
-            TargetId = targetId ?? reviewId
+            Source = source,
+            TargetType = targetType ?? "Review",
+            TargetId = targetId ?? reviewId,
+            IpAddress = ipAddress,
+            UserAgent = userAgent,
+            IsVerifiedUser = isVerifiedUser,
+            UserReputationAtTime = userReputationAtTime
         };
-        
+            
         // Domain Event
         vote.AddDomainEvent(new ReviewVoteCastEvent(
             vote.Id,
@@ -72,7 +116,7 @@ public class ReviewVote : BaseEntity
             isUpvote ? VoteType.Upvote : VoteType.Downvote,
             DateTime.UtcNow
         ));
-
+            
         return vote;
     }
 
