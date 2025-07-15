@@ -14,5 +14,6 @@ public enum VerificationMethod
     CompanyIdCard,
     Manual,
     Automatic,
-    ThirdPartyService
+    ThirdPartyService,
+    WebDomain
 }

@@ -46,36 +46,7 @@ public interface IContentModerationService
     Task<List<ContentCategory>> CategorizeContentAsync(string content);
 }
 
-/// <summary>
-/// Moderasyon sonucu
-/// </summary>
-public class ModerationResult
-{
-    /// <summary>
-    /// İçerik onaylandı mı?
-    /// </summary>
-    public bool IsApproved { get; set; }
-    
-    /// <summary>
-    /// Red nedeni (eğer onaylanmadıysa)
-    /// </summary>
-    public string? RejectionReason { get; set; }
-    
-    /// <summary>
-    /// Toksisite skoru (0-1 arası, 1 en toksik)
-    /// </summary>
-    public double ToxicityScore { get; set; }
-    
-    /// <summary>
-    /// Tespit edilen sorunlar
-    /// </summary>
-    public List<string> DetectedIssues { get; set; } = new();
-    
-    /// <summary>
-    /// Detaylı analiz sonuçları
-    /// </summary>
-    public ModerationDetails? Details { get; set; }
-}
+
 
 /// <summary>
 /// Detaylı moderasyon analizi

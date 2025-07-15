@@ -100,7 +100,7 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     public Dictionary<string, object> Metadata { get; set; } = new();
     public Dictionary<string, decimal> RatingBreakdown { get; private set; } = new(); // Kategori bazlı puanlar
     public Dictionary<string, int> ReviewCountByType { get; private set; } = new(); // Yorum tipi bazlı sayılar
-    public CompanyReviewStatistics ReviewStatistics { get; set; } = new();
+    public CompanyReviewStatistics ReviewStatistics { get; set; }
     
     // ========== DOĞRULAMA BİLGİLERİ ==========
     

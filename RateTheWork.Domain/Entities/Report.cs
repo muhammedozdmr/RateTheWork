@@ -2,6 +2,7 @@ using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Enums.Report;
 using RateTheWork.Domain.Events.Report;
 using RateTheWork.Domain.Exceptions;
+using static RateTheWork.Domain.Enums.Report.ReportReasons;
 
 namespace RateTheWork.Domain.Entities;
 
@@ -185,23 +186,23 @@ public class Report : BaseEntity
         //TODO: Cannot convert expression of type 'RateTheWork. Domain. Enums. Report. ReportReasons' to type 'string' bu hatayı düzelt
         return reportReason switch
         {
-            ReportReasons.Harassment => 3,
-            ReportReasons.PersonalAttack => 4,
-            ReportReasons.ConfidentialInfo => 5,
-            ReportReasons.FalseInformation => 1,
-            ReportReasons.InappropriateContent => 0,
-            ReportReasons.Spam => 2,
-            ReportReasons.OffTopic => 6,
-            ReportReasons.Duplicate => 7,
+            Harassment => 3,
+            PersonalAttack => 4,
+            ConfidentialInfo => 5,
+            FalseInformation => 1,
+            InappropriateContent => 0,
+            Spam => 2,
+            OffTopic => 6,
+            Duplicate => 7,
             _ => 8
         };
     }
 
     private static bool DetermineUrgency(string reportReason)
     {
-        return reportReason == ReportReasons.Harassment.ToString() ||
-               reportReason == ReportReasons.PersonalAttack.ToString() ||
-               reportReason == ReportReasons.ConfidentialInfo.ToString();
+        return reportReason == Harassment.ToString() ||
+               reportReason == PersonalAttack.ToString() ||
+               reportReason == ConfidentialInfo.ToString();
     }
 
     // Validation methods
