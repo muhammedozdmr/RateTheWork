@@ -4,13 +4,13 @@ namespace RateTheWork.Domain.Events.UserBadge;
 /// 1. Kullanıcıya rozet verildi event'i
 /// </summary>
 public record BadgeAwardedEvent(
-    string? UserBadgeId,
-    string UserId,
-    string BadgeId,
-    DateTime AwardedAt,
-    string? AwardReason,
-    string? SpecialNote,
-    DateTime OccurredOn = default
+    string? UserBadgeId
+    , string UserId
+    , string BadgeId
+    , DateTime AwardedAt
+    , string? AwardReason
+    , string? SpecialNote
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -20,11 +20,11 @@ public record BadgeAwardedEvent(
 /// 2. Kullanıcı rozeti görüntüledi event'i
 /// </summary>
 public record BadgeViewedEvent(
-    string? UserBadgeId,
-    string? UserId,
-    string? BadgeId,
-    DateTime ViewedAt,
-    DateTime OccurredOn = default
+    string? UserBadgeId
+    , string? UserId
+    , string? BadgeId
+    , DateTime ViewedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -34,11 +34,11 @@ public record BadgeViewedEvent(
 /// 3. Kullanıcı rozeti gösterildi event'i
 /// </summary>
 public record BadgeDisplayedEvent(
-    string? UserBadgeId,
-    string? UserId,
-    string? BadgeId,
-    DateTime DisplayedAt,
-    DateTime OccurredOn = default
+    string? UserBadgeId
+    , string? UserId
+    , string? BadgeId
+    , DateTime DisplayedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -48,11 +48,57 @@ public record BadgeDisplayedEvent(
 /// 4. Kullanıcı rozeti gizlendi event'i
 /// </summary>
 public record BadgeHiddenEvent(
-    string? UserBadgeId,
-    string? UserId,
-    string? BadgeId,
-    DateTime HiddenAt,
-    DateTime OccurredOn = default
+    string? UserBadgeId
+    , string? UserId
+    , string? BadgeId
+    , DateTime HiddenAt
+    , DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 5. Otomatik rozet kazanıldı event'i
+/// </summary>
+public record AutomaticBadgeAwardedEvent(
+    string? UserBadgeId
+    , string? UserId
+    , string? BadgeId
+    , string TriggerCondition
+    , Dictionary<string, object>? Metadata
+    , DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 6. Sezonluk rozet kazanıldı event'i
+/// </summary>
+public record SeasonalBadgeAwardedEvent(
+    string? UserBadgeId
+    , string? UserId
+    , string? BadgeId
+    , string SeasonName
+    , DateTime SeasonStart
+    , DateTime SeasonEnd
+    , DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 7. Manuel rozet verildi event'i
+/// </summary>
+public record ManualBadgeAwardedEvent(
+    string? UserBadgeId
+    , string? UserId
+    , string? BadgeId
+    , string AdminId
+    , string Reason
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;

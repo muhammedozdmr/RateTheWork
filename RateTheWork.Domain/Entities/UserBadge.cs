@@ -1,5 +1,5 @@
+using System.Text.Json;
 using RateTheWork.Domain.Common;
-using RateTheWork.Domain.Events;
 using RateTheWork.Domain.Events.UserBadge;
 using RateTheWork.Domain.Exceptions;
 
@@ -10,6 +10,13 @@ namespace RateTheWork.Domain.Entities;
 /// </summary>
 public class UserBadge : BaseEntity
 {
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private UserBadge() : base()
+    {
+    }
+
     // Properties
     public string? UserId { get; private set; } = string.Empty;
     public string? BadgeId { get; private set; } = string.Empty;
@@ -22,20 +29,15 @@ public class UserBadge : BaseEntity
     public string? SpecialNote { get; private set; } = string.Empty;
 
     /// <summary>
-    /// EF Core için parametresiz private constructor
-    /// </summary>
-    private UserBadge() : base()
-    {
-    }
-
-    /// <summary>
     /// Kullanıcıya rozet atar (Factory method)
     /// </summary>
-    public static UserBadge Award(
-        string userId,
-        string badgeId,
-        string? awardReason = null,
-        string? specialNote = null)
+    public static UserBadge Award
+    (
+        string userId
+        , string badgeId
+        , string? awardReason = null
+        , string? specialNote = null
+    )
     {
         if (string.IsNullOrWhiteSpace(userId))
             throw new ArgumentNullException(nameof(userId));
@@ -45,14 +47,8 @@ public class UserBadge : BaseEntity
 
         var userBadge = new UserBadge
         {
-            UserId = userId,
-            BadgeId = badgeId,
-            AwardedAt = DateTime.UtcNow,
-            AwardReason = awardReason,
-            IsDisplayed = true,
-            DisplayOrder = 999,
-            IsNew = true,
-            SpecialNote = specialNote
+            UserId = userId, BadgeId = badgeId, AwardedAt = DateTime.UtcNow, AwardReason = awardReason
+            , IsDisplayed = true, DisplayOrder = 999, IsNew = true, SpecialNote = specialNote
         };
 
         // Domain Event
@@ -67,6 +63,133 @@ public class UserBadge : BaseEntity
         ));
 
         return userBadge;
+    }
+
+    /// <summary>
+    /// Otomatik sistem rozeti atar
+    /// </summary>
+    public static UserBadge AwardAutomatic
+    (
+        string userId
+        , string badgeId
+        , string triggerCondition
+        , Dictionary<string, object>? metadata = null
+    )
+    {
+        var reason = $"Otomatik kazanım: {triggerCondition}";
+        var specialNote = metadata != null
+            ? JsonSerializer.Serialize(metadata)
+            : null;
+
+        var userBadge = Award(userId, badgeId, reason, specialNote);
+
+        // Ek domain event ekleyebiliriz
+        userBadge.AddDomainEvent(new AutomaticBadgeAwardedEvent(
+            userBadge.Id,
+            userId,
+            badgeId,
+            triggerCondition,
+            metadata,
+            DateTime.UtcNow
+        ));
+
+        return userBadge;
+    }
+
+    /// <summary>
+    /// Milestone rozeti atar (belirli bir başarı için)
+    /// </summary>
+    public static UserBadge AwardMilestone
+    (
+        string userId
+        , string badgeId
+        , string milestoneName
+        , int achievedValue
+        , int requiredValue
+    )
+    {
+        var reason = $"{milestoneName}: {achievedValue}/{requiredValue} tamamlandı";
+        var specialNote = $"Başarı değeri: {achievedValue}";
+
+        return Award(userId, badgeId, reason, specialNote);
+    }
+
+    /// <summary>
+    /// Sezonluk/dönemsel rozet atar
+    /// </summary>
+    public static UserBadge AwardSeasonal
+    (
+        string userId
+        , string badgeId
+        , string seasonName
+        , DateTime seasonStart
+        , DateTime seasonEnd
+    )
+    {
+        var reason = $"{seasonName} sezonu rozeti";
+        var specialNote = $"Sezon: {seasonStart:yyyy-MM-dd} - {seasonEnd:yyyy-MM-dd}";
+
+        var userBadge = Award(userId, badgeId, reason, specialNote);
+
+        // Sezonluk rozetler için özel event
+        userBadge.AddDomainEvent(new SeasonalBadgeAwardedEvent(
+            userBadge.Id,
+            userId,
+            badgeId,
+            seasonName,
+            seasonStart,
+            seasonEnd,
+            DateTime.UtcNow
+        ));
+
+        return userBadge;
+    }
+
+    /// <summary>
+    /// Admin tarafından manuel rozet atar
+    /// </summary>
+    public static UserBadge AwardManual
+    (
+        string userId
+        , string badgeId
+        , string adminId
+        , string reason
+        , string? specialNote = null
+    )
+    {
+        var fullReason = $"Admin tarafından verildi: {reason}";
+        var note = $"Veren Admin: {adminId}. {specialNote ?? ""}";
+
+        var userBadge = Award(userId, badgeId, fullReason, note);
+
+        // Manuel rozet için özel event
+        userBadge.AddDomainEvent(new ManualBadgeAwardedEvent(
+            userBadge.Id,
+            userId,
+            badgeId,
+            adminId,
+            reason,
+            DateTime.UtcNow
+        ));
+
+        return userBadge;
+    }
+
+    /// <summary>
+    /// Başarı rozeti atar (örn: ilk yorum, 100. yorum vb.)
+    /// </summary>
+    public static UserBadge AwardAchievement
+    (
+        string userId
+        , string badgeId
+        , string achievementType
+        , string achievementDetails
+    )
+    {
+        var reason = $"Başarı kilidi açıldı: {achievementType}";
+        var specialNote = achievementDetails;
+
+        return Award(userId, badgeId, reason, specialNote);
     }
 
     /// <summary>

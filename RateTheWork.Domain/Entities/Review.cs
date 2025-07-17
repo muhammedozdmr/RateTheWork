@@ -1,5 +1,6 @@
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Constants;
+using RateTheWork.Domain.Enums.Review;
 using RateTheWork.Domain.Events.Review;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Common;
@@ -12,10 +13,17 @@ namespace RateTheWork.Domain.Entities;
 /// </summary>
 public class Review : AuditableBaseEntity, IAggregateRoot
 {
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private Review() : base()
+    {
+    }
+
     // Properties
     public string CompanyId { get; private set; } = string.Empty;
     public string UserId { get; private set; } = string.Empty;
-    public string CommentType { get; private set; } = string.Empty;
+    public CommentType CommentType { get; private set; }
     public decimal OverallRating { get; private set; }
     public string CommentText { get; private set; } = string.Empty;
     public string? DocumentUrl { get; private set; }
@@ -33,20 +41,13 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     public string? TargetId { get; private set; } // Hedef ID'si
 
     /// <summary>
-    /// EF Core için parametresiz private constructor
-    /// </summary>
-    private Review() : base()
-    {
-    }
-
-    /// <summary>
     /// Yeni yorum oluşturur (Factory method)
     /// </summary>
     public static Review Create
     (
         string companyId
         , string userId
-        , string commentType
+        , CommentType commentType
         , decimal overallRating
         , string commentText
         , string? documentUrl = null
@@ -55,7 +56,6 @@ public class Review : AuditableBaseEntity, IAggregateRoot
         // Validasyonlar
         ValidateRating(overallRating);
         ValidateCommentText(commentText);
-        ValidateCommentType(commentType);
 
         var review = new Review
         {
@@ -70,7 +70,7 @@ public class Review : AuditableBaseEntity, IAggregateRoot
             review.Id,
             userId,
             companyId,
-            commentType,
+            commentType.ToString(),
             overallRating,
             !string.IsNullOrEmpty(documentUrl),
             DateTime.UtcNow
@@ -82,7 +82,7 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     /// <summary>
     /// Taslak yorum oluşturur (henüz gönderilmemiş)
     /// </summary>
-    public static Review CreateDraft(string companyId, string userId, string commentType)
+    public static Review CreateDraft(string companyId, string userId, CommentType commentType)
     {
         var review = new Review
         {
@@ -101,7 +101,7 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     /// <summary>
     /// Mevcut yorumdan yeni yorum oluşturur (farklı bir yorum tipi için)
     /// </summary>
-    public static Review CreateFromExisting(Review existingReview, string newCommentType)
+    public static Review CreateFromExisting(Review existingReview, CommentType newCommentType)
     {
         if (existingReview.CommentType == newCommentType)
             throw new BusinessRuleException("Aynı tip için kopyalama yapılamaz.");
@@ -118,7 +118,7 @@ public class Review : AuditableBaseEntity, IAggregateRoot
         review.AddDomainEvent(new ReviewCreatedFromTemplateEvent(
             review.Id,
             existingReview.Id,
-            newCommentType,
+            newCommentType.ToString(),
             DateTime.UtcNow
         ));
 
@@ -133,7 +133,7 @@ public class Review : AuditableBaseEntity, IAggregateRoot
         var review = Create(
             companyId,
             userId,
-            "WorkEnvironment", // Default yorum tipi
+            CommentType.WorkEnvironment, // Default yorum tipi
             rating,
             GenerateMinimumComment() // Minimum karakter sayısını karşılayan otomatik metin
         );
@@ -203,7 +203,7 @@ public class Review : AuditableBaseEntity, IAggregateRoot
             DateTime.UtcNow
         ));
     }
-    
+
     /// <summary>
     /// Yorumun şirket ID'sini günceller (şirket birleşme işlemleri için)
     /// </summary>
@@ -211,21 +211,21 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     {
         if (string.IsNullOrWhiteSpace(newCompanyId))
             throw new ArgumentNullException(nameof(newCompanyId));
-        
+
         if (newCompanyId == CompanyId)
             throw new BusinessRuleException("Yeni şirket ID'si mevcut ID ile aynı olamaz.");
-    
+
         var oldCompanyId = CompanyId;
         CompanyId = newCompanyId;
-    
+
         // Eğer TargetType Company ise, TargetId'yi de güncelle
         if (TargetType == "Company")
         {
             TargetId = newCompanyId;
         }
-    
+
         SetModifiedDate();
-    
+
         // Domain Event
         //TODO: Eventi tamamla
         AddDomainEvent(new ReviewCompanyUpdatedEvent(
@@ -423,16 +423,6 @@ public class Review : AuditableBaseEntity, IAggregateRoot
                 $"Yorum en fazla {DomainConstants.Review.MaxCommentLength} karakter olabilir.");
     }
 
-    private static void ValidateCommentType(string commentType)
-    {
-        if (string.IsNullOrWhiteSpace(commentType))
-            throw new ArgumentNullException(nameof(commentType));
-
-        var validTypes = new[]
-            { "Salary", "WorkEnvironment", "CareerGrowth", "Benefits", "Management", "WorkLifeBalance" };
-        if (!validTypes.Contains(commentType))
-            throw new BusinessRuleException("Geçersiz yorum türü.");
-    }
 
     private static void ValidateEditReason(string editReason)
     {

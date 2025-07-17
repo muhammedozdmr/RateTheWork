@@ -1,5 +1,5 @@
 using RateTheWork.Domain.Common;
-using RateTheWork.Domain.Events;
+using RateTheWork.Domain.Enums.User;
 using RateTheWork.Domain.Events.Ban;
 using RateTheWork.Domain.Exceptions;
 
@@ -10,25 +10,11 @@ namespace RateTheWork.Domain.Entities;
 /// </summary>
 public class Ban : BaseEntity
 {
-    // Ban Types
-    public enum BanType
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private Ban() : base()
     {
-        Temporary,       // Geçici ban (süre belirtilir)
-        Permanent,       // Kalıcı ban
-        SystemAutomatic  // Sistem otomatik banı
-    }
-
-    // Ban Reasons
-    public static class BanReasons
-    {
-        public const string MultipleViolations = "Çoklu kural ihlali";
-        public const string SpamContent = "Spam içerik";
-        public const string InappropriateContent = "Uygunsuz içerik";
-        public const string FakeReviews = "Sahte yorumlar";
-        public const string Harassment = "Taciz/Zorbalık";
-        public const string IdentityFraud = "Kimlik sahtekarlığı";
-        public const string AutomaticWarningLimit = "Otomatik: Uyarı limiti aşıldı";
-        public const string Other = "Diğer";
     }
 
     // Properties
@@ -50,22 +36,17 @@ public class Ban : BaseEntity
     public string? TargetId { get; private set; }
 
     /// <summary>
-    /// EF Core için parametresiz private constructor
-    /// </summary>
-    private Ban() : base()
-    {
-    }
-
-    /// <summary>
     /// Geçici ban oluşturur (Factory method)
     /// </summary>
-    public static Ban CreateTemporary(
-        string userId,
-        string adminId,
-        string reason,
-        int durationDays,
-        string? detailedReason = null,
-        bool isAppealable = true)
+    public static Ban CreateTemporary
+    (
+        string userId
+        , string adminId
+        , string reason
+        , int durationDays
+        , string? detailedReason = null
+        , bool isAppealable = true
+    )
     {
         if (durationDays <= 0)
             throw new BusinessRuleException("Ban süresi 0'dan büyük olmalıdır.");
@@ -75,16 +56,11 @@ public class Ban : BaseEntity
 
         var ban = new Ban
         {
-            UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
-            AdminId = adminId ?? throw new ArgumentNullException(nameof(adminId)),
-            Reason = ValidateAndReturnReason(reason),
-            DetailedReason = detailedReason,
-            BannedAt = DateTime.UtcNow,
-            UnbanDate = DateTime.UtcNow.AddDays(durationDays),
-            Type = BanType.Temporary,
-            IsActive = true,
-            IsAppealable = isAppealable,
-            AppealDeadline = isAppealable ? DateTime.UtcNow.AddDays(7) : null
+            UserId = userId ?? throw new ArgumentNullException(nameof(userId))
+            , AdminId = adminId ?? throw new ArgumentNullException(nameof(adminId))
+            , Reason = ValidateAndReturnReason(reason), DetailedReason = detailedReason, BannedAt = DateTime.UtcNow
+            , UnbanDate = DateTime.UtcNow.AddDays(durationDays), Type = BanType.Temporary, IsActive = true
+            , IsAppealable = isAppealable, AppealDeadline = isAppealable ? DateTime.UtcNow.AddDays(7) : null
         };
 
         // Domain Event
@@ -106,25 +82,22 @@ public class Ban : BaseEntity
     /// <summary>
     /// Kalıcı ban oluşturur
     /// </summary>
-    public static Ban CreatePermanent(
-        string userId,
-        string adminId,
-        string reason,
-        string? detailedReason = null,
-        bool isAppealable = false)
+    public static Ban CreatePermanent
+    (
+        string userId
+        , string adminId
+        , string reason
+        , string? detailedReason = null
+        , bool isAppealable = false
+    )
     {
         var ban = new Ban
         {
-            UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
-            AdminId = adminId ?? throw new ArgumentNullException(nameof(adminId)),
-            Reason = ValidateAndReturnReason(reason),
-            DetailedReason = detailedReason,
-            BannedAt = DateTime.UtcNow,
-            UnbanDate = null,
-            Type = BanType.Permanent,
-            IsActive = true,
-            IsAppealable = isAppealable,
-            AppealDeadline = isAppealable ? DateTime.UtcNow.AddDays(30) : null
+            UserId = userId ?? throw new ArgumentNullException(nameof(userId))
+            , AdminId = adminId ?? throw new ArgumentNullException(nameof(adminId))
+            , Reason = ValidateAndReturnReason(reason), DetailedReason = detailedReason, BannedAt = DateTime.UtcNow
+            , UnbanDate = null, Type = BanType.Permanent, IsActive = true, IsAppealable = isAppealable
+            , AppealDeadline = isAppealable ? DateTime.UtcNow.AddDays(30) : null
         };
 
         // Domain Event
@@ -146,23 +119,20 @@ public class Ban : BaseEntity
     /// <summary>
     /// Otomatik sistem banı oluşturur
     /// </summary>
-    public static Ban CreateAutomatic(
-        string userId,
-        string triggerReason,
-        int warningCount)
+    public static Ban CreateAutomatic
+    (
+        string userId
+        , string triggerReason
+        , int warningCount
+    )
     {
         var ban = new Ban
         {
-            UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
-            AdminId = "SYSTEM",
-            Reason = BanReasons.AutomaticWarningLimit,
-            DetailedReason = $"{triggerReason} - {warningCount} uyarı",
-            BannedAt = DateTime.UtcNow,
-            UnbanDate = DateTime.UtcNow.AddDays(30), // 30 gün otomatik ban
-            Type = BanType.SystemAutomatic,
-            IsActive = true,
-            IsAppealable = true,
-            AppealDeadline = DateTime.UtcNow.AddDays(7)
+            UserId = userId ?? throw new ArgumentNullException(nameof(userId)), AdminId = "SYSTEM"
+            , Reason = BanReasons.AutomaticWarningLimit, DetailedReason = $"{triggerReason} - {warningCount} uyarı"
+            , BannedAt = DateTime.UtcNow, UnbanDate = DateTime.UtcNow.AddDays(30), // 30 gün otomatik ban
+            Type = BanType.SystemAutomatic
+            , IsActive = true, IsAppealable = true, AppealDeadline = DateTime.UtcNow.AddDays(7)
         };
 
         // Domain Event
@@ -260,5 +230,18 @@ public class Ban : BaseEntity
             throw new BusinessRuleException("Ban nedeni en az 5 karakter olmalıdır.");
 
         return reason;
+    }
+
+    // Ban Reasons
+    public static class BanReasons
+    {
+        public const string MultipleViolations = "Çoklu kural ihlali";
+        public const string SpamContent = "Spam içerik";
+        public const string InappropriateContent = "Uygunsuz içerik";
+        public const string FakeReviews = "Sahte yorumlar";
+        public const string Harassment = "Taciz/Zorbalık";
+        public const string IdentityFraud = "Kimlik sahtekarlığı";
+        public const string AutomaticWarningLimit = "Otomatik: Uyarı limiti aşıldı";
+        public const string Other = "Diğer";
     }
 }

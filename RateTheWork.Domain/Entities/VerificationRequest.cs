@@ -1,6 +1,6 @@
+using System.Reflection;
 using RateTheWork.Domain.Common;
-using RateTheWork.Domain.Enums;
-using RateTheWork.Domain.Events;
+using RateTheWork.Domain.Enums.Verification;
 using RateTheWork.Domain.Events.VerificationRequest;
 using RateTheWork.Domain.Exceptions;
 
@@ -11,26 +11,11 @@ namespace RateTheWork.Domain.Entities;
 /// </summary>
 public class VerificationRequest : ApprovableBaseEntity
 {
-    // Verification Types
-    public enum VerificationType
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private VerificationRequest() : base()
     {
-        ReviewDocument,     // Yorum belgesi doğrulama
-        CompanyDocument,    // Şirket belgesi doğrulama
-        UserIdentity,       // Kullanıcı kimlik doğrulama
-        EmploymentProof     // Çalışma belgesi doğrulama
-    }
-
-    // Document Types
-    public static class DocumentTypes
-    {
-        public const string PaySlip = "Maaş Bordrosu";
-        public const string EmploymentContract = "İş Sözleşmesi";
-        public const string EmploymentCertificate = "Çalışma Belgesi";
-        public const string CompanyIdCard = "Şirket Kimlik Kartı";
-        public const string SeveranceLetter = "İşten Ayrılma Yazısı";
-        public const string TaxReturn = "Vergi Beyannamesi";
-        public const string TradeRegistry = "Ticaret Sicil Gazetesi";
-        public const string Other = "Diğer";
     }
 
     // Properties
@@ -51,22 +36,17 @@ public class VerificationRequest : ApprovableBaseEntity
     public string? SecurityCheckNotes { get; private set; }
 
     /// <summary>
-    /// EF Core için parametresiz private constructor
-    /// </summary>
-    private VerificationRequest() : base()
-    {
-    }
-
-    /// <summary>
     /// Yeni doğrulama talebi oluşturur (Factory method)
     /// </summary>
-    public static VerificationRequest Create(
-        string reviewId,
-        string userId,
-        string documentUrl,
-        string documentName,
-        string documentType,
-        VerificationType verificationType = VerificationType.ReviewDocument)
+    public static VerificationRequest Create
+    (
+        string reviewId
+        , string userId
+        , string documentUrl
+        , string documentName
+        , string documentType
+        , VerificationType verificationType = VerificationType.ReviewDocument
+    )
     {
         ValidateDocumentUrl(documentUrl);
         ValidateDocumentName(documentName);
@@ -74,16 +54,11 @@ public class VerificationRequest : ApprovableBaseEntity
 
         var request = new VerificationRequest
         {
-            ReviewId = reviewId ?? throw new ArgumentNullException(nameof(reviewId)),
-            UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
-            DocumentUrl = documentUrl,
-            DocumentName = documentName,
-            DocumentType = documentType,
-            Type = verificationType,
-            RequestedAt = DateTime.UtcNow,
-            Status = "Pending",
-            IsUrgent = DetermineUrgency(documentType),
-            AllowResubmission = true
+            ReviewId = reviewId ?? throw new ArgumentNullException(nameof(reviewId))
+            , UserId = userId ?? throw new ArgumentNullException(nameof(userId)), DocumentUrl = documentUrl
+            , DocumentName = documentName, DocumentType = documentType, Type = verificationType
+            , RequestedAt = DateTime.UtcNow, Status = "Pending", IsUrgent = DetermineUrgency(documentType)
+            , AllowResubmission = true
         };
 
         // Domain Event
@@ -94,6 +69,134 @@ public class VerificationRequest : ApprovableBaseEntity
             documentType,
             verificationType.ToString(),
             request.RequestedAt,
+            DateTime.UtcNow
+        ));
+
+        return request;
+    }
+
+    /// <summary>
+    /// Yorum belgesi doğrulama talebi oluşturur
+    /// </summary>
+    public static VerificationRequest CreateForReviewDocument
+    (
+        string reviewId
+        , string userId
+        , string documentUrl
+        , string documentName
+        , string documentType
+    )
+    {
+        return Create(
+            reviewId,
+            userId,
+            documentUrl,
+            documentName,
+            documentType,
+            VerificationType.ReviewDocument
+        );
+    }
+
+    /// <summary>
+    /// Şirket belgesi doğrulama talebi oluşturur
+    /// </summary>
+    public static VerificationRequest CreateForCompanyDocument
+    (
+        string companyId
+        , string userId
+        , string documentUrl
+        , string documentName
+        , string documentType
+    )
+    {
+        return Create(
+            companyId, // reviewId yerine companyId kullanıyoruz
+            userId,
+            documentUrl,
+            documentName,
+            documentType,
+            VerificationType.CompanyDocument
+        );
+    }
+
+    /// <summary>
+    /// Kullanıcı kimlik doğrulama talebi oluşturur
+    /// </summary>
+    public static VerificationRequest CreateForUserIdentity
+    (
+        string userId
+        , string documentUrl
+        , string documentName
+    )
+    {
+        return Create(
+            userId, // reviewId yerine userId kullanıyoruz
+            userId,
+            documentUrl,
+            documentName,
+            "Kimlik Belgesi",
+            VerificationType.UserIdentity
+        );
+    }
+
+    /// <summary>
+    /// Çalışma belgesi doğrulama talebi oluşturur
+    /// </summary>
+    public static VerificationRequest CreateForEmploymentProof
+    (
+        string reviewId
+        , string userId
+        , string documentUrl
+        , string documentName
+        , string documentType
+    )
+    {
+        var request = Create(
+            reviewId,
+            userId,
+            documentUrl,
+            documentName,
+            documentType,
+            VerificationType.EmploymentProof
+        );
+
+        // Çalışma belgeleri genellikle acildir
+        request.IsUrgent = true;
+
+        return request;
+    }
+
+    /// <summary>
+    /// Acil doğrulama talebi oluşturur
+    /// </summary>
+    public static VerificationRequest CreateUrgent
+    (
+        string reviewId
+        , string userId
+        , string documentUrl
+        , string documentName
+        , string documentType
+        , VerificationType verificationType
+        , string urgencyReason
+    )
+    {
+        var request = Create(
+            reviewId,
+            userId,
+            documentUrl,
+            documentName,
+            documentType,
+            verificationType
+        );
+
+        request.IsUrgent = true;
+        request.ProcessingNotes = $"ACİL: {urgencyReason}";
+
+        // Acil talep için özel event
+        request.AddDomainEvent(new VerificationRequestMarkedUrgentEvent(
+            request.Id,
+            urgencyReason,
+            "SYSTEM",
             DateTime.UtcNow
         ));
 
@@ -130,7 +233,7 @@ public class VerificationRequest : ApprovableBaseEntity
             throw new BusinessRuleException("Bu durumda talep onaylanamaz.");
 
         base.Approve(approvedBy, notes);
-        
+
         Status = "Approved";
         AdminId = approvedBy;
         ProcessedAt = DateTime.UtcNow;
@@ -159,7 +262,7 @@ public class VerificationRequest : ApprovableBaseEntity
             throw new BusinessRuleException("Bu durumda talep reddedilemez.");
 
         base.Reject(rejectedBy, reason);
-        
+
         Status = "Rejected";
         AdminId = rejectedBy;
         ProcessedAt = DateTime.UtcNow;
@@ -265,12 +368,25 @@ public class VerificationRequest : ApprovableBaseEntity
             throw new ArgumentNullException(nameof(type));
 
         var validTypes = typeof(DocumentTypes)
-            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
             .Select(f => f.GetValue(null)?.ToString())
             .Where(v => v != null)
             .ToList();
 
         if (!validTypes.Contains(type))
             throw new BusinessRuleException("Geçersiz belge türü.");
+    }
+
+    // Document Types
+    public static class DocumentTypes
+    {
+        public const string PaySlip = "Maaş Bordrosu";
+        public const string EmploymentContract = "İş Sözleşmesi";
+        public const string EmploymentCertificate = "Çalışma Belgesi";
+        public const string CompanyIdCard = "Şirket Kimlik Kartı";
+        public const string SeveranceLetter = "İşten Ayrılma Yazısı";
+        public const string TaxReturn = "Vergi Beyannamesi";
+        public const string TradeRegistry = "Ticaret Sicil Gazetesi";
+        public const string Other = "Diğer";
     }
 }

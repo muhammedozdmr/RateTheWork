@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Enums.Company;
 using RateTheWork.Domain.Events.Company;
@@ -20,121 +21,6 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     private const int MersisNoLength = 16;
     private const int MaxDescriptionLength = 2000;
 
-    // ========== TEMEL ŞİRKET BİLGİLERİ ==========
-    
-    public string Name { get; private set; } = string.Empty;
-    public string TaxId { get; private set; } = string.Empty;
-    public string MersisNo { get; private set; } = string.Empty;
-    public string CompanyType { get; private set; } = string.Empty; // Ltd. Şti., A.Ş., vb.
-    public int EstablishedYear { get; private set; }
-    public string? Description { get; private set; }
-    public bool IsActive { get; private set; } = true;
-    public DateTime? DeactivatedAt { get; private set; }
-    public string? DeactivationReason { get; private set; } = string.Empty;
-    
-    // ========== SEKTÖR VE KATEGORİ ==========
-    
-    public string Sector { get; private set; } = string.Empty;
-    public string? SubSector { get; private set; }
-    public string CompanySize { get; private set; } = "Small"; // Small, Medium, Large, Enterprise
-    public List<string> Tags { get; private set; } = new();
-    public string? Category { get; private set; }
-    
-    // ========== ÇALIŞAN BİLGİLERİ ==========
-    
-    public int? EmployeeCount { get; private set; }
-    public string? EmployeeCountRange { get; private set; } // "1-10", "11-50", "51-200", vb.
-    public DateTime? EmployeeCountUpdatedAt { get; private set; }
-    public decimal? AverageEmployeeTenure { get; private set; } // Ortalama çalışma süresi (yıl)
-    
-    // ========== FİNANSAL BİLGİLER ==========
-    
-    public string? RevenueRange { get; private set; } // "0-1M", "1M-10M", "10M-100M", vb.
-    public string? FundingStage { get; private set; } // Seed, Series A, IPO, vb.
-    public decimal? MarketCap { get; private set; }
-    
-    // ========== İLETİŞİM BİLGİLERİ ==========
-    
-    public string Address { get; private set; } = string.Empty;
-    public string? AddressLine2 { get; private set; }
-    public string City { get; private set; } = string.Empty;
-    public string? District { get; private set; }
-    public string? PostalCode { get; private set; }
-    public string Country { get; private set; } = "Türkiye";
-    
-    public string PhoneNumber { get; private set; } = string.Empty;
-    public string? FaxNumber { get; private set; }
-    public string Email { get; private set; } = string.Empty;
-    public string? HrEmail { get; private set; } // İK departmanı emaili
-    public string? SupportEmail { get; private set; }
-    
-    public string WebsiteUrl { get; private set; } = string.Empty;
-    public string? CareersPageUrl { get; private set; }
-    
-    // ========== SOSYAL MEDYA ==========
-    
-    public string? LinkedInUrl { get; set; }
-    public string? XUrl { get; set; }
-    public string? InstagramUrl { get; set; }
-    public string? FacebookUrl { get; set; }
-    public string? YouTubeUrl { get; private set; }
-    
-    // ========== GÖRSELLER VE MEDYA ==========
-    
-    public string? LogoUrl { get; set; }
-    public string? CoverImageUrl { get; private set; }
-    public List<string> GalleryImages { get; private set; } = new();
-    public string? CompanyVideo { get; private set; }
-    
-    // ========== ÇALIŞMA BİLGİLERİ ==========
-    
-    public Dictionary<string, string>? WorkingHours { get; private set; } // Gün -> Saat mapping
-    public bool? HasRemoteWork { get; private set; }
-    public string? RemoteWorkPolicy { get; private set; }
-    public List<string> Benefits { get; private set; } = new(); // Yan haklar
-    
-    // ========== İSTATİSTİKLER ==========
-    
-    public decimal AverageRating { get; private set; } = 0;
-    public int TotalReviewCount { get; private set; } = 0;
-    public DateTime? LastReviewDate { get; private set; }
-    public Dictionary<string, object> Metadata { get; set; } = new();
-    public Dictionary<string, decimal> RatingBreakdown { get; private set; } = new(); // Kategori bazlı puanlar
-    public Dictionary<string, int> ReviewCountByType { get; private set; } = new(); // Yorum tipi bazlı sayılar
-    public CompanyReviewStatistics ReviewStatistics { get; set; }
-    
-    // ========== DOĞRULAMA BİLGİLERİ ==========
-    
-    public bool IsVerified { get; private set; } = false;
-    public DateTime? VerifiedAt { get; private set; }
-    public string? VerifiedBy { get; private set; }
-    public string? VerificationMethod { get; private set; }
-    public string? VerificationNotes { get; private set; }
-    public Dictionary<string, object>? VerificationMetadata { get; private set; }
-    public DateTime? UpdatedAt { get; set; }
-    
-    // ========== RİSK VE DEĞERLENDİRME ==========
-    
-    public decimal? RiskScore { get; private set; }
-    public DateTime? RiskScoreUpdatedAt { get; private set; }
-    public string? RiskLevel { get; private set; } // Low, Medium, High
-    public List<string> ComplianceCertificates { get; private set; } = new(); // ISO, vb.
-    
-    // ========== BİRLEŞME VE SATIN ALMA ==========
-    
-    public bool IsMerged { get; private set; } = false;
-    public string? MergedWithCompanyId { get; private set; }
-    public DateTime? MergedAt { get; private set; }
-    public string? ParentCompanyId { get; private set; } // Ana şirket
-    public List<string> SubsidiaryIds { get; private set; } = new(); // Bağlı şirketler
-    
-    // ========== ŞUBE BİLGİLERİ ==========
-    
-    public int BranchCount { get; private set; } = 1;
-    public List<CompanyBranch> Branches { get; private set; } = new();
-    
-    public ApprovalStatus ApprovalStatus { get; private set; }
-
     /// <summary>
     /// EF Core için parametresiz private constructor
     /// </summary>
@@ -148,28 +34,143 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
         throw new NotImplementedException();
     }
 
+    // ========== TEMEL ŞİRKET BİLGİLERİ ==========
+
+    public string Name { get; private set; } = string.Empty;
+    public string TaxId { get; private set; } = string.Empty;
+    public string MersisNo { get; private set; } = string.Empty;
+    public CompanyType CompanyType { get; private set; }
+    public int EstablishedYear { get; private set; }
+    public string? Description { get; private set; }
+    public bool IsActive { get; private set; } = true;
+    public DateTime? DeactivatedAt { get; private set; }
+    public string? DeactivationReason { get; private set; } = string.Empty;
+
+    // ========== SEKTÖR VE KATEGORİ ==========
+
+    public CompanySector Sector { get; private set; }
+    public string? SubSector { get; private set; }
+    public string CompanySize { get; private set; } = "Small"; // Small, Medium, Large, Enterprise
+    public List<string> Tags { get; private set; } = new();
+    public string? Category { get; private set; }
+
+    // ========== ÇALIŞAN BİLGİLERİ ==========
+
+    public int? EmployeeCount { get; private set; }
+    public string? EmployeeCountRange { get; private set; } // "1-10", "11-50", "51-200", vb.
+    public DateTime? EmployeeCountUpdatedAt { get; private set; }
+    public decimal? AverageEmployeeTenure { get; private set; } // Ortalama çalışma süresi (yıl)
+
+    // ========== FİNANSAL BİLGİLER ==========
+
+    public string? RevenueRange { get; private set; } // "0-1M", "1M-10M", "10M-100M", vb.
+    public string? FundingStage { get; private set; } // Seed, Series A, IPO, vb.
+    public decimal? MarketCap { get; private set; }
+
+    // ========== İLETİŞİM BİLGİLERİ ==========
+
+    public string Address { get; private set; } = string.Empty;
+    public string? AddressLine2 { get; private set; }
+    public string City { get; private set; } = string.Empty;
+    public string? District { get; private set; }
+    public string? PostalCode { get; private set; }
+    public string Country { get; private set; } = "Türkiye";
+
+    public string PhoneNumber { get; private set; } = string.Empty;
+    public string? FaxNumber { get; private set; }
+    public string Email { get; private set; } = string.Empty;
+    public string? HrEmail { get; private set; } // İK departmanı emaili
+    public string? SupportEmail { get; private set; }
+
+    public string WebsiteUrl { get; private set; } = string.Empty;
+    public string? CareersPageUrl { get; private set; }
+
+    // ========== SOSYAL MEDYA ==========
+
+    public string? LinkedInUrl { get; set; }
+    public string? XUrl { get; set; }
+    public string? InstagramUrl { get; set; }
+    public string? FacebookUrl { get; set; }
+    public string? YouTubeUrl { get; private set; }
+
+    // ========== GÖRSELLER VE MEDYA ==========
+
+    public string? LogoUrl { get; set; }
+    public string? CoverImageUrl { get; private set; }
+    public List<string> GalleryImages { get; private set; } = new();
+    public string? CompanyVideo { get; private set; }
+
+    // ========== ÇALIŞMA BİLGİLERİ ==========
+
+    public Dictionary<string, string>? WorkingHours { get; private set; } // Gün -> Saat mapping
+    public bool? HasRemoteWork { get; private set; }
+    public string? RemoteWorkPolicy { get; private set; }
+    public List<string> Benefits { get; private set; } = new(); // Yan haklar
+
+    // ========== İSTATİSTİKLER ==========
+
+    public decimal AverageRating { get; private set; } = 0;
+    public int TotalReviewCount { get; private set; } = 0;
+    public DateTime? LastReviewDate { get; private set; }
+    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, decimal> RatingBreakdown { get; private set; } = new(); // Kategori bazlı puanlar
+    public Dictionary<string, int> ReviewCountByType { get; private set; } = new(); // Yorum tipi bazlı sayılar
+    public CompanyReviewStatistics ReviewStatistics { get; set; }
+
+    // ========== DOĞRULAMA BİLGİLERİ ==========
+
+    public bool IsVerified { get; private set; } = false;
+    public DateTime? VerifiedAt { get; private set; }
+    public string? VerifiedBy { get; private set; }
+    public string? VerificationMethod { get; private set; }
+    public string? VerificationNotes { get; private set; }
+    public Dictionary<string, object>? VerificationMetadata { get; private set; }
+    public DateTime? UpdatedAt { get; set; }
+
+    // ========== RİSK VE DEĞERLENDİRME ==========
+
+    public decimal? RiskScore { get; private set; }
+    public DateTime? RiskScoreUpdatedAt { get; private set; }
+    public string? RiskLevel { get; private set; } // Low, Medium, High
+    public List<string> ComplianceCertificates { get; private set; } = new(); // ISO, vb.
+
+    // ========== BİRLEŞME VE SATIN ALMA ==========
+
+    public bool IsMerged { get; private set; } = false;
+    public string? MergedWithCompanyId { get; private set; }
+    public DateTime? MergedAt { get; private set; }
+    public string? ParentCompanyId { get; private set; } // Ana şirket
+    public List<string> SubsidiaryIds { get; private set; } = new(); // Bağlı şirketler
+
+    // ========== ŞUBE BİLGİLERİ ==========
+
+    public int BranchCount { get; private set; } = 1;
+    public List<CompanyBranch> Branches { get; private set; } = new();
+
+    public ApprovalStatus ApprovalStatus { get; private set; }
+
     /// <summary>
     /// Yeni şirket oluşturur (Factory method)
     /// </summary>
-    public static Company Create(
-        string name,
-        string taxId,
-        string mersisNo,
-        string companyType,
-        string sector,
-        string city,
-        string address,
-        string phoneNumber,
-        string email,
-        string websiteUrl,
-        int establishedYear)
+    public static Company Create
+    (
+        string name
+        , string taxId
+        , string mersisNo
+        , CompanyType companyType
+        , CompanySector sector
+        , string city
+        , string address
+        , string phoneNumber
+        , string email
+        , string websiteUrl
+        , int establishedYear
+    )
     {
         // Validasyonlar
         ValidateName(name);
         ValidateTaxId(taxId);
         ValidateMersisNo(mersisNo);
-        ValidateCompanyType(companyType);
-        ValidateSector(sector);
         ValidateCity(city);
         ValidateAddress(address);
         ValidateEmail(email);
@@ -178,22 +179,10 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
 
         var company = new Company
         {
-            Name = name,
-            TaxId = taxId,
-            MersisNo = mersisNo,
-            CompanyType = companyType,
-            Sector = sector,
-            City = city,
-            Address = address,
-            PhoneNumber = phoneNumber,
-            Email = email.ToLowerInvariant(),
-            WebsiteUrl = websiteUrl,
-            EstablishedYear = establishedYear,
-            Country = "Türkiye",
-            AverageRating = 0,
-            TotalReviewCount = 0,
-            BranchCount = 1,
-            IsActive = true
+            Name = name, TaxId = taxId, MersisNo = mersisNo, CompanyType = companyType, Sector = sector, City = city
+            , Address = address, PhoneNumber = phoneNumber, Email = email.ToLowerInvariant(), WebsiteUrl = websiteUrl
+            , EstablishedYear = establishedYear, Country = "Türkiye", AverageRating = 0, TotalReviewCount = 0
+            , BranchCount = 1, IsActive = true
         };
 
         // Domain Event
@@ -202,7 +191,16 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
             company.Name,
             company.TaxId,
             company.MersisNo,
-            company.Sector,
+            company.CompanyType.ToString(),
+            company.Sector.ToString(),
+            company.City,
+            company.Address,
+            company.PhoneNumber,
+            company.Email,
+            company.WebsiteUrl,
+            company.EstablishedYear,
+            null, // CreatedByUserId
+            "SYSTEM", // CreatedByIp
             DateTime.UtcNow
         ));
 
@@ -216,7 +214,7 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     {
         if (description?.Length > MaxDescriptionLength)
             throw new BusinessRuleException($"Açıklama {MaxDescriptionLength} karakterden uzun olamaz.");
-            
+
         Description = description;
         SetModifiedDate();
     }
@@ -228,11 +226,11 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     {
         if (employeeCount.HasValue && employeeCount.Value < 0)
             throw new BusinessRuleException("Çalışan sayısı negatif olamaz.");
-            
+
         EmployeeCount = employeeCount;
         EmployeeCountRange = employeeCountRange;
         EmployeeCountUpdatedAt = DateTime.UtcNow;
-        
+
         // Şirket büyüklüğünü otomatik güncelle
         UpdateCompanySize();
         SetModifiedDate();
@@ -252,16 +250,18 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     /// <summary>
     /// Detaylı adres bilgilerini günceller
     /// </summary>
-    public void UpdateDetailedAddress(
-        string address,
-        string? addressLine2,
-        string city,
-        string? district,
-        string? postalCode)
+    public void UpdateDetailedAddress
+    (
+        string address
+        , string? addressLine2
+        , string city
+        , string? district
+        , string? postalCode
+    )
     {
         ValidateAddress(address);
         ValidateCity(city);
-        
+
         Address = address;
         AddressLine2 = addressLine2;
         City = city;
@@ -273,17 +273,19 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     /// <summary>
     /// İletişim bilgilerini günceller
     /// </summary>
-    public void UpdateContactInfo(
-        string phoneNumber,
-        string email,
-        string? hrEmail = null,
-        string? supportEmail = null,
-        string? faxNumber = null)
+    public void UpdateContactInfo
+    (
+        string phoneNumber
+        , string email
+        , string? hrEmail = null
+        , string? supportEmail = null
+        , string? faxNumber = null
+    )
     {
         ValidateEmail(email);
         if (hrEmail != null) ValidateEmail(hrEmail);
         if (supportEmail != null) ValidateEmail(supportEmail);
-        
+
         PhoneNumber = phoneNumber;
         Email = email.ToLowerInvariant();
         HrEmail = hrEmail?.ToLowerInvariant();
@@ -295,12 +297,14 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     /// <summary>
     /// Sosyal medya linklerini günceller
     /// </summary>
-    public void UpdateSocialMediaLinks(
-        string? linkedInUrl = null,
-        string? xUrl = null,
-        string? instagramUrl = null,
-        string? facebookUrl = null,
-        string? youTubeUrl = null)
+    public void UpdateSocialMediaLinks
+    (
+        string? linkedInUrl = null
+        , string? xUrl = null
+        , string? instagramUrl = null
+        , string? facebookUrl = null
+        , string? youTubeUrl = null
+    )
     {
         LinkedInUrl = linkedInUrl;
         XUrl = xUrl;
@@ -313,11 +317,13 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     /// <summary>
     /// Çalışma bilgilerini günceller
     /// </summary>
-    public void UpdateWorkInfo(
-        Dictionary<string, string>? workingHours,
-        bool? hasRemoteWork,
-        string? remoteWorkPolicy,
-        List<string>? benefits)
+    public void UpdateWorkInfo
+    (
+        Dictionary<string, string>? workingHours
+        , bool? hasRemoteWork
+        , string? remoteWorkPolicy
+        , List<string>? benefits
+    )
     {
         WorkingHours = workingHours;
         HasRemoteWork = hasRemoteWork;
@@ -329,11 +335,13 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     /// <summary>
     /// Görsel içerikleri günceller
     /// </summary>
-    public void UpdateVisualContent(
-        string? logoUrl,
-        string? coverImageUrl,
-        List<string>? galleryImages,
-        string? companyVideo)
+    public void UpdateVisualContent
+    (
+        string? logoUrl
+        , string? coverImageUrl
+        , List<string>? galleryImages
+        , string? companyVideo
+    )
     {
         LogoUrl = logoUrl;
         CoverImageUrl = coverImageUrl;
@@ -345,21 +353,23 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     /// <summary>
     /// Yorum istatistiklerini günceller
     /// </summary>
-    public void UpdateReviewStatistics(
-        decimal averageRating,
-        int totalReviewCount,
-        Dictionary<string, decimal>? ratingBreakdown = null,
-        Dictionary<string, int>? reviewCountByType = null)
+    public void UpdateReviewStatistics
+    (
+        decimal averageRating
+        , int totalReviewCount
+        , Dictionary<string, decimal>? ratingBreakdown = null
+        , Dictionary<string, int>? reviewCountByType = null
+    )
     {
         var oldRating = AverageRating;
-        
+
         AverageRating = Math.Round(averageRating, 2);
         TotalReviewCount = totalReviewCount;
         LastReviewDate = DateTime.UtcNow;
-        
+
         if (ratingBreakdown != null)
             RatingBreakdown = ratingBreakdown;
-            
+
         if (reviewCountByType != null)
             ReviewCountByType = reviewCountByType;
 
@@ -382,55 +392,57 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     {
         if (string.IsNullOrWhiteSpace(newCompanyId))
             throw new ArgumentNullException(nameof(newCompanyId));
-        
+
         if (newCompanyId == Id)
             throw new BusinessRuleException("Yeni ID mevcut ID ile aynı olamaz.");
-        
+
         var oldId = Id;
         // ID güncelleme BaseEntity'de protected olduğu için reflection veya başka yöntem gerekebilir
         // Alternatif: Merge işlemi için özel bir metod kullanılabilir
-    
+
         AddDomainEvent(new CompanyIdUpdatedEvent(oldId, newCompanyId, DateTime.UtcNow));
     }
-    
+
     /// <summary>
     /// Şirketi doğrular
     /// </summary>
-    public void Verify(
-        string verifiedBy,
-        string verificationMethod,
-        string? verificationNotes = null,
-        Dictionary<string, object>? metadata = null)
+    public void Verify
+    (
+        string verifiedBy
+        , string verificationMethod
+        , string? verificationNotes = null
+        , Dictionary<string, object>? metadata = null
+    )
     {
         if (IsVerified)
             throw new InvalidOperationException("Şirket zaten doğrulanmış.");
-        
+
         if (string.IsNullOrWhiteSpace(verifiedBy))
             throw new ArgumentNullException(nameof(verifiedBy));
-        
+
         if (string.IsNullOrWhiteSpace(verificationMethod))
             throw new ArgumentNullException(nameof(verificationMethod));
-            
+
         IsVerified = true;
         VerifiedAt = DateTime.UtcNow;
         VerifiedBy = verifiedBy;
         VerificationMethod = verificationMethod;
         VerificationNotes = verificationNotes;
         VerificationMetadata = metadata;
-        
+
         // Eğer henüz onaylanmamışsa otomatik onayla
         if (!IsApproved)
         {
             IsApproved = true;
             ApprovedAt = DateTime.UtcNow;
             ApprovedBy = verifiedBy;
-            
+
             ApprovalStatus = ApprovalStatus.Approved;
         }
 
-        
+
         SetModifiedDate();
-        
+
         // Domain event
         // Domain event
         AddDomainEvent(new CompanyVerifiedEvent(
@@ -448,11 +460,11 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     {
         if (riskScore < 0 || riskScore > 100)
             throw new ArgumentException("Risk skoru 0-100 arasında olmalıdır.");
-            
+
         var validRiskLevels = new[] { "Low", "Medium", "High" };
         if (!validRiskLevels.Contains(riskLevel))
             throw new ArgumentException("Geçersiz risk seviyesi.");
-            
+
         RiskScore = riskScore;
         RiskLevel = riskLevel;
         RiskScoreUpdatedAt = DateTime.UtcNow;
@@ -466,12 +478,13 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     {
         if (branch == null)
             throw new ArgumentNullException(nameof(branch));
-            
+
         Branches.Add(branch);
         BranchCount = Branches.Count + 1; // +1 merkez ofis için
         SetModifiedDate();
-        
-        AddDomainEvent(new CompanyBranchAddedEvent(Id, branch.Id, branch.Name, branch.City, branch.IsHeadquarters, branch.CreatedAt));
+
+        AddDomainEvent(new CompanyBranchAddedEvent(Id, branch.Id, branch.Name, branch.City, branch.IsHeadquarters
+            , branch.CreatedAt));
     }
 
     /// <summary>
@@ -481,13 +494,13 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     {
         if (IsMerged)
             throw new InvalidOperationException("Şirket zaten birleşmiş.");
-            
+
         IsMerged = true;
         MergedWithCompanyId = targetCompanyId;
         MergedAt = DateTime.UtcNow;
         IsActive = false;
         SetModifiedDate();
-        
+
         AddDomainEvent(new CompanyMergedEvent(Id, targetCompanyId, DateTime.UtcNow));
     }
 
@@ -513,20 +526,16 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     }
 
     // Private helper methods
-    
+
     private void UpdateCompanySize()
     {
         CompanySize = EmployeeCount switch
         {
-            null => CompanySize,
-            <= 10 => "Micro",
-            <= 50 => "Small",
-            <= 250 => "Medium",
-            <= 1000 => "Large",
-            _ => "Enterprise"
+            null => CompanySize, <= 10 => "Micro", <= 50 => "Small", <= 250 => "Medium", <= 1000 => "Large"
+            , _ => "Enterprise"
         };
     }
-    
+
     /// <summary>
     /// Şirketi pasifleştirir
     /// </summary>
@@ -534,7 +543,7 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     {
         if (!IsActive)
             throw new BusinessRuleException("Şirket zaten pasif durumda.");
-        
+
         if (string.IsNullOrWhiteSpace(reason))
             throw new ArgumentNullException(nameof(reason), "Pasifleştirme nedeni belirtilmelidir.");
 
@@ -542,9 +551,9 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
         DeactivatedAt = DateTime.UtcNow;
         DeactivationReason = reason;
         SetModifiedDate();
-    
+
         // Domain Event
-        AddDomainEvent(new CompanyDeactivatedEvent(Id, "SYSTEM",reason, DateTime.UtcNow));
+        AddDomainEvent(new CompanyDeactivatedEvent(Id, "SYSTEM", reason, DateTime.UtcNow));
     }
 
     /// <summary>
@@ -554,15 +563,15 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     {
         if (IsActive)
             throw new BusinessRuleException("Şirket zaten aktif durumda.");
-        
+
         IsActive = true;
         //TODO: deactivated tarihini null yapamayız buna başka birşey yapmamız lazım
         DeactivatedAt = null;
         DeactivationReason = string.Empty;
         SetModifiedDate();
-    
+
         // Domain Event
-        AddDomainEvent(new CompanyReactivatedEvent(Id, "SYSTEM", reactivatedBy,DateTime.UtcNow));
+        AddDomainEvent(new CompanyReactivatedEvent(Id, "SYSTEM", reactivatedBy, DateTime.UtcNow));
     }
 
     /// <summary>
@@ -572,7 +581,7 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     {
         if (string.IsNullOrWhiteSpace(key))
             throw new ArgumentNullException(nameof(key));
-        
+
         Metadata ??= new Dictionary<string, object>();
         Metadata[key] = value;
         SetModifiedDate();
@@ -591,7 +600,7 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     }
 
     // Validation methods
-    
+
     private static void ValidateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -607,7 +616,8 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
             throw new ArgumentNullException(nameof(taxId));
 
         if (taxId.Length != TaxIdLength || !taxId.All(char.IsDigit))
-            throw new BusinessRuleException($"Vergi numarası {TaxIdLength} haneli olmalı ve sadece rakamlardan oluşmalıdır.");
+            throw new BusinessRuleException(
+                $"Vergi numarası {TaxIdLength} haneli olmalı ve sadece rakamlardan oluşmalıdır.");
     }
 
     private static void ValidateMersisNo(string mersisNo)
@@ -619,32 +629,6 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
             throw new BusinessRuleException($"MERSİS numarası {MersisNoLength} haneli olmalıdır.");
     }
 
-    private static void ValidateCompanyType(string companyType)
-    {
-        if (string.IsNullOrWhiteSpace(companyType))
-            throw new ArgumentNullException(nameof(companyType));
-
-        var validTypes = new[] { "A.Ş.", "Ltd. Şti.", "Koll. Şti.", "Kom. Şti.", "Adi Ort.", "Şahıs", "Koop.", "Dernek", "Vakıf", "Kamu" };
-        
-        if (!validTypes.Contains(companyType))
-            throw new BusinessRuleException("Geçersiz şirket türü.");
-    }
-
-    private static void ValidateSector(string sector)
-    {
-        if (string.IsNullOrWhiteSpace(sector))
-            throw new ArgumentNullException(nameof(sector));
-
-        var validSectors = new[] { 
-            "Teknoloji", "Finans", "Sağlık", "Eğitim", "Perakende", 
-            "Üretim", "İnşaat", "Turizm", "Medya", "Telekomünikasyon", 
-            "Enerji", "Otomotiv", "Yiyecek & İçecek", "Lojistik", 
-            "Gayrimenkul", "Danışmanlık", "Hukuk", "Tarım", "Tekstil", "Diğer" 
-        };
-
-        if (!validSectors.Contains(sector))
-            throw new BusinessRuleException("Geçersiz sektör.");
-    }
 
     private static void ValidateCity(string city)
     {
@@ -666,7 +650,7 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
         if (string.IsNullOrWhiteSpace(email))
             throw new ArgumentNullException(nameof(email));
 
-        if (!System.Text.RegularExpressions.Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+        if (!Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
             throw new BusinessRuleException("Geçersiz email formatı.");
     }
 
@@ -675,7 +659,7 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
         if (string.IsNullOrWhiteSpace(url))
             throw new ArgumentNullException(nameof(url));
 
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || 
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
             (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
             throw new BusinessRuleException("Geçersiz website URL'i.");

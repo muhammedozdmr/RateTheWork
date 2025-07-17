@@ -4,13 +4,22 @@ namespace RateTheWork.Domain.Events.Company;
 /// 1. Şirket oluşturuldu event'i
 /// </summary>
 public record CompanyCreatedEvent(
-    string? CompanyId,
-    string Name,
-    string TaxId,
-    string MersisNo,
-    string Sector,
-    DateTime CreatedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string Name
+    , string TaxId
+    , string MersisNo
+    , string CompanyType
+    , string Sector
+    , string City
+    , string? Address
+    , string? PhoneNumber
+    , string? Email
+    , string? WebsiteUrl
+    , int? EstablishedYear
+    , string? CreatedByUserId
+    , string CreatedByIp
+    , DateTime CreatedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -20,11 +29,11 @@ public record CompanyCreatedEvent(
 /// 2. Şirket onaylandı event'i
 /// </summary>
 public record CompanyApprovedEvent(
-    string? CompanyId,
-    string ApprovedBy,
-    string? Notes,
-    DateTime ApprovedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string ApprovedBy
+    , string? Notes
+    , DateTime ApprovedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -34,11 +43,11 @@ public record CompanyApprovedEvent(
 /// 3. Şirket reddedildi event'i
 /// </summary>
 public record CompanyRejectedEvent(
-    string? CompanyId,
-    string RejectedBy,
-    string Reason,
-    DateTime RejectedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string RejectedBy
+    , string Reason
+    , DateTime RejectedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -48,11 +57,14 @@ public record CompanyRejectedEvent(
 /// 4. Şirket bilgileri güncellendi event'i
 /// </summary>
 public record CompanyInfoUpdatedEvent(
-    string? CompanyId,
-    string[] UpdatedFields,
-    string UpdatedBy,
-    DateTime UpdatedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string[] UpdatedFields
+    , Dictionary<string, object>? OldValues
+    , Dictionary<string, object>? NewValues
+    , string UpdatedBy
+    , string? UpdateReason
+    , DateTime UpdatedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -62,10 +74,10 @@ public record CompanyInfoUpdatedEvent(
 /// 5. Şirket logosu güncellendi event'i
 /// </summary>
 public record CompanyLogoUpdatedEvent(
-    string? CompanyId,
-    string LogoUrl,
-    DateTime UpdatedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string LogoUrl
+    , DateTime UpdatedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -75,12 +87,12 @@ public record CompanyLogoUpdatedEvent(
 /// 6. Şirket puanı güncellendi event'i
 /// </summary>
 public record CompanyRatingUpdatedEvent(
-    string? CompanyId,
-    decimal OldRating,
-    decimal NewRating,
-    int TotalReviews,
-    DateTime UpdatedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , decimal OldRating
+    , decimal NewRating
+    , int TotalReviews
+    , DateTime UpdatedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -90,12 +102,12 @@ public record CompanyRatingUpdatedEvent(
 /// 7. Şirket doğrulandı event'i
 /// </summary>
 public record CompanyVerifiedEvent(
-    string? CompanyId,
-    string VerificationMethod,
-    string VerifiedBy,
-    DateTime VerifiedAt,
-    Dictionary<string, object>? Metadata = null,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string VerificationMethod
+    , string VerifiedBy
+    , DateTime VerifiedAt
+    , Dictionary<string, object>? Metadata = null
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -105,11 +117,11 @@ public record CompanyVerifiedEvent(
 /// 8. Şirket birleşti event'i
 /// </summary>
 public record CompanyMergedEvent(
-    string? SourceCompanyId,
-    string TargetCompanyId,
-    DateTime MergedAt,
-    string? MergedBy = null,
-    DateTime OccurredOn = default
+    string? SourceCompanyId
+    , string TargetCompanyId
+    , DateTime MergedAt
+    , string? MergedBy = null
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -119,13 +131,13 @@ public record CompanyMergedEvent(
 /// 9. Şirkete şube eklendi event'i
 /// </summary>
 public record CompanyBranchAddedEvent(
-    string? CompanyId,
-    string BranchId,
-    string BranchName,
-    string City,
-    bool IsHeadquarters,
-    DateTime AddedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string BranchId
+    , string BranchName
+    , string City
+    , bool IsHeadquarters
+    , DateTime AddedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -135,13 +147,13 @@ public record CompanyBranchAddedEvent(
 /// 10. Şirket çalışan bilgileri güncellendi event'i
 /// </summary>
 public record CompanyEmployeeInfoUpdatedEvent(
-    string? CompanyId,
-    int? OldEmployeeCount,
-    int? NewEmployeeCount,
-    string? EmployeeCountRange,
-    string CompanySize,
-    DateTime UpdatedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , int? OldEmployeeCount
+    , int? NewEmployeeCount
+    , string? EmployeeCountRange
+    , string CompanySize
+    , DateTime UpdatedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -151,13 +163,13 @@ public record CompanyEmployeeInfoUpdatedEvent(
 /// 11. Şirket risk skoru güncellendi event'i
 /// </summary>
 public record CompanyRiskScoreUpdatedEvent(
-    string? CompanyId,
-    decimal? OldScore,
-    decimal NewScore,
-    string RiskLevel,
-    List<string> RiskFactors,
-    DateTime UpdatedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , decimal? OldScore
+    , decimal NewScore
+    , string RiskLevel
+    , List<string> RiskFactors
+    , DateTime UpdatedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -167,13 +179,13 @@ public record CompanyRiskScoreUpdatedEvent(
 /// 12. Şirket finansal bilgileri güncellendi event'i
 /// </summary>
 public record CompanyFinancialInfoUpdatedEvent(
-    string? CompanyId,
-    string? RevenueRange,
-    string? FundingStage,
-    decimal? MarketCap,
-    string UpdatedBy,
-    DateTime UpdatedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string? RevenueRange
+    , string? FundingStage
+    , decimal? MarketCap
+    , string UpdatedBy
+    , DateTime UpdatedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -183,13 +195,13 @@ public record CompanyFinancialInfoUpdatedEvent(
 /// 13. Şirket çalışma bilgileri güncellendi event'i
 /// </summary>
 public record CompanyWorkInfoUpdatedEvent(
-    string? CompanyId,
-    bool? HasRemoteWork,
-    string? RemoteWorkPolicy,
-    List<string>? Benefits,
-    Dictionary<string, string>? WorkingHours,
-    DateTime UpdatedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , bool? HasRemoteWork
+    , string? RemoteWorkPolicy
+    , List<string>? Benefits
+    , Dictionary<string, string>? WorkingHours
+    , DateTime UpdatedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -199,11 +211,11 @@ public record CompanyWorkInfoUpdatedEvent(
 /// 14. Şirket deaktif edildi event'i
 /// </summary>
 public record CompanyDeactivatedEvent(
-    string? CompanyId,
-    string DeactivatedBy,
-    string Reason,
-    DateTime DeactivatedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string DeactivatedBy
+    , string Reason
+    , DateTime DeactivatedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -213,11 +225,11 @@ public record CompanyDeactivatedEvent(
 /// 15. Şirket yeniden aktif edildi event'i
 /// </summary>
 public record CompanyReactivatedEvent(
-    string? CompanyId,
-    string ReactivatedBy,
-    string? Notes,
-    DateTime ReactivatedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string ReactivatedBy
+    , string? Notes
+    , DateTime ReactivatedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -227,13 +239,13 @@ public record CompanyReactivatedEvent(
 /// 16. Şirket görsel içeriği güncellendi event'i
 /// </summary>
 public record CompanyVisualContentUpdatedEvent(
-    string? CompanyId,
-    string? LogoUrl,
-    string? CoverImageUrl,
-    List<string>? GalleryImages,
-    string? CompanyVideo,
-    DateTime UpdatedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string? LogoUrl
+    , string? CoverImageUrl
+    , List<string>? GalleryImages
+    , string? CompanyVideo
+    , DateTime UpdatedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -243,14 +255,14 @@ public record CompanyVisualContentUpdatedEvent(
 /// 17. Şirket sosyal medya linkleri güncellendi event'i
 /// </summary>
 public record CompanySocialMediaUpdatedEvent(
-    string? CompanyId,
-    string? LinkedInUrl,
-    string? XUrl,
-    string? InstagramUrl,
-    string? FacebookUrl,
-    string? YouTubeUrl,
-    DateTime UpdatedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string? LinkedInUrl
+    , string? XUrl
+    , string? InstagramUrl
+    , string? FacebookUrl
+    , string? YouTubeUrl
+    , DateTime UpdatedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -260,15 +272,15 @@ public record CompanySocialMediaUpdatedEvent(
 /// 18. Şirket detaylı adres güncellendi event'i
 /// </summary>
 public record CompanyAddressUpdatedEvent(
-    string? CompanyId,
-    string Address,
-    string? AddressLine2,
-    string City,
-    string? District,
-    string? PostalCode,
-    string Country,
-    DateTime UpdatedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string Address
+    , string? AddressLine2
+    , string City
+    , string? District
+    , string? PostalCode
+    , string Country
+    , DateTime UpdatedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -278,14 +290,14 @@ public record CompanyAddressUpdatedEvent(
 /// 19. Şirket iletişim bilgileri güncellendi event'i
 /// </summary>
 public record CompanyContactInfoUpdatedEvent(
-    string? CompanyId,
-    string PhoneNumber,
-    string Email,
-    string? HrEmail,
-    string? SupportEmail,
-    string? FaxNumber,
-    DateTime UpdatedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string PhoneNumber
+    , string Email
+    , string? HrEmail
+    , string? SupportEmail
+    , string? FaxNumber
+    , DateTime UpdatedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -295,11 +307,11 @@ public record CompanyContactInfoUpdatedEvent(
 /// 20. Şirket ana şirket ilişkisi kuruldu event'i
 /// </summary>
 public record CompanyParentSetEvent(
-    string? CompanyId,
-    string ParentCompanyId,
-    string SetBy,
-    DateTime SetAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string ParentCompanyId
+    , string SetBy
+    , DateTime SetAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -309,11 +321,11 @@ public record CompanyParentSetEvent(
 /// 21. Şirkete bağlı şirket eklendi event'i
 /// </summary>
 public record CompanySubsidiaryAddedEvent(
-    string? CompanyId,
-    string SubsidiaryId,
-    string AddedBy,
-    DateTime AddedAt,
-    DateTime OccurredOn = default
+    string? CompanyId
+    , string SubsidiaryId
+    , string AddedBy
+    , DateTime AddedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
@@ -323,10 +335,104 @@ public record CompanySubsidiaryAddedEvent(
 /// 22. Şirket ID'si güncellendi event'i
 /// </summary>
 public record CompanyIdUpdatedEvent(
-    string OldCompanyId,
-    string NewCompanyId,
-    DateTime UpdatedAt,
-    DateTime OccurredOn = default
+    string OldCompanyId
+    , string NewCompanyId
+    , DateTime UpdatedAt
+    , DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 23. Şirket görüntülendi event'i
+/// </summary>
+public record CompanyViewedEvent(
+    string? CompanyId
+    , string? ViewedByUserId
+    , string ViewerIp
+    , string? ReferrerUrl
+    , string UserAgent
+    , DateTime ViewedAt
+    , DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 24. Şirket arandı event'i
+/// </summary>
+public record CompanySearchedEvent(
+    string SearchQuery
+    , string? Sector
+    , string? City
+    , int ResultCount
+    , string? SearchByUserId
+    , string SearcherIp
+    , Dictionary<string, object>? SearchFilters
+    , DateTime SearchedAt
+    , DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 25. Şirket geçici olarak askıya alındı event'i
+/// </summary>
+public record CompanySuspendedEvent(
+    string? CompanyId
+    , string SuspendedBy
+    , string Reason
+    , DateTime? SuspensionEndDate
+    , bool CanAppeal
+    , DateTime SuspendedAt
+    , DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 26. Şirket takip edildi event'i
+/// </summary>
+public record CompanyFollowedEvent(
+    string? CompanyId
+    , string UserId
+    , bool EnableNotifications
+    , DateTime FollowedAt
+    , DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 27. Şirket takibi bırakıldı event'i
+/// </summary>
+public record CompanyUnfollowedEvent(
+    string? CompanyId
+    , string UserId
+    , string? UnfollowReason
+    , DateTime UnfollowedAt
+    , DateTime OccurredOn = default
+) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
+}
+
+/// <summary>
+/// 28. Şirket sahibi tarafından talep edildi event'i
+/// </summary>
+public record CompanyClaimedEvent(
+    string? CompanyId
+    , string ClaimedByUserId
+    , string ClaimantEmail
+    , string? VerificationDocumentUrl
+    , string ClaimStatus
+    , DateTime ClaimedAt
+    , DateTime OccurredOn = default
 ) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;

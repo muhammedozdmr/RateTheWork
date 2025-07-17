@@ -1,5 +1,6 @@
 using System.Text.Json;
 using RateTheWork.Domain.Common;
+using RateTheWork.Domain.Enums.Admin;
 using RateTheWork.Domain.Events.AuditLog;
 using RateTheWork.Domain.Exceptions;
 
@@ -10,57 +11,11 @@ namespace RateTheWork.Domain.Entities;
 /// </summary>
 public class AuditLog : BaseEntity
 {
-    // Audit Severity Levels
-    public enum AuditSeverity
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private AuditLog() : base()
     {
-        Info,        // Bilgi
-        Warning,     // Uyarı
-        Critical,    // Kritik
-        Security     // Güvenlik
-    }
-
-    // Action Types
-    public static class ActionTypes
-    {
-        // User Management
-        public const string UserCreated = "User.Created";
-        public const string UserUpdated = "User.Updated";
-        public const string UserDeleted = "User.Deleted";
-        public const string UserBanned = "User.Banned";
-        public const string UserUnbanned = "User.Unbanned";
-        public const string UserWarned = "User.Warned";
-        
-        // Company Management
-        public const string CompanyApproved = "Company.Approved";
-        public const string CompanyRejected = "Company.Rejected";
-        public const string CompanyUpdated = "Company.Updated";
-        public const string CompanyDeleted = "Company.Deleted";
-        
-        // Review Management
-        public const string ReviewHidden = "Review.Hidden";
-        public const string ReviewActivated = "Review.Activated";
-        public const string ReviewDeleted = "Review.Deleted";
-        
-        // Document Verification
-        public const string DocumentApproved = "Document.Approved";
-        public const string DocumentRejected = "Document.Rejected";
-        
-        // Report Management
-        public const string ReportResolved = "Report.Resolved";
-        public const string ReportDismissed = "Report.Dismissed";
-        public const string ReportEscalated = "Report.Escalated";
-        
-        // Admin Actions
-        public const string AdminLogin = "Admin.Login";
-        public const string AdminLogout = "Admin.Logout";
-        public const string AdminPasswordChanged = "Admin.PasswordChanged";
-        public const string AdminRoleChanged = "Admin.RoleChanged";
-        
-        // System Actions
-        public const string SettingsUpdated = "System.SettingsUpdated";
-        public const string DataExported = "System.DataExported";
-        public const string DataImported = "System.DataImported";
-        public const string BackupCreated = "System.BackupCreated";
     }
 
     // Properties
@@ -79,39 +34,28 @@ public class AuditLog : BaseEntity
     public string? ErrorMessage { get; private set; }
 
     /// <summary>
-    /// EF Core için parametresiz private constructor
-    /// </summary>
-    private AuditLog() : base()
-    {
-    }
-
-    /// <summary>
     /// Yeni audit log oluşturur (Factory method)
     /// </summary>
-    public static AuditLog Create(
-        string adminUserId,
-        string actionType,
-        string entityType,
-        string entityId,
-        string? details = null,
-        string? ipAddress = null,
-        string? userAgent = null)
+    public static AuditLog Create
+    (
+        string adminUserId
+        , string actionType
+        , string entityType
+        , string entityId
+        , string? details = null
+        , string? ipAddress = null
+        , string? userAgent = null
+    )
     {
         ValidateActionType(actionType);
         ValidateEntityType(entityType);
 
         var auditLog = new AuditLog
         {
-            AdminUserId = adminUserId ?? throw new ArgumentNullException(nameof(adminUserId)),
-            ActionType = actionType,
-            EntityType = entityType,
-            EntityId = entityId ?? throw new ArgumentNullException(nameof(entityId)),
-            PerformedAt = DateTime.UtcNow,
-            Severity = DetermineSeverityByAction(actionType),
-            Details = details,
-            IpAddress = ipAddress,
-            UserAgent = userAgent,
-            IsSuccess = true
+            AdminUserId = adminUserId ?? throw new ArgumentNullException(nameof(adminUserId)), ActionType = actionType
+            , EntityType = entityType, EntityId = entityId ?? throw new ArgumentNullException(nameof(entityId))
+            , PerformedAt = DateTime.UtcNow, Severity = DetermineSeverityByAction(actionType), Details = details
+            , IpAddress = ipAddress, UserAgent = userAgent, IsSuccess = true
         };
 
         // Kritik aksiyonlar için event
@@ -197,7 +141,7 @@ public class AuditLog : BaseEntity
                 IpAddress = $"{v6Parts[0]}:{v6Parts[1]}:xxxx:xxxx:...";
             }
         }
-        
+
         SetModifiedDate();
     }
 
@@ -206,14 +150,13 @@ public class AuditLog : BaseEntity
     {
         return actionType switch
         {
-            var type when type.Contains("Deleted") => AuditSeverity.Critical,
-            var type when type.Contains("Banned") => AuditSeverity.Critical,
-            var type when type.Contains("Password") => AuditSeverity.Security,
-            var type when type.Contains("Role") => AuditSeverity.Security,
-            var type when type.Contains("Settings") => AuditSeverity.Warning,
-            var type when type.Contains("Export") => AuditSeverity.Warning,
-            var type when type.Contains("Import") => AuditSeverity.Warning,
-            _ => AuditSeverity.Info
+            var type when type.Contains("Deleted") => AuditSeverity.Critical
+            , var type when type.Contains("Banned") => AuditSeverity.Critical
+            , var type when type.Contains("Password") => AuditSeverity.Security
+            , var type when type.Contains("Role") => AuditSeverity.Security
+            , var type when type.Contains("Settings") => AuditSeverity.Warning
+            , var type when type.Contains("Export") => AuditSeverity.Warning
+            , var type when type.Contains("Import") => AuditSeverity.Warning, _ => AuditSeverity.Info
         };
     }
 
@@ -232,11 +175,56 @@ public class AuditLog : BaseEntity
         if (string.IsNullOrWhiteSpace(entityType))
             throw new ArgumentNullException(nameof(entityType));
 
-        var validTypes = new[] { "User", "Company", "Review", "Admin", "System", "Security", 
-            "Badge", "Report", "Warning", "Ban", "Settings" };
+        var validTypes = new[]
+        {
+            "User", "Company", "Review", "Admin", "System", "Security", "Badge", "Report", "Warning", "Ban", "Settings"
+        };
 
         if (!validTypes.Contains(entityType))
             throw new BusinessRuleException($"Geçersiz entity tipi: {entityType}");
     }
-}
 
+    // Action Types
+    public static class ActionTypes
+    {
+        // User Management
+        public const string UserCreated = "User.Created";
+        public const string UserUpdated = "User.Updated";
+        public const string UserDeleted = "User.Deleted";
+        public const string UserBanned = "User.Banned";
+        public const string UserUnbanned = "User.Unbanned";
+        public const string UserWarned = "User.Warned";
+
+        // Company Management
+        public const string CompanyApproved = "Company.Approved";
+        public const string CompanyRejected = "Company.Rejected";
+        public const string CompanyUpdated = "Company.Updated";
+        public const string CompanyDeleted = "Company.Deleted";
+
+        // Review Management
+        public const string ReviewHidden = "Review.Hidden";
+        public const string ReviewActivated = "Review.Activated";
+        public const string ReviewDeleted = "Review.Deleted";
+
+        // Document Verification
+        public const string DocumentApproved = "Document.Approved";
+        public const string DocumentRejected = "Document.Rejected";
+
+        // Report Management
+        public const string ReportResolved = "Report.Resolved";
+        public const string ReportDismissed = "Report.Dismissed";
+        public const string ReportEscalated = "Report.Escalated";
+
+        // Admin Actions
+        public const string AdminLogin = "Admin.Login";
+        public const string AdminLogout = "Admin.Logout";
+        public const string AdminPasswordChanged = "Admin.PasswordChanged";
+        public const string AdminRoleChanged = "Admin.RoleChanged";
+
+        // System Actions
+        public const string SettingsUpdated = "System.SettingsUpdated";
+        public const string DataExported = "System.DataExported";
+        public const string DataImported = "System.DataImported";
+        public const string BackupCreated = "System.BackupCreated";
+    }
+}

@@ -1,4 +1,6 @@
+using System.Text.Json;
 using RateTheWork.Domain.Common;
+using RateTheWork.Domain.Enums.User;
 using RateTheWork.Domain.Events.Warning;
 using RateTheWork.Domain.Exceptions;
 
@@ -9,23 +11,11 @@ namespace RateTheWork.Domain.Entities;
 /// </summary>
 public class Warning : BaseEntity
 {
-    // Warning Types
-    public enum WarningType
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private Warning() : base()
     {
-        ContentViolation,      // İçerik ihlali
-        SpamBehavior,          // Spam davranışı
-        FalseInformation,      // Yanlış bilgi
-        DisrespectfulBehavior, // Saygısız davranış
-        Other                  // Diğer
-    }
-
-    // Warning Severity
-    public enum WarningSeverity
-    {
-        Low,      // Düşük - Bilgilendirme amaçlı
-        Medium,   // Orta - Dikkat edilmesi gereken
-        High,     // Yüksek - Ciddi ihlal
-        Critical  // Kritik - Ban'a yakın
     }
 
     // Properties
@@ -47,42 +37,31 @@ public class Warning : BaseEntity
     public int Points { get; private set; }
 
     /// <summary>
-    /// EF Core için parametresiz private constructor
-    /// </summary>
-    private Warning() : base()
-    {
-    }
-
-    /// <summary>
     /// Yeni uyarı oluşturur (Factory method)
     /// </summary>
-    public static Warning Create(
-        string userId,
-        string adminId,
-        string reason,
-        WarningType type,
-        WarningSeverity severity,
-        string? relatedEntityType = null,
-        string? relatedEntityId = null,
-        string? detailedExplanation = null,
-        int? expirationDays = null)
+    public static Warning Create
+    (
+        string userId
+        , string adminId
+        , string reason
+        , WarningType type
+        , WarningSeverity severity
+        , string? relatedEntityType = null
+        , string? relatedEntityId = null
+        , string? detailedExplanation = null
+        , int? expirationDays = null
+    )
     {
         ValidateReason(reason);
 
         var warning = new Warning
         {
-            UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
-            AdminId = adminId ?? throw new ArgumentNullException(nameof(adminId)),
-            Reason = reason,
-            Type = type,
-            Severity = severity,
-            DetailedExplanation = detailedExplanation,
-            RelatedEntityType = relatedEntityType,
-            RelatedEntityId = relatedEntityId,
-            IssuedAt = DateTime.UtcNow,
-            IsActive = true,
-            Points = CalculatePoints(severity),
-            ExpiresAt = expirationDays.HasValue ? DateTime.UtcNow.AddDays(expirationDays.Value) : null
+            UserId = userId ?? throw new ArgumentNullException(nameof(userId))
+            , AdminId = adminId ?? throw new ArgumentNullException(nameof(adminId)), Reason = reason, Type = type
+            , Severity = severity, DetailedExplanation = detailedExplanation, RelatedEntityType = relatedEntityType
+            , RelatedEntityId = relatedEntityId, IssuedAt = DateTime.UtcNow, IsActive = true
+            , Points = CalculatePoints(severity)
+            , ExpiresAt = expirationDays.HasValue ? DateTime.UtcNow.AddDays(expirationDays.Value) : null
         };
 
         // Domain Event
@@ -100,6 +79,162 @@ public class Warning : BaseEntity
         ));
 
         return warning;
+    }
+
+    /// <summary>
+    /// İçerik ihlali uyarısı oluşturur
+    /// </summary>
+    public static Warning CreateForContentViolation
+    (
+        string userId
+        , string adminId
+        , string violatedContent
+        , string contentId
+        , WarningSeverity severity
+        , string? detailedExplanation = null
+    )
+    {
+        var reason = $"İçerik ihlali: {violatedContent}";
+
+        return Create(
+            userId,
+            adminId,
+            reason,
+            WarningType.ContentViolation,
+            severity,
+            "Content",
+            contentId,
+            detailedExplanation,
+            severity == WarningSeverity.Low ? 30 : null // Düşük seviyeli uyarılar 30 gün sonra sona erer
+        );
+    }
+
+    /// <summary>
+    /// Spam davranışı uyarısı oluşturur
+    /// </summary>
+    public static Warning CreateForSpamBehavior
+    (
+        string userId
+        , string adminId
+        , string spamType
+        , int spamCount
+        , string? relatedEntityId = null
+    )
+    {
+        var reason = $"Spam davranışı tespit edildi: {spamType} ({spamCount} kez)";
+        var severity = spamCount switch
+        {
+            < 3 => WarningSeverity.Low, < 5 => WarningSeverity.Medium, < 10 => WarningSeverity.High
+            , _ => WarningSeverity.Critical
+        };
+
+        return Create(
+            userId,
+            adminId,
+            reason,
+            WarningType.SpamBehavior,
+            severity,
+            "Spam",
+            relatedEntityId,
+            $"Spam tipi: {spamType}, Tekrar sayısı: {spamCount}"
+        );
+    }
+
+    /// <summary>
+    /// Otomatik sistem uyarısı oluşturur
+    /// </summary>
+    public static Warning CreateAutomatic
+    (
+        string userId
+        , string triggerRule
+        , WarningType type
+        , WarningSeverity severity
+        , Dictionary<string, object>? metadata = null
+    )
+    {
+        var reason = $"Otomatik tespit: {triggerRule}";
+        var detailedExplanation = metadata != null
+            ? JsonSerializer.Serialize(metadata)
+            : null;
+
+        var warning = Create(
+            userId,
+            "SYSTEM", // adminId olarak SYSTEM kullanıyoruz
+            reason,
+            type,
+            severity,
+            "AutoDetection",
+            null,
+            detailedExplanation,
+            90 // Otomatik uyarılar 90 gün sonra sona erer
+        );
+
+        // Otomatik uyarı için ek event
+        warning.AddDomainEvent(new AutomaticWarningIssuedEvent(
+            warning.Id,
+            userId,
+            triggerRule,
+            type.ToString(),
+            severity.ToString(),
+            metadata,
+            DateTime.UtcNow
+        ));
+
+        return warning;
+    }
+
+    /// <summary>
+    /// Saygısız davranış uyarısı oluşturur
+    /// </summary>
+    public static Warning CreateForDisrespectfulBehavior
+    (
+        string userId
+        , string adminId
+        , string targetUserId
+        , string incidentDescription
+        , string? reviewId = null
+    )
+    {
+        var reason = "Saygısız davranış ve hakaret";
+        var detailedExplanation = $"Hedef kullanıcı: {targetUserId}. Olay: {incidentDescription}";
+
+        return Create(
+            userId,
+            adminId,
+            reason,
+            WarningType.DisrespectfulBehavior,
+            WarningSeverity.High, // Saygısızlık genellikle yüksek seviyeli uyarı
+            "Review",
+            reviewId,
+            detailedExplanation
+        );
+    }
+
+    /// <summary>
+    /// Toplu uyarı oluşturur (birden fazla ihlal için)
+    /// </summary>
+    public static Warning CreateBulkWarning
+    (
+        string userId
+        , string adminId
+        , List<string> violations
+        , WarningType type
+        , WarningSeverity severity
+    )
+    {
+        var reason = $"Çoklu ihlal tespit edildi ({violations.Count} adet)";
+        var detailedExplanation = "İhlaller:\n" + string.Join("\n- ", violations);
+
+        return Create(
+            userId,
+            adminId,
+            reason,
+            type,
+            severity,
+            "Multiple",
+            null,
+            detailedExplanation
+        );
     }
 
     /// <summary>
@@ -192,11 +327,8 @@ public class Warning : BaseEntity
     {
         return severity switch
         {
-            WarningSeverity.Low => 1,
-            WarningSeverity.Medium => 2,
-            WarningSeverity.High => 3,
-            WarningSeverity.Critical => 5,
-            _ => 1
+            WarningSeverity.Low => 1, WarningSeverity.Medium => 2, WarningSeverity.High => 3
+            , WarningSeverity.Critical => 5, _ => 1
         };
     }
 

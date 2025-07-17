@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Constants;
 using RateTheWork.Domain.Enums.Admin;
@@ -12,6 +13,13 @@ namespace RateTheWork.Domain.Entities;
 /// </summary>
 public class AdminUser : AuditableBaseEntity
 {
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private AdminUser() : base()
+    {
+    }
+
     // Properties
     public string Username { get; private set; } = string.Empty;
     public string HashedPassword { get; private set; } = string.Empty;
@@ -29,35 +37,25 @@ public class AdminUser : AuditableBaseEntity
     public DateTime? PasswordResetTokenExpiry { get; private set; }
 
     /// <summary>
-    /// EF Core için parametresiz private constructor
-    /// </summary>
-    private AdminUser() : base()
-    {
-    }
-
-    /// <summary>
     /// Yeni admin kullanıcı oluşturur (Factory method)
     /// </summary>
-    public static AdminUser Create(
-        string username,
-        string email,
-        string hashedPassword,
-        AdminRole role,
-        string createdByAdminId)
+    public static AdminUser Create
+    (
+        string username
+        , string email
+        , string hashedPassword
+        , AdminRole role
+        , string createdByAdminId
+    )
     {
-        var roleString = role.ToString();
         ValidateUsername(username);
         ValidateEmail(email);
-        ValidateRole(roleString);
 
         var adminUser = new AdminUser
         {
-            Username = username,
-            Email = email.ToLowerInvariant(),
-            HashedPassword = hashedPassword ?? throw new ArgumentNullException(nameof(hashedPassword)),
-            Role = role,
-            IsActive = true,
-            PasswordChangedAt = DateTime.UtcNow
+            Username = username, Email = email.ToLowerInvariant()
+            , HashedPassword = hashedPassword ?? throw new ArgumentNullException(nameof(hashedPassword)), Role = role
+            , IsActive = true, PasswordChangedAt = DateTime.UtcNow
         };
 
         adminUser.SetCreatedAudit(createdByAdminId);
@@ -67,7 +65,7 @@ public class AdminUser : AuditableBaseEntity
             adminUser.Id,
             username,
             email,
-            roleString,
+            role.ToString(),
             createdByAdminId,
             DateTime.UtcNow
         ));
@@ -125,7 +123,7 @@ public class AdminUser : AuditableBaseEntity
     private void LockAccount()
     {
         LockedUntil = DateTime.UtcNow.AddMinutes(DomainConstants.Security.AccountLockMinutes);
-        
+
         // Domain Event
         AddDomainEvent(new AdminAccountLockedEvent(
             Id,
@@ -146,22 +144,20 @@ public class AdminUser : AuditableBaseEntity
     /// <summary>
     /// Rolü değiştir
     /// </summary>
-    public void ChangeRole(string newRole, string changedBy)
+    public void ChangeRole(AdminRole newRole, string changedBy)
     {
-        ValidateRole(newRole);
-
-        if (Role.ToString() == newRole)
+        if (Role == newRole)
             throw new BusinessRuleException("Yeni rol mevcut rol ile aynı.");
 
         var oldRole = Role.ToString();
-        Role = Enum.Parse<AdminRole>(newRole);
+        Role = newRole;
         SetModifiedAudit(changedBy);
 
         // Domain Event
         AddDomainEvent(new AdminRoleChangedEvent(
             Id,
             oldRole,
-            newRole,
+            newRole.ToString(),
             changedBy,
             DateTime.UtcNow
         ));
@@ -237,6 +233,7 @@ public class AdminUser : AuditableBaseEntity
         {
             rng.GetBytes(key);
         }
+
         return Convert.ToBase64String(key);
     }
 
@@ -249,7 +246,7 @@ public class AdminUser : AuditableBaseEntity
         if (username.Length < 3 || username.Length > 50)
             throw new BusinessRuleException("Kullanıcı adı 3-50 karakter arasında olmalıdır.");
 
-        if (!System.Text.RegularExpressions.Regex.IsMatch(username, @"^[a-zA-Z0-9_]+$"))
+        if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_]+$"))
             throw new BusinessRuleException("Kullanıcı adı sadece harf, rakam ve alt çizgi içerebilir.");
     }
 
@@ -258,17 +255,7 @@ public class AdminUser : AuditableBaseEntity
         if (string.IsNullOrWhiteSpace(email))
             throw new ArgumentNullException(nameof(email));
 
-        if (!System.Text.RegularExpressions.Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+        if (!Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
             throw new BusinessRuleException("Geçersiz email formatı.");
-    }
-
-    private static void ValidateRole(string role)
-    {
-        if (string.IsNullOrWhiteSpace(role))
-            throw new ArgumentNullException(nameof(role));
-
-        var validRoles = new[] { "SuperAdmin", "Admin", "Moderator", "ContentManager" };
-        if (!validRoles.Contains(role))
-            throw new BusinessRuleException("Geçersiz rol.");
     }
 }

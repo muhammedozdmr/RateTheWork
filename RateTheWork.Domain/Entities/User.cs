@@ -1,11 +1,11 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using RateTheWork.Domain.Common;
-using RateTheWork.Domain.Events;
+using RateTheWork.Domain.Enums.User;
 using RateTheWork.Domain.Events.User;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Common;
-using RateTheWork.Domain.Services;
 
 namespace RateTheWork.Domain.Entities;
 
@@ -21,10 +21,17 @@ public class User : AuditableBaseEntity, IAggregateRoot
     private const int MaxUsernameLength = 50;
     private const int MaxWarningsBeforeAutoBan = 3;
 
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private User() : base()
+    {
+    }
+
     // Properties - Kullanıcı Bilgileri
     public string AnonymousUsername { get; private set; } = string.Empty;
     public string HashedPassword { get; private set; } = string.Empty;
-    
+
     // Properties - Kişisel Bilgiler (Şifreli)
     public string Email { get; private set; } = string.Empty;
     public string EncryptedFirstName { get; private set; } = string.Empty;
@@ -35,18 +42,18 @@ public class User : AuditableBaseEntity, IAggregateRoot
     public string EncryptedCity { get; private set; } = string.Empty;
     public string EncryptedDistrict { get; private set; } = string.Empty;
     public string EncryptedPhoneNumber { get; private set; } = string.Empty;
-    public string Gender { get; private set; } = string.Empty;
+    public Gender Gender { get; private set; } = Gender.PreferNotToSay;
     public string EncryptedBirthDate { get; private set; } = string.Empty;
 
     // Properties - Doğrulama Durumları
     public bool IsEmailVerified { get; private set; } = false;
     public string? EmailVerificationToken { get; set; }
     public DateTime? EmailVerificationTokenExpiry { get; set; }
-    
+
     public bool IsPhoneVerified { get; private set; } = false;
     public string? PhoneVerificationCode { get; private set; }
     public DateTime? PhoneVerificationCodeExpiry { get; private set; }
-    
+
     public bool IsTcIdentityVerified { get; private set; } = false;
     public string? TcIdentityVerificationDocumentUrl { get; private set; }
 
@@ -63,29 +70,24 @@ public class User : AuditableBaseEntity, IAggregateRoot
     public string? TcIdentityHash { get; private set; }
 
     /// <summary>
-    /// EF Core için parametresiz private constructor
-    /// </summary>
-    private User() : base()
-    {
-    }
-
-    /// <summary>
     /// Yeni kullanıcı oluşturur (Factory method)
     /// </summary>
-    public static User Create(
-        string anonymousUsername,
-        string hashedPassword,
-        string email,
-        string encryptedFirstName,
-        string encryptedLastName,
-        string profession,
-        string encryptedTcIdentityNumber,
-        string encryptedAddress,
-        string encryptedCity,
-        string encryptedDistrict,
-        string encryptedPhoneNumber,
-        string gender,
-        string encryptedBirthDate)
+    public static User Create
+    (
+        string anonymousUsername
+        , string hashedPassword
+        , string email
+        , string encryptedFirstName
+        , string encryptedLastName
+        , string profession
+        , string encryptedTcIdentityNumber
+        , string encryptedAddress
+        , string encryptedCity
+        , string encryptedDistrict
+        , string encryptedPhoneNumber
+        , string gender
+        , string encryptedBirthDate
+    )
     {
         // Validasyonlar
         ValidateUsername(anonymousUsername);
@@ -94,21 +96,13 @@ public class User : AuditableBaseEntity, IAggregateRoot
 
         var user = new User
         {
-            AnonymousUsername = anonymousUsername,
-            HashedPassword = hashedPassword,
-            Email = email.ToLowerInvariant(),
-            EncryptedFirstName = encryptedFirstName,
-            EncryptedLastName = encryptedLastName,
-            Profession = profession,
-            EncryptedTcIdentityNumber = encryptedTcIdentityNumber,
-            EncryptedAddress = encryptedAddress,
-            EncryptedCity = encryptedCity,
-            EncryptedDistrict = encryptedDistrict,
-            EncryptedPhoneNumber = encryptedPhoneNumber,
-            Gender = gender,
-            EncryptedBirthDate = encryptedBirthDate,
-            EmailHash = GenerateHash(email.ToLowerInvariant()),
-            TcIdentityHash = GenerateHash(encryptedTcIdentityNumber)
+            AnonymousUsername = anonymousUsername, HashedPassword = hashedPassword, Email = email.ToLowerInvariant()
+            , EncryptedFirstName = encryptedFirstName, EncryptedLastName = encryptedLastName, Profession = profession
+            , EncryptedTcIdentityNumber = encryptedTcIdentityNumber, EncryptedAddress = encryptedAddress
+            , EncryptedCity = encryptedCity, EncryptedDistrict = encryptedDistrict
+            , EncryptedPhoneNumber = encryptedPhoneNumber, Gender = gender, EncryptedBirthDate = encryptedBirthDate
+            , EmailHash = GenerateHash(email.ToLowerInvariant())
+            , TcIdentityHash = GenerateHash(encryptedTcIdentityNumber)
         };
 
         // Domain Event
@@ -121,7 +115,7 @@ public class User : AuditableBaseEntity, IAggregateRoot
 
         return user;
     }
-    
+
     /// <summary>
     /// Test için basitleştirilmiş kullanıcı oluşturur
     /// </summary>
@@ -129,26 +123,18 @@ public class User : AuditableBaseEntity, IAggregateRoot
     {
         var user = new User
         {
-            Email = email.ToLowerInvariant(),
-            AnonymousUsername = username,
-            HashedPassword = "test-hash",
-            EncryptedFirstName = "encrypted-test",
-            EncryptedLastName = "encrypted-test",
-            EncryptedTcIdentityNumber = "encrypted-12345678901",
-            EncryptedAddress = "encrypted-test-address",
-            EncryptedCity = "encrypted-istanbul",
-            EncryptedDistrict = "encrypted-kadikoy",
-            EncryptedPhoneNumber = "encrypted-5551234567",
-            Gender = "PreferNotToSay",
-            EncryptedBirthDate = "encrypted-2000-01-01",
-            Profession = "Test",
-            EmailHash = GenerateHash(email.ToLowerInvariant()),
-            TcIdentityHash = GenerateHash("encrypted-12345678901")
+            Email = email.ToLowerInvariant(), AnonymousUsername = username, HashedPassword = "test-hash"
+            , EncryptedFirstName = "encrypted-test", EncryptedLastName = "encrypted-test"
+            , EncryptedTcIdentityNumber = "encrypted-12345678901", EncryptedAddress = "encrypted-test-address"
+            , EncryptedCity = "encrypted-istanbul", EncryptedDistrict = "encrypted-kadikoy"
+            , EncryptedPhoneNumber = "encrypted-5551234567", Gender = Gender.PreferNotToSay
+            , EncryptedBirthDate = "encrypted-2000-01-01", Profession = "Test"
+            , EmailHash = GenerateHash(email.ToLowerInvariant()), TcIdentityHash = GenerateHash("encrypted-12345678901")
         };
 
         return user;
     }
-    
+
     //TODO: Bu factory metodu yapmayı unutma eventini de yap 
     // /// <summary>
     // /// CSV/Excel import'tan kullanıcı oluşturur
@@ -175,7 +161,7 @@ public class User : AuditableBaseEntity, IAggregateRoot
     //
     //     return user;
     // }
-    
+
     /// <summary>
     /// Sosyal medya login'den kullanıcı oluşturur
     /// </summary>
@@ -183,38 +169,34 @@ public class User : AuditableBaseEntity, IAggregateRoot
     {
         var user = new User
         {
-            Email = email.ToLowerInvariant(),
-            AnonymousUsername = GenerateAnonymousUsername(),
-            HashedPassword = GenerateRandomPassword(), // Sosyal login için random
-            EncryptedFirstName = "encrypted-" + (name?.Split(' ').FirstOrDefault() ?? "User"),
-            EncryptedLastName = "encrypted-" + (name?.Split(' ').LastOrDefault() ?? "User"),
+            Email = email.ToLowerInvariant(), AnonymousUsername = GenerateAnonymousUsername()
+            , HashedPassword = GenerateRandomPassword(), // Sosyal login için random
+            EncryptedFirstName = "encrypted-" + (name?.Split(' ').FirstOrDefault() ?? "User")
+            , EncryptedLastName = "encrypted-" + (name?.Split(' ').LastOrDefault() ?? "User"),
             // Diğer alanlar default/empty
-            EncryptedTcIdentityNumber = "encrypted-pending",
-            EncryptedAddress = "encrypted-pending",
-            EncryptedCity = "encrypted-pending",
-            EncryptedDistrict = "encrypted-pending",
-            EncryptedPhoneNumber = "encrypted-pending",
-            Gender = "PreferNotToSay",
-            EncryptedBirthDate = "encrypted-pending",
-            Profession = "Belirtilmemiş",
-            IsEmailVerified = true // Sosyal medya'dan geldiği için verified
+            EncryptedTcIdentityNumber = "encrypted-pending"
+            , EncryptedAddress = "encrypted-pending", EncryptedCity = "encrypted-pending"
+            , EncryptedDistrict = "encrypted-pending", EncryptedPhoneNumber = "encrypted-pending"
+            , Gender = Gender.PreferNotToSay, EncryptedBirthDate = "encrypted-pending", Profession = "Belirtilmemiş"
+            , IsEmailVerified = true // Sosyal medya'dan geldiği için verified
         };
 
         user.EmailHash = GenerateHash(email.ToLowerInvariant());
-        
+
         // Social login event
         user.AddDomainEvent(new UserRegisteredViaSocialEvent(user.Id, provider, providerId, DateTime.UtcNow));
 
         return user;
     }
-    
+
     // Helper methods
     private static string GenerateAnonymousUsername()
     {
         var adjectives = new[] { "Gizli", "Anonim", "Özel", "Saklı", "Bilinmeyen" };
         var nouns = new[] { "Kullanıcı", "Yorumcu", "Üye", "Kişi", "Değerlendirici" };
         var random = new Random();
-        return $"{adjectives[random.Next(adjectives.Length)]}{nouns[random.Next(nouns.Length)]}{random.Next(1000, 9999)}";
+        return
+            $"{adjectives[random.Next(adjectives.Length)]}{nouns[random.Next(nouns.Length)]}{random.Next(1000, 9999)}";
     }
 
     private static string GenerateTemporaryPassword() => $"Temp-{Guid.NewGuid():N}";
@@ -285,11 +267,13 @@ public class User : AuditableBaseEntity, IAggregateRoot
     /// <summary>
     /// Kullanıcı profilini günceller
     /// </summary>
-    public void UpdateProfile(
-        string? profession = null,
-        string? encryptedAddress = null,
-        string? encryptedCity = null,
-        string? encryptedDistrict = null)
+    public void UpdateProfile
+    (
+        string? profession = null
+        , string? encryptedAddress = null
+        , string? encryptedCity = null
+        , string? encryptedDistrict = null
+    )
     {
         var updatedFields = new List<string>();
 
@@ -464,7 +448,7 @@ public class User : AuditableBaseEntity, IAggregateRoot
         if (username.Length > MaxUsernameLength)
             throw new BusinessRuleException($"Kullanıcı adı {MaxUsernameLength} karakterden uzun olamaz.");
 
-        if (!System.Text.RegularExpressions.Regex.IsMatch(username, @"^[a-zA-Z0-9_]+$"))
+        if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_]+$"))
             throw new BusinessRuleException("Kullanıcı adı sadece harf, rakam ve alt çizgi içerebilir.");
     }
 
@@ -473,14 +457,7 @@ public class User : AuditableBaseEntity, IAggregateRoot
         if (string.IsNullOrWhiteSpace(email))
             throw new ArgumentNullException(nameof(email));
 
-        if (!System.Text.RegularExpressions.Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+        if (!Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
             throw new BusinessRuleException("Geçersiz email formatı.");
-    }
-
-    private static void ValidateGender(string gender)
-    {
-        var validGenders = new[] { "Male", "Female", "Other", "PreferNotToSay" };
-        if (!validGenders.Contains(gender))
-            throw new BusinessRuleException("Geçersiz cinsiyet değeri.");
     }
 }

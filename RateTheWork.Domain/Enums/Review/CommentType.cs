@@ -6,42 +6,42 @@ namespace RateTheWork.Domain.Enums.Review;
 public enum CommentType
 {
     /// <summary>
-    /// Maaş ve yan haklar hakkında yorum
+    /// Maaş hakkında yorum
     /// </summary>
-    SalaryAndBenefits,
-    
+    Salary
+
+    ,
+
     /// <summary>
     /// Çalışma ortamı hakkında yorum
     /// </summary>
-    WorkEnvironment,
-    
-    /// <summary>
-    /// Yönetim hakkında yorum
-    /// </summary>
-    Management,
-    
+    WorkEnvironment
+
+    ,
+
     /// <summary>
     /// Kariyer gelişimi hakkında yorum
     /// </summary>
-    CareerDevelopment,
-    
+    CareerGrowth
+
+    ,
+
+    /// <summary>
+    /// Yan haklar hakkında yorum
+    /// </summary>
+    Benefits
+
+    ,
+
+    /// <summary>
+    /// Yönetim hakkında yorum
+    /// </summary>
+    Management
+
+    ,
+
     /// <summary>
     /// İş-yaşam dengesi hakkında yorum
     /// </summary>
-    WorkLifeBalance,
-    
-    /// <summary>
-    /// Şirket kültürü hakkında yorum
-    /// </summary>
-    CompanyCulture,
-    
-    /// <summary>
-    /// Mülakat süreci hakkında yorum
-    /// </summary>
-    InterviewProcess,
-    
-    /// <summary>
-    /// Diğer konular hakkında yorum
-    /// </summary>
-    Other
+    WorkLifeBalance
 }
