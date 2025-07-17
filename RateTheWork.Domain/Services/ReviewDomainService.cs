@@ -23,7 +23,7 @@ public class ReviewDomainService : IReviewDomainService
     public async Task<bool> CanUserReviewCompanyAsync(string userId, string companyId, string commentType)
     {
         // Kullanıcı kontrolü
-        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId);
         if (user == null || user.IsBanned)
             return false;
 
@@ -32,7 +32,7 @@ public class ReviewDomainService : IReviewDomainService
             return false;
 
         // Şirket kontrolü
-        var company = await _unitOfWork.Companies.GetByIdAsync(companyId);
+        var company = await _unitOfWork.Repository<Company>().GetByIdAsync(companyId);
         if (company == null || !company.IsApproved)
             return false;
 
@@ -50,7 +50,7 @@ public class ReviewDomainService : IReviewDomainService
         }
 
         // Aynı tip yorum için cooldown kontrolü
-        var lastReview = await _unitOfWork.Reviews
+        var lastReview = await _unitOfWork.Repository<Review>()
             .GetFirstOrDefaultAsync(r =>
                 r.UserId == userId &&
                 r.CompanyId == companyId &&
@@ -95,17 +95,17 @@ public class ReviewDomainService : IReviewDomainService
 
     public async Task UpdateCompanyRatingAsync(string companyId)
     {
-        var company = await _unitOfWork.Companies.GetByIdAsync(companyId);
+        var company = await _unitOfWork.Repository<Company>().GetByIdAsync(companyId);
         if (company == null)
             throw new EntityNotFoundException(nameof(Company), companyId);
 
-        var reviews = await _unitOfWork.Reviews.GetReviewsByCompanyAsync(companyId, 1, int.MaxValue);
+        var reviews = await _unitOfWork.Repository<Review>().GetReviewsByCompanyAsync(companyId, 1, int.MaxValue);
         var activeReviews = reviews.Where(r => r.IsActive).ToList();
 
         if (!activeReviews.Any())
         {
             company.UpdateReviewStatistics(0, 0);
-            await _unitOfWork.Companies.UpdateAsync(company);
+            await _unitOfWork.Repository<Company>().UpdateAsync(company);
             return;
         }
 
@@ -129,13 +129,13 @@ public class ReviewDomainService : IReviewDomainService
         var weightedAverage = totalWeight > 0 ? weightedSum / totalWeight : 0;
         company.UpdateReviewStatistics(Math.Round(weightedAverage, 2), activeReviews.Count);
 
-        await _unitOfWork.Companies.UpdateAsync(company);
+        await _unitOfWork.Repository<Company>().UpdateAsync(company);
     }
 
     public async Task<bool> IsSpamReviewAsync(string userId, string commentText)
     {
         // Son 24 saatte çok fazla yorum kontrolü
-        var recentReviews = await _unitOfWork.Reviews
+        var recentReviews = await _unitOfWork.Repository<Review>()
             .GetAsync(r => r.UserId == userId && r.CreatedAt > DateTime.UtcNow.AddDays(-1));
 
         if (recentReviews.Count > 3)
@@ -143,7 +143,7 @@ public class ReviewDomainService : IReviewDomainService
 
         // Aynı metni içeren yorum kontrolü
         var normalizedText = NormalizeText(commentText);
-        var similarReviews = await _unitOfWork.Reviews
+        var similarReviews = await _unitOfWork.Repository<Review>()
             .GetAsync(r => r.UserId == userId && r.CreatedAt > DateTime.UtcNow.AddDays(-30));
 
         foreach (var review in similarReviews)
@@ -173,7 +173,7 @@ public class ReviewDomainService : IReviewDomainService
 
     public async Task<ReviewQualityScore> CalculateReviewQualityAsync(string reviewId)
     {
-        var review = await _unitOfWork.Reviews.GetByIdAsync(reviewId);
+        var review = await _unitOfWork.Repository<Review>().GetByIdAsync(reviewId);
         if (review == null)
             throw new EntityNotFoundException(nameof(Review), reviewId);
 
@@ -229,7 +229,7 @@ public class ReviewDomainService : IReviewDomainService
     public async Task<List<string?>> FindSimilarReviewsAsync(string userId, string commentText)
     {
         var normalizedNewText = NormalizeText(commentText);
-        var userReviews = await _unitOfWork.Reviews.GetReviewsByUserAsync(userId, 1, int.MaxValue);
+        var userReviews = await _unitOfWork.Repository<Review>().GetReviewsByUserAsync(userId, 1, int.MaxValue);
         var similarReviewIds = new List<string?>();
 
         foreach (var review in userReviews.Where(r => r.IsActive))
@@ -246,7 +246,7 @@ public class ReviewDomainService : IReviewDomainService
 
     public async Task<ReviewTrends> AnalyzeReviewTrendsAsync(string companyId, DateTime startDate, DateTime endDate)
     {
-        var reviews = await _unitOfWork.Reviews
+        var reviews = await _unitOfWork.Repository<Review>()
             .GetAsync(r => r.CompanyId == companyId &&
                            r.CreatedAt >= startDate &&
                            r.CreatedAt <= endDate &&

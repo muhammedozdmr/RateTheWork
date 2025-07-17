@@ -12,11 +12,7 @@ public record UserRegisteredEvent(
     , string? ReferrerUrl
     , string? RegistrationSource
     , DateTime RegisteredAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 2. Email doğrulandı event'i
@@ -27,11 +23,7 @@ public record UserEmailVerifiedEvent(
     , string? PreviousEmail
     , string VerificationMethod
     , DateTime VerifiedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 3. Telefon doğrulandı event'i
@@ -40,11 +32,7 @@ public record UserPhoneVerifiedEvent(
     string? UserId
     , string PhoneNumber
     , DateTime VerifiedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 4. TC Kimlik doğrulandı event'i
@@ -53,11 +41,7 @@ public record UserTcIdentityVerifiedEvent(
     string? UserId
     , string DocumentUrl
     , DateTime VerifiedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 5. Kullanıcı profili güncellendi event'i
@@ -69,11 +53,7 @@ public record UserProfileUpdatedEvent(
     , Dictionary<string, object>? NewValues
     , decimal ProfileCompleteness
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 6. Kullanıcı şifresi değiştirildi event'i
@@ -81,11 +61,7 @@ public record UserProfileUpdatedEvent(
 public record UserPasswordChangedEvent(
     string? UserId
     , DateTime ChangedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 7. Kullanıcı hesabı silindi event'i
@@ -98,11 +74,7 @@ public record UserAccountDeletedEvent(
     , bool DataExported
     , string? FeedbackProvided
     , DateTime DeletedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 8. Sosyal medya hesabı ile giriş event'i
@@ -112,10 +84,7 @@ public record UserRegisteredViaSocialEvent(
     , string Provider
     , string ProviderId
     , DateTime RegisteredAt
-    , DateTime OccurredOn = default) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 9. Kullanıcı giriş yaptı event'i
@@ -129,11 +98,7 @@ public record UserLoginEvent(
     , bool IsSuccessful
     , string? FailureReason
     , DateTime LoginAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 10. Kullanıcı çıkış yaptı event'i
@@ -143,11 +108,7 @@ public record UserLogoutEvent(
     , string LogoutReason
     , TimeSpan SessionDuration
     , DateTime LogoutAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 11. Kullanıcı oturumu sona erdi event'i
@@ -157,11 +118,7 @@ public record UserSessionExpiredEvent(
     , string SessionId
     , string ExpirationReason
     , DateTime ExpiredAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 12. Kullanıcı tercihleri güncellendi event'i
@@ -172,11 +129,7 @@ public record UserPreferencesUpdatedEvent(
     , Dictionary<string, object> NewPreferences
     , string[] UpdatedCategories
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 13. Kullanıcı konumu güncellendi event'i
@@ -188,11 +141,7 @@ public record UserLocationUpdatedEvent(
     , string? OldDistrict
     , string? NewDistrict
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 14. Kullanıcı deaktif edildi event'i
@@ -204,11 +153,7 @@ public record UserDeactivatedEvent(
     , bool CanReactivate
     , DateTime? ReactivationDate
     , DateTime DeactivatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 15. Kullanıcı yeniden aktif edildi event'i
@@ -218,8 +163,4 @@ public record UserReactivatedEvent(
     , string ReactivatedBy
     , TimeSpan DeactivationDuration
     , DateTime ReactivatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;

@@ -34,7 +34,7 @@ public class CompanyDomainService : ICompanyDomainService
 
     public async Task<bool> VerifyCompanyAsync(string companyId, string verificationMethod)
     {
-        var company = await _unitOfWork.Companies.GetByIdAsync(companyId);
+        var company = await _unitOfWork.Repository<Company>().GetByIdAsync(companyId);
         if (company == null)
             throw new EntityNotFoundException(nameof(Company), companyId);
 
@@ -55,7 +55,7 @@ public class CompanyDomainService : ICompanyDomainService
                         verificationMethod: VerificationMethod.TaxNumber.ToString(),
                         verificationNotes: "Vergi Numarası numarası GİB üzerinden doğrulandı",
                         new Dictionary<string, object> { ["Method"] = "TaxNumber" });
-                    await _unitOfWork.Companies.UpdateAsync(company);
+                    await _unitOfWork.Repository<Company>().UpdateAsync(company);
                 }
 
                 return isValidTaxNumber;
@@ -74,7 +74,7 @@ public class CompanyDomainService : ICompanyDomainService
                         verificationMethod: VerificationMethod.Mersis.ToString(),
                         verificationNotes: "Mersis numarası MERSİS üzerinden doğrulandı",
                         metadata: new Dictionary<string, object> { ["MersisNo"] = company.MersisNo });
-                    await _unitOfWork.Companies.UpdateAsync(company);
+                    await _unitOfWork.Repository<Company>().UpdateAsync(company);
                 }
 
                 return isValidMersis;
@@ -93,7 +93,7 @@ public class CompanyDomainService : ICompanyDomainService
                         verificationMethod: VerificationMethod.WebDomain.ToString(),
                         verificationNotes: "Web sitesi domain üzerinden doğrulandı",
                         metadata: new Dictionary<string, object> { ["Domain"] = company.WebsiteUrl });
-                    await _unitOfWork.Companies.UpdateAsync(company);
+                    await _unitOfWork.Repository<Company>().UpdateAsync(company);
                 }
 
                 return isDomainVerified;
@@ -106,12 +106,12 @@ public class CompanyDomainService : ICompanyDomainService
 
     public async Task UpdateCompanyStatisticsAsync(string companyId)
     {
-        var company = await _unitOfWork.Companies.GetByIdAsync(companyId);
+        var company = await _unitOfWork.Repository<Company>().GetByIdAsync(companyId);
         if (company == null)
             throw new EntityNotFoundException(nameof(Company), companyId);
 
         // Aktif yorumları getir
-        var reviews = await _unitOfWork.Reviews.GetReviewsByCompanyAsync(companyId, 1, int.MaxValue);
+        var reviews = await _unitOfWork.Repository<Review>().GetReviewsByCompanyAsync(companyId, 1, int.MaxValue);
         var activeReviews = reviews.Where(r => r.IsActive).ToList();
 
         if (!activeReviews.Any())
@@ -153,7 +153,7 @@ public class CompanyDomainService : ICompanyDomainService
 
     public async Task<bool> IsCompanyActiveForReviewsAsync(string companyId)
     {
-        var company = await _unitOfWork.Companies.GetByIdAsync(companyId);
+        var company = await _unitOfWork.Repository<Company>().GetByIdAsync(companyId);
         if (company == null)
             return false;
 
@@ -162,7 +162,7 @@ public class CompanyDomainService : ICompanyDomainService
             return false;
 
         // Kara listede mi?
-        var blacklisted = await _unitOfWork.Bans
+        var blacklisted = await _unitOfWork.Repository<Ban>()
             .GetFirstOrDefaultAsync(b =>
                 b.TargetType == "Company" &&
                 b.TargetId == companyId &&
@@ -181,7 +181,7 @@ public class CompanyDomainService : ICompanyDomainService
 
     public async Task<Company?> GetMergedCompanyAsync(string companyId)
     {
-        var company = await _unitOfWork.Companies.GetByIdAsync(companyId);
+        var company = await _unitOfWork.Repository<Company>().GetByIdAsync(companyId);
         if (company == null)
             return null;
 
@@ -191,7 +191,7 @@ public class CompanyDomainService : ICompanyDomainService
             var mergedCompanyId = mergedId?.ToString();
             if (!string.IsNullOrEmpty(mergedCompanyId))
             {
-                return await _unitOfWork.Companies.GetByIdAsync(mergedCompanyId);
+                return await _unitOfWork.Repository<Company>().GetByIdAsync(mergedCompanyId);
             }
         }
 
@@ -200,12 +200,13 @@ public class CompanyDomainService : ICompanyDomainService
 
     public async Task<CompanyRiskScore> CalculateCompanyRiskScoreAsync(string companyId)
     {
-        var company = await _unitOfWork.Companies.GetByIdAsync(companyId);
+        var company = await _unitOfWork.Repository<Company>().GetByIdAsync(companyId);
         if (company == null)
             throw new EntityNotFoundException(nameof(Company), companyId);
 
-        var reviews = await _unitOfWork.Reviews.GetReviewsByCompanyAsync(companyId, 1, int.MaxValue);
-        var reports = await _unitOfWork.Reports.GetAsync(r => r.TargetId == companyId && r.TargetType == "Company");
+        var reviews = await _unitOfWork.Repository<Review>().GetReviewsByCompanyAsync(companyId, 1, int.MaxValue);
+        var reports = await _unitOfWork.Repository<Report>()
+            .GetAsync(r => r.TargetId == companyId && r.TargetType == "Company");
 
         // Risk faktörleri
         var factors = new Dictionary<string, double>();
@@ -244,7 +245,7 @@ public class CompanyDomainService : ICompanyDomainService
 
     public async Task<CompanyCategory> DetermineCompanyCategoryAsync(string companyId)
     {
-        var company = await _unitOfWork.Companies.GetByIdAsync(companyId);
+        var company = await _unitOfWork.Repository<Company>().GetByIdAsync(companyId);
         if (company == null)
             throw new EntityNotFoundException(nameof(Company), companyId);
 
@@ -298,12 +299,12 @@ public class CompanyDomainService : ICompanyDomainService
 
     public async Task<List<Company>> FindCompetitorCompaniesAsync(string companyId, int maxResults = 10)
     {
-        var company = await _unitOfWork.Companies.GetByIdAsync(companyId);
+        var company = await _unitOfWork.Repository<Company>().GetByIdAsync(companyId);
         if (company == null)
             throw new EntityNotFoundException(nameof(Company), companyId);
 
         // Aynı sektördeki şirketler
-        var competitors = await _unitOfWork.Companies
+        var competitors = await _unitOfWork.Repository<Company>()
             .GetAsync(c =>
                 c.Id != companyId &&
                 c.Sector == company.Sector &&
@@ -336,14 +337,14 @@ public class CompanyDomainService : ICompanyDomainService
     public async Task<CompanyGrowthAnalysis> AnalyzeCompanyGrowthAsync
         (string companyId, DateTime startDate, DateTime endDate)
     {
-        var company = await _unitOfWork.Companies.GetByIdAsync(companyId);
+        var company = await _unitOfWork.Repository<Company>().GetByIdAsync(companyId);
         if (company == null)
             throw new EntityNotFoundException(nameof(Company), companyId);
 
         var analysis = new CompanyGrowthAnalysis();
 
         // Belirtilen dönemdeki yorumları al
-        var reviews = await _unitOfWork.Reviews
+        var reviews = await _unitOfWork.Repository<Review>()
             .GetAsync(r =>
                 r.CompanyId == companyId &&
                 r.CreatedAt >= startDate &&
@@ -355,7 +356,7 @@ public class CompanyDomainService : ICompanyDomainService
         var previousStartDate = startDate.Subtract(periodLength);
         var previousEndDate = startDate.AddDays(-1);
 
-        var previousReviews = await _unitOfWork.Reviews
+        var previousReviews = await _unitOfWork.Repository<Review>()
             .GetAsync(r =>
                 r.CompanyId == companyId &&
                 r.CreatedAt >= previousStartDate &&
@@ -429,7 +430,7 @@ public class CompanyDomainService : ICompanyDomainService
 
     public async Task<CompanyReviewStatistics> CalculateCompanyStatisticsAsync(string companyId)
     {
-        var reviews = await _unitOfWork.Reviews.GetReviewsByCompanyAsync(companyId, 1, int.MaxValue);
+        var reviews = await _unitOfWork.Repository<Review>().GetReviewsByCompanyAsync(companyId, 1, int.MaxValue);
         var activeReviews = reviews.Where(r => r.IsActive).ToList();
 
         if (!activeReviews.Any())
@@ -488,7 +489,7 @@ public class CompanyDomainService : ICompanyDomainService
             foreach (var review in secondaryReviews)
             {
                 review.UpdateCompanyId(primaryCompanyId);
-                await _unitOfWork.Reviews.UpdateAsync(review);
+                await _unitOfWork.Repository<Review>().UpdateAsync(review);
             }
 
             // İkincil şirketi pasifleştir

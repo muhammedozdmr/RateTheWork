@@ -10,6 +10,13 @@ namespace RateTheWork.Domain.Entities;
 /// </summary>
 public class Badge : BaseEntity
 {
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private Badge() : base()
+    {
+    }
+
     // Properties
     public string Name { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
@@ -24,24 +31,19 @@ public class Badge : BaseEntity
     public int Points { get; private set; }
 
     /// <summary>
-    /// EF Core için parametresiz private constructor
-    /// </summary>
-    private Badge() : base()
-    {
-    }
-
-    /// <summary>
     /// Yeni rozet oluşturur (Factory method)
     /// </summary>
-    public static Badge Create(
-        string name,
-        string description,
-        string iconUrl,
-        string criteria,
-        BadgeType type,
-        BadgeRarity rarity,
-        int requiredCount = 0,
-        int points = 10)
+    public static Badge Create
+    (
+        string name
+        , string description
+        , string iconUrl
+        , string criteria
+        , BadgeType type
+        , BadgeRarity rarity
+        , int requiredCount = 0
+        , int points = 10
+    )
     {
         ValidateName(name);
         ValidateDescription(description);
@@ -49,15 +51,9 @@ public class Badge : BaseEntity
 
         var badge = new Badge
         {
-            Name = name,
-            Description = description,
-            IconUrl = iconUrl,
-            Criteria = criteria ?? throw new ArgumentNullException(nameof(criteria)),
-            Type = type,
-            Rarity = rarity,
-            RequiredCount = requiredCount,
-            Points = points > 0 ? points : 10,
-            IsActive = true
+            Name = name, Description = description, IconUrl = iconUrl
+            , Criteria = criteria ?? throw new ArgumentNullException(nameof(criteria)), Type = type, Rarity = rarity
+            , RequiredCount = requiredCount, Points = points > 0 ? points : 10, IsActive = true
         };
 
         // Domain Event
@@ -66,7 +62,7 @@ public class Badge : BaseEntity
             badge.Name,
             badge.Type.ToString(),
             badge.Rarity.ToString(),
-            DateTime.UtcNow
+            badge.CreatedAt
         ));
 
         return badge;

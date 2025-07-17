@@ -10,6 +10,12 @@ namespace RateTheWork.Domain.Entities;
 /// </summary>
 public class Report : BaseEntity
 {
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private Report() : base()
+    {
+    }
 
     // Properties
     public string ReviewId { get; private set; } = string.Empty;
@@ -28,15 +34,8 @@ public class Report : BaseEntity
     public string? RelatedReports { get; private set; }
     public string TargetType { get; private set; } = string.Empty;
     public string TargetId { get; private set; } = string.Empty;
-    
-    public Dictionary<string, object>? Metadata { get; private set; }
 
-    /// <summary>
-    /// EF Core için parametresiz private constructor
-    /// </summary>
-    private Report() : base()
-    {
-    }
+    public Dictionary<string, object>? Metadata { get; private set; }
 
     /// <summary>
     /// Yeni şikayet oluşturur (Factory method)
@@ -58,16 +57,18 @@ public class Report : BaseEntity
 
         return Create(reviewId, reporterUserId, reasonEnum, reportDetails, isAnonymous);
     }
-    
+
     /// <summary>
     /// Yeni şikayet oluşturur (Factory method) - Enum parametre ile
     /// </summary>
-    public static Report Create(
-        string reviewId,
-        string reporterUserId,
-        ReportReasons reportReason,
-        string? reportDetails = null,
-        bool isAnonymous = false)
+    public static Report Create
+    (
+        string reviewId
+        , string reporterUserId
+        , ReportReasons reportReason
+        , string? reportDetails = null
+        , bool isAnonymous = false
+    )
     {
         ValidateReportDetails(reportDetails);
 
@@ -76,17 +77,11 @@ public class Report : BaseEntity
 
         var report = new Report
         {
-            ReviewId = reviewId ?? throw new ArgumentNullException(nameof(reviewId)),
-            ReporterUserId = reporterUserId ?? throw new ArgumentNullException(nameof(reporterUserId)),
-            ReportReason = reportReason,
-            ReportDetails = reportDetails,
-            ReportedAt = DateTime.UtcNow,
-            Status = ReportStatus.Pending,
-            IsAnonymous = isAnonymous,
-            Priority = priority,
-            RequiresUrgentAction = requiresUrgent,
-            TargetType = "Review",
-            TargetId = reviewId
+            ReviewId = reviewId ?? throw new ArgumentNullException(nameof(reviewId))
+            , ReporterUserId = reporterUserId ?? throw new ArgumentNullException(nameof(reporterUserId))
+            , ReportReason = reportReason, ReportDetails = reportDetails, ReportedAt = DateTime.UtcNow
+            , Status = ReportStatus.Pending, IsAnonymous = isAnonymous, Priority = priority
+            , RequiresUrgentAction = requiresUrgent, TargetType = "Review", TargetId = reviewId
         };
 
         // Domain Event
@@ -97,40 +92,41 @@ public class Report : BaseEntity
             reportReason.ToString(),
             isAnonymous,
             priority,
-            report.ReportedAt,
-            DateTime.UtcNow
+            report.ReportedAt
         ));
 
         return report;
     }
-    
+
     /// <summary>
     /// Genel amaçlı şikayet oluşturma - targetType ve targetId parametreli
     /// </summary>
-    public static Report Create(
-        string reporterUserId,
-        string targetType,
-        string targetId,
-        ReportReasons reportReason,
-        string reportDetails,
-        Dictionary<string, object>? metadata = null)
+    public static Report Create
+    (
+        string reporterUserId
+        , string targetType
+        , string targetId
+        , ReportReasons reportReason
+        , string reportDetails
+        , Dictionary<string, object>? metadata = null
+    )
     {
         if (string.IsNullOrWhiteSpace(reporterUserId))
             throw new DomainValidationException(nameof(reporterUserId), "Reporter user ID zorunludur");
-        
+
         if (string.IsNullOrWhiteSpace(targetType))
             throw new DomainValidationException(nameof(targetType), "Target type zorunludur");
-        
+
         if (string.IsNullOrWhiteSpace(targetId))
             throw new DomainValidationException(nameof(targetId), "Target ID zorunludur");
-        
+
         if (string.IsNullOrWhiteSpace(reportDetails))
             throw new DomainValidationException(nameof(reportDetails), "Rapor detayları zorunludur");
 
         // Hedef tipi kontrolü
         var validTargetTypes = new[] { "Review", "Company", "User" };
         if (!validTargetTypes.Contains(targetType))
-            throw new DomainValidationException(nameof(targetType), 
+            throw new DomainValidationException(nameof(targetType),
                 $"Geçersiz hedef tipi. Geçerli tipler: {string.Join(", ", validTargetTypes)}");
 
         var priority = CalculatePriority(reportReason);
@@ -138,22 +134,13 @@ public class Report : BaseEntity
 
         var report = new Report
         {
-            Id = Guid.NewGuid().ToString(),
-            ReporterUserId = reporterUserId,
-            TargetType = targetType,
-            TargetId = targetId,
-            ReviewId = targetType == "Review" ? targetId : string.Empty,
-            ReportReason = reportReason,
-            ReportDetails = reportDetails,
-            Status = ReportStatus.Pending,
-            Metadata = metadata,
-            CreatedAt = DateTime.UtcNow,
-            ReportedAt = DateTime.UtcNow,
-            Priority = priority,
-            RequiresUrgentAction = requiresUrgent,
-            IsAnonymous = reporterUserId == "SYSTEM"
+            Id = Guid.NewGuid().ToString(), ReporterUserId = reporterUserId, TargetType = targetType
+            , TargetId = targetId, ReviewId = targetType == "Review" ? targetId : string.Empty
+            , ReportReason = reportReason, ReportDetails = reportDetails, Status = ReportStatus.Pending
+            , Metadata = metadata, CreatedAt = DateTime.UtcNow, ReportedAt = DateTime.UtcNow, Priority = priority
+            , RequiresUrgentAction = requiresUrgent, IsAnonymous = reporterUserId == "SYSTEM"
         };
-        
+
         // Domain event
         report.AddDomainEvent(new ReportCreatedEvent(
             report.Id,
@@ -162,14 +149,13 @@ public class Report : BaseEntity
             reportReason.ToString(),
             report.IsAnonymous,
             priority,
-            report.ReportedAt,
-            DateTime.UtcNow
+            report.ReportedAt
         ));
-        
+
         return report;
     }
 
-    
+
     /// <summary>
     /// Şikayeti incelemeye al
     /// </summary>
@@ -187,7 +173,6 @@ public class Report : BaseEntity
         AddDomainEvent(new ReportUnderReviewEvent(
             Id,
             reviewedBy,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }
@@ -212,7 +197,6 @@ public class Report : BaseEntity
             Id,
             resolvedBy,
             actionTaken,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }
@@ -239,7 +223,6 @@ public class Report : BaseEntity
             Id,
             dismissedBy,
             dismissReason,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }
@@ -264,7 +247,6 @@ public class Report : BaseEntity
             Id,
             escalatedBy,
             escalationReason,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }
@@ -274,16 +256,9 @@ public class Report : BaseEntity
     {
         return reportReason switch
         {
-            ReportReasons.Harassment => 1,
-            ReportReasons.PersonalAttack => 1,
-            ReportReasons.ConfidentialInfo => 2,
-            ReportReasons.FalseInformation => 3,
-            ReportReasons.InappropriateContent => 3,
-            ReportReasons.Spam => 4,
-            ReportReasons.OffTopic => 5,
-            ReportReasons.Duplicate => 5,
-            ReportReasons.HighDownvoteRatio => 4,
-             _ => 6
+            ReportReasons.Harassment => 1, ReportReasons.PersonalAttack => 1, ReportReasons.ConfidentialInfo => 2
+            , ReportReasons.FalseInformation => 3, ReportReasons.InappropriateContent => 3, ReportReasons.Spam => 4
+            , ReportReasons.OffTopic => 5, ReportReasons.Duplicate => 5, ReportReasons.HighDownvoteRatio => 4, _ => 6
         };
     }
 
@@ -294,7 +269,7 @@ public class Report : BaseEntity
                reportReason == ReportReasons.PersonalAttack ||
                reportReason == ReportReasons.ConfidentialInfo;
     }
-    
+
     private static void ValidateReportDetails(string? reportDetails)
     {
         if (!string.IsNullOrWhiteSpace(reportDetails) && reportDetails.Length > 1000)
@@ -308,18 +283,14 @@ public class Report : BaseEntity
 
         var validActions = new[]
         {
-            "Yorum Gizlendi",
-            "Kullanıcı Uyarıldı",
-            "Kullanıcı Banlandı",
-            "İçerik Düzenlendi",
-            "Herhangi Bir İşlem Yapılmadı",
-            "Üst Yönetime İletildi"
+            "Yorum Gizlendi", "Kullanıcı Uyarıldı", "Kullanıcı Banlandı", "İçerik Düzenlendi"
+            , "Herhangi Bir İşlem Yapılmadı", "Üst Yönetime İletildi"
         };
 
         if (!validActions.Contains(actionTaken))
             throw new BusinessRuleException("Geçersiz aksiyon türü.");
     }
-    
+
     /// <summary>
     /// Metadata ekler veya günceller
     /// </summary>
@@ -335,8 +306,8 @@ public class Report : BaseEntity
     /// </summary>
     public bool IsSystemGenerated()
     {
-        return ReporterUserId == "SYSTEM" || 
-               (Metadata?.ContainsKey("IsSystemGenerated") == true && 
+        return ReporterUserId == "SYSTEM" ||
+               (Metadata?.ContainsKey("IsSystemGenerated") == true &&
                 Metadata["IsSystemGenerated"] is bool isSystem && isSystem);
     }
 

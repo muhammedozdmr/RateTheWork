@@ -119,7 +119,7 @@ public class User : AuditableBaseEntity, IAggregateRoot
             "Unknown", // UserAgent - will be set by the application layer
             null, // ReferrerUrl
             "Web", // RegistrationSource
-            DateTime.UtcNow
+            user.CreatedAt
         ));
 
         return user;
@@ -193,7 +193,7 @@ public class User : AuditableBaseEntity, IAggregateRoot
         user.EmailHash = GenerateHash(email.ToLowerInvariant());
 
         // Social login event
-        user.AddDomainEvent(new UserRegisteredViaSocialEvent(user.Id, provider, providerId, DateTime.UtcNow));
+        user.AddDomainEvent(new UserRegisteredViaSocialEvent(user.Id, provider, providerId, user.CreatedAt));
 
         return user;
     }

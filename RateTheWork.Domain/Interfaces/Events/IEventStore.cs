@@ -1,3 +1,5 @@
+using RateTheWork.Domain.Events;
+
 namespace RateTheWork.Domain.Interfaces.Events;
 
 /// <summary>
@@ -9,12 +11,12 @@ public interface IEventStore
     /// Event'i saklar
     /// </summary>
     Task SaveEventAsync<TEvent>(TEvent domainEvent) where TEvent : IDomainEvent;
-    
+
     /// <summary>
     /// Aggregate'in event'lerini getirir
     /// </summary>
     Task<IEnumerable<IDomainEvent>> GetEventsAsync(Guid aggregateId, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Belirli bir tarihten sonraki event'leri getirir
     /// </summary>

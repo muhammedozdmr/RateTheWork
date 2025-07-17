@@ -58,8 +58,7 @@ public class UserBadge : BaseEntity
             badgeId,
             userBadge.AwardedAt,
             awardReason,
-            specialNote,
-            DateTime.UtcNow
+            specialNote
         ));
 
         return userBadge;
@@ -89,8 +88,7 @@ public class UserBadge : BaseEntity
             userId,
             badgeId,
             triggerCondition,
-            metadata,
-            DateTime.UtcNow
+            metadata
         ));
 
         return userBadge;
@@ -138,8 +136,7 @@ public class UserBadge : BaseEntity
             badgeId,
             seasonName,
             seasonStart,
-            seasonEnd,
-            DateTime.UtcNow
+            seasonEnd
         ));
 
         return userBadge;
@@ -168,8 +165,7 @@ public class UserBadge : BaseEntity
             userId,
             badgeId,
             adminId,
-            reason,
-            DateTime.UtcNow
+            reason
         ));
 
         return userBadge;
@@ -209,7 +205,6 @@ public class UserBadge : BaseEntity
             Id,
             UserId,
             BadgeId,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }
@@ -230,7 +225,6 @@ public class UserBadge : BaseEntity
             Id,
             UserId,
             BadgeId,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }
@@ -251,7 +245,6 @@ public class UserBadge : BaseEntity
             Id,
             UserId,
             BadgeId,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }

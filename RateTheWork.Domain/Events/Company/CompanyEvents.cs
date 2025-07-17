@@ -19,11 +19,7 @@ public record CompanyCreatedEvent(
     , string? CreatedByUserId
     , string CreatedByIp
     , DateTime CreatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 2. Şirket onaylandı event'i
@@ -33,11 +29,7 @@ public record CompanyApprovedEvent(
     , string ApprovedBy
     , string? Notes
     , DateTime ApprovedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 3. Şirket reddedildi event'i
@@ -47,11 +39,7 @@ public record CompanyRejectedEvent(
     , string RejectedBy
     , string Reason
     , DateTime RejectedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 4. Şirket bilgileri güncellendi event'i
@@ -64,11 +52,7 @@ public record CompanyInfoUpdatedEvent(
     , string UpdatedBy
     , string? UpdateReason
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 5. Şirket logosu güncellendi event'i
@@ -77,11 +61,7 @@ public record CompanyLogoUpdatedEvent(
     string? CompanyId
     , string LogoUrl
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 6. Şirket puanı güncellendi event'i
@@ -92,11 +72,7 @@ public record CompanyRatingUpdatedEvent(
     , decimal NewRating
     , int TotalReviews
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 7. Şirket doğrulandı event'i
@@ -107,11 +83,7 @@ public record CompanyVerifiedEvent(
     , string VerifiedBy
     , DateTime VerifiedAt
     , Dictionary<string, object>? Metadata = null
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 8. Şirket birleşti event'i
@@ -121,11 +93,7 @@ public record CompanyMergedEvent(
     , string TargetCompanyId
     , DateTime MergedAt
     , string? MergedBy = null
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 9. Şirkete şube eklendi event'i
@@ -137,11 +105,7 @@ public record CompanyBranchAddedEvent(
     , string City
     , bool IsHeadquarters
     , DateTime AddedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 10. Şirket çalışan bilgileri güncellendi event'i
@@ -153,11 +117,7 @@ public record CompanyEmployeeInfoUpdatedEvent(
     , string? EmployeeCountRange
     , string CompanySize
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 11. Şirket risk skoru güncellendi event'i
@@ -169,11 +129,7 @@ public record CompanyRiskScoreUpdatedEvent(
     , string RiskLevel
     , List<string> RiskFactors
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 12. Şirket finansal bilgileri güncellendi event'i
@@ -185,11 +141,7 @@ public record CompanyFinancialInfoUpdatedEvent(
     , decimal? MarketCap
     , string UpdatedBy
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 13. Şirket çalışma bilgileri güncellendi event'i
@@ -201,11 +153,7 @@ public record CompanyWorkInfoUpdatedEvent(
     , List<string>? Benefits
     , Dictionary<string, string>? WorkingHours
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 14. Şirket deaktif edildi event'i
@@ -215,11 +163,7 @@ public record CompanyDeactivatedEvent(
     , string DeactivatedBy
     , string Reason
     , DateTime DeactivatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 15. Şirket yeniden aktif edildi event'i
@@ -229,11 +173,7 @@ public record CompanyReactivatedEvent(
     , string ReactivatedBy
     , string? Notes
     , DateTime ReactivatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 16. Şirket görsel içeriği güncellendi event'i
@@ -245,11 +185,7 @@ public record CompanyVisualContentUpdatedEvent(
     , List<string>? GalleryImages
     , string? CompanyVideo
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 17. Şirket sosyal medya linkleri güncellendi event'i
@@ -262,11 +198,7 @@ public record CompanySocialMediaUpdatedEvent(
     , string? FacebookUrl
     , string? YouTubeUrl
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 18. Şirket detaylı adres güncellendi event'i
@@ -280,11 +212,7 @@ public record CompanyAddressUpdatedEvent(
     , string? PostalCode
     , string Country
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 19. Şirket iletişim bilgileri güncellendi event'i
@@ -297,11 +225,7 @@ public record CompanyContactInfoUpdatedEvent(
     , string? SupportEmail
     , string? FaxNumber
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 20. Şirket ana şirket ilişkisi kuruldu event'i
@@ -311,11 +235,7 @@ public record CompanyParentSetEvent(
     , string ParentCompanyId
     , string SetBy
     , DateTime SetAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 21. Şirkete bağlı şirket eklendi event'i
@@ -325,11 +245,7 @@ public record CompanySubsidiaryAddedEvent(
     , string SubsidiaryId
     , string AddedBy
     , DateTime AddedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 22. Şirket ID'si güncellendi event'i
@@ -338,11 +254,7 @@ public record CompanyIdUpdatedEvent(
     string OldCompanyId
     , string NewCompanyId
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 23. Şirket görüntülendi event'i
@@ -354,11 +266,7 @@ public record CompanyViewedEvent(
     , string? ReferrerUrl
     , string UserAgent
     , DateTime ViewedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 24. Şirket arandı event'i
@@ -372,11 +280,7 @@ public record CompanySearchedEvent(
     , string SearcherIp
     , Dictionary<string, object>? SearchFilters
     , DateTime SearchedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 25. Şirket geçici olarak askıya alındı event'i
@@ -388,11 +292,7 @@ public record CompanySuspendedEvent(
     , DateTime? SuspensionEndDate
     , bool CanAppeal
     , DateTime SuspendedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 26. Şirket takip edildi event'i
@@ -402,11 +302,7 @@ public record CompanyFollowedEvent(
     , string UserId
     , bool EnableNotifications
     , DateTime FollowedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 27. Şirket takibi bırakıldı event'i
@@ -416,11 +312,7 @@ public record CompanyUnfollowedEvent(
     , string UserId
     , string? UnfollowReason
     , DateTime UnfollowedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 28. Şirket sahibi tarafından talep edildi event'i
@@ -432,8 +324,4 @@ public record CompanyClaimedEvent(
     , string? VerificationDocumentUrl
     , string ClaimStatus
     , DateTime ClaimedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;

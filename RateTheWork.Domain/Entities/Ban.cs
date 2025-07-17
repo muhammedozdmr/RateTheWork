@@ -72,8 +72,7 @@ public class Ban : BaseEntity
             BanType.Temporary.ToString(),
             ban.UnbanDate,
             isAppealable,
-            ban.BannedAt,
-            DateTime.UtcNow
+            ban.BannedAt
         ));
 
         return ban;
@@ -109,8 +108,7 @@ public class Ban : BaseEntity
             BanType.Permanent.ToString(),
             null,
             isAppealable,
-            ban.BannedAt,
-            DateTime.UtcNow
+            ban.BannedAt
         ));
 
         return ban;
@@ -141,8 +139,7 @@ public class Ban : BaseEntity
             userId,
             triggerReason,
             warningCount,
-            ban.BannedAt,
-            DateTime.UtcNow
+            ban.BannedAt
         ));
 
         return ban;
@@ -171,7 +168,6 @@ public class Ban : BaseEntity
             UserId,
             liftedBy,
             liftReason,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }
@@ -201,7 +197,6 @@ public class Ban : BaseEntity
             Id,
             UserId,
             appealNotes,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }

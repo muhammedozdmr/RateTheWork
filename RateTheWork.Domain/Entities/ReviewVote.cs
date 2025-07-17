@@ -106,8 +106,7 @@ public class ReviewVote : BaseEntity
             vote.Id,
             reviewId,
             userId,
-            isUpvote ? VoteType.Upvote : VoteType.Downvote,
-            DateTime.UtcNow
+            isUpvote ? VoteType.Upvote : VoteType.Downvote
         ));
 
         return vote;
@@ -242,7 +241,6 @@ public class ReviewVote : BaseEntity
             oldIsUpvote,
             IsUpvote,
             ChangeCount,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }

@@ -23,12 +23,12 @@ public class BadgeDomainService : IBadgeDomainService
 
     public async Task<List<Badge>> CheckEligibleBadgesAsync(string userId)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId);
         if (user == null)
             throw new EntityNotFoundException(nameof(User), userId);
 
-        var allBadges = await _unitOfWork.Badges.GetAllAsync();
-        var userBadges = await _unitOfWork.UserBadges.GetAsync(ub => ub.UserId == userId);
+        var allBadges = await _unitOfWork.Repository<Badge>().GetAllAsync();
+        var userBadges = await _unitOfWork.Repository<UserBadge>().GetAsync(ub => ub.UserId == userId);
         var earnedBadgeIds = userBadges.Select(ub => ub.BadgeId).ToHashSet();
 
         var eligibleBadges = new List<Badge>();
@@ -47,29 +47,29 @@ public class BadgeDomainService : IBadgeDomainService
     public async Task AwardBadgeAsync(string userId, string badgeId)
     {
         // Kullanıcı kontrolü
-        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId);
         if (user == null)
             throw new EntityNotFoundException(nameof(User), userId);
-        
+
         if (user.IsBanned)
             throw new BusinessRuleException("BANNED_USER", "Banlı kullanıcılar rozet kazanamaz.");
 
         // Rozet kontrolü
-        var badge = await _unitOfWork.Badges.GetByIdAsync(badgeId);
+        var badge = await _unitOfWork.Repository<Badge>().GetByIdAsync(badgeId);
         if (badge == null || !badge.IsActive)
             throw new EntityNotFoundException(nameof(Badge), badgeId);
 
         // Zaten kazanılmış mı kontrolü
-        var existingUserBadge = await _unitOfWork.UserBadges
+        var existingUserBadge = await _unitOfWork.Repository<UserBadge>()
             .GetFirstOrDefaultAsync(ub => ub.UserId == userId && ub.BadgeId == badgeId);
-        
+
         if (existingUserBadge != null)
-            throw new BusinessRuleException("USER_ALREADY_HAS_BADGE", 
+            throw new BusinessRuleException("USER_ALREADY_HAS_BADGE",
                 $"Kullanıcı bu rozete zaten sahip: {badge.Name}");
 
         // Kriterleri karşılıyor mu kontrolü
         if (!await CheckBadgeCriteriaAsync(userId, badge))
-            throw new BusinessRuleException("BADGE_CRITERIA_NOT_MET", 
+            throw new BusinessRuleException("BADGE_CRITERIA_NOT_MET",
                 $"Kullanıcı rozet kriterlerini karşılamıyor: {badge.Name}");
 
         // Rozeti ata
@@ -80,7 +80,7 @@ public class BadgeDomainService : IBadgeDomainService
             specialNote: null
         );
 
-        await _unitOfWork.UserBadges.AddAsync(userBadge);
+        await _unitOfWork.Repository<UserBadge>().AddAsync(userBadge);
 
         // Kullanıcıya bildirim gönder
         var notification = Notification.Create(
@@ -94,12 +94,12 @@ public class BadgeDomainService : IBadgeDomainService
             imageUrl: badge.IconUrl
         );
 
-        await _unitOfWork.Notifications.AddAsync(notification);
+        await _unitOfWork.Repository<Notification>().AddAsync(notification);
     }
 
     public async Task<bool> CheckBadgeCriteriaAsync(string userId, Badge badge)
     {
-        var userReviews = await _unitOfWork.Reviews.GetReviewsByUserAsync(userId, 1, int.MaxValue);
+        var userReviews = await _unitOfWork.Repository<Review>().GetReviewsByUserAsync(userId, 1, int.MaxValue);
         var verifiedReviews = userReviews.Where(r => r.IsDocumentVerified && r.IsActive).ToList();
         var activeReviews = userReviews.Where(r => r.IsActive).ToList();
 
@@ -138,7 +138,7 @@ public class BadgeDomainService : IBadgeDomainService
                 return helpfulReviews >= 5;
 
             case BadgeType.Anniversary:
-                var user = await _unitOfWork.Users.GetByIdAsync(userId);
+                var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId);
                 if (user == null) return false;
                 var membershipDays = (DateTime.UtcNow - user.CreatedAt).TotalDays;
                 return membershipDays >= 365; // 1 yıl
@@ -155,11 +155,11 @@ public class BadgeDomainService : IBadgeDomainService
     public async Task<Dictionary<string, BadgeProgress>> GetUserBadgeProgressAsync(string userId)
     {
         var progress = new Dictionary<string, BadgeProgress>();
-        var allBadges = await _unitOfWork.Badges.GetAllAsync();
-        var userBadges = await _unitOfWork.UserBadges.GetAsync(ub => ub.UserId == userId);
+        var allBadges = await _unitOfWork.Repository<Badge>().GetAllAsync();
+        var userBadges = await _unitOfWork.Repository<UserBadge>().GetAsync(ub => ub.UserId == userId);
         var earnedBadgeIds = userBadges.Select(ub => ub.BadgeId).ToHashSet();
 
-        var userReviews = await _unitOfWork.Reviews.GetReviewsByUserAsync(userId, 1, int.MaxValue);
+        var userReviews = await _unitOfWork.Repository<Review>().GetReviewsByUserAsync(userId, 1, int.MaxValue);
         var activeReviews = userReviews.Where(r => r.IsActive).ToList();
         var verifiedReviews = userReviews.Where(r => r.IsDocumentVerified && r.IsActive).ToList();
 
@@ -167,9 +167,7 @@ public class BadgeDomainService : IBadgeDomainService
         {
             var badgeProgress = new BadgeProgress
             {
-                BadgeId = badge.Id,
-                BadgeName = badge.Name,
-                IsEarned = earnedBadgeIds.Contains(badge.Id)
+                BadgeId = badge.Id, BadgeName = badge.Name, IsEarned = earnedBadgeIds.Contains(badge.Id)
             };
 
             if (!badgeProgress.IsEarned)
@@ -185,23 +183,27 @@ public class BadgeDomainService : IBadgeDomainService
 
                     case BadgeType.ActiveReviewer:
                         var activeCount = activeReviews.Count;
-                        badgeProgress.ProgressPercentage = Math.Min(100, (activeCount * 100m) / DomainConstants.Badge.ActiveReviewerThreshold);
+                        badgeProgress.ProgressPercentage = Math.Min(100
+                            , (activeCount * 100m) / DomainConstants.Badge.ActiveReviewerThreshold);
                         badgeProgress.CurrentStatus = $"{activeCount}/10 yorum";
                         badgeProgress.NextRequirement = $"{Math.Max(0, 10 - activeCount)} yorum daha yapın";
                         break;
 
                     case BadgeType.TrustedReviewer:
                         var verifiedCount = verifiedReviews.Count;
-                        badgeProgress.ProgressPercentage = Math.Min(100, (verifiedCount * 100m) / DomainConstants.Badge.TrustedReviewerThreshold);
+                        badgeProgress.ProgressPercentage = Math.Min(100
+                            , (verifiedCount * 100m) / DomainConstants.Badge.TrustedReviewerThreshold);
                         badgeProgress.CurrentStatus = $"{verifiedCount}/5 doğrulanmış yorum";
                         badgeProgress.NextRequirement = $"{Math.Max(0, 5 - verifiedCount)} doğrulanmış yorum daha";
                         break;
 
                     case BadgeType.CompanyExplorer:
                         var uniqueCompanies = activeReviews.Select(r => r.CompanyId).Distinct().Count();
-                        badgeProgress.ProgressPercentage = Math.Min(100, (uniqueCompanies * 100m) / DomainConstants.Badge.CompanyExplorerThreshold);
+                        badgeProgress.ProgressPercentage = Math.Min(100
+                            , (uniqueCompanies * 100m) / DomainConstants.Badge.CompanyExplorerThreshold);
                         badgeProgress.CurrentStatus = $"{uniqueCompanies}/10 farklı şirket";
-                        badgeProgress.NextRequirement = $"{Math.Max(0, 10 - uniqueCompanies)} farklı şirkete daha yorum yapın";
+                        badgeProgress.NextRequirement =
+                            $"{Math.Max(0, 10 - uniqueCompanies)} farklı şirkete daha yorum yapın";
                         break;
 
                     default:
@@ -226,14 +228,14 @@ public class BadgeDomainService : IBadgeDomainService
 
     public async Task<int> CalculateUserBadgePointsAsync(string userId)
     {
-        var userBadges = await _unitOfWork.UserBadges.GetAsync(ub => ub.UserId == userId);
+        var userBadges = await _unitOfWork.Repository<UserBadge>().GetAsync(ub => ub.UserId == userId);
         var badgeIds = userBadges.Select(ub => ub.BadgeId).ToList();
-        
+
         if (!badgeIds.Any())
             return 0;
 
-        var badges = await _unitOfWork.Badges.GetAsync(b => badgeIds.Contains(b.Id));
-        
+        var badges = await _unitOfWork.Repository<Badge>().GetAsync(b => badgeIds.Contains(b.Id));
+
         // Her rozet türü için farklı puan
         var totalPoints = 0;
         foreach (var badge in badges)

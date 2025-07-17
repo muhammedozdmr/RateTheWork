@@ -18,11 +18,7 @@ public record ReviewCreatedEvent(
     , string UserIp
     , string UserAgent
     , DateTime CreatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 2. Yorum güncellendi event'i
@@ -36,11 +32,7 @@ public record ReviewUpdatedEvent(
     , Dictionary<string, object>? NewValues
     , string? ModerationNote
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 3. Yorum belge yüklendi event'i
@@ -49,11 +41,7 @@ public record ReviewDocumentUploadedEvent(
     string? ReviewId
     , string DocumentUrl
     , DateTime UploadedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 4. Yorum doğrulandı event'i
@@ -62,11 +50,7 @@ public record ReviewVerifiedEvent(
     string? ReviewId
     , string VerifiedBy
     , DateTime VerifiedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 5. Yorum gizlendi event'i
@@ -81,11 +65,7 @@ public record ReviewHiddenEvent(
     , bool CanAppeal
     , DateTime? AppealDeadline
     , DateTime HiddenAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 6. Yorum aktifleştirildi event'i
@@ -94,11 +74,7 @@ public record ReviewActivatedEvent(
     string? ReviewId
     , string ActivatedBy
     , DateTime ActivatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 7. Mevcut yorumdan yeni yorum oluşturur (farklı bir yorum tipi için)
@@ -108,10 +84,7 @@ public record ReviewCreatedFromTemplateEvent(
     , string? ExistingReviewId
     , string CommentType
     , DateTime UploadedAt
-    , DateTime OccurredOn = default) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 8. Taslak yorum oluşturur (henüz gönderilmemiş)
@@ -121,10 +94,7 @@ public record ReviewDraftCreatedEvent(
     , string UserId
     , string CompanyId
     , DateTime CreatedAt
-    , DateTime OccurredOn = default) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 9. Yorum faydalılık skoru güncellendi event'i
@@ -134,11 +104,7 @@ public record ReviewHelpfulnessUpdatedEvent(
     , decimal NewScore
     , decimal OldScore
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 10. Yorum oy sayıları güncellendi event'i
@@ -148,11 +114,7 @@ public record ReviewVoteCountsUpdatedEvent(
     , int Upvotes
     , int Downvotes
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 11. Yorum şirket ID'si güncellendi event'i (şirket birleşmeleri için)
@@ -163,11 +125,7 @@ public record ReviewCompanyUpdatedEvent(
     , string NewCompanyId
     , string UpdatedBy
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 12. Yorum rapor edildi event'i
@@ -180,11 +138,7 @@ public record ReviewReportedEvent(
     , bool IsAutoDetected
     , decimal? ConfidenceScore
     , DateTime ReportedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 13. Yorum öne çıkarıldı event'i
@@ -196,11 +150,7 @@ public record ReviewFeaturedEvent(
     , DateTime? FeaturedUntil
     , int DisplayOrder
     , DateTime FeaturedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 14. Yorum çevrildi event'i
@@ -212,11 +162,7 @@ public record ReviewTranslatedEvent(
     , string TranslationProvider
     , bool IsAutoTranslated
     , DateTime TranslatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 15. Yoruma yanıt verildi event'i
@@ -228,8 +174,4 @@ public record ReviewCommentedEvent(
     , string CommentText
     , bool IsCompanyResponse
     , DateTime CommentedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;

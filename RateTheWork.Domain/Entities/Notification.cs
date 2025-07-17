@@ -1,9 +1,5 @@
-using System.Text.Json;
 using RateTheWork.Domain.Common;
-using RateTheWork.Domain.Constants;
-using RateTheWork.Domain.Enums;
 using RateTheWork.Domain.Enums.Notification;
-using RateTheWork.Domain.Events;
 using RateTheWork.Domain.Events.Notification;
 using RateTheWork.Domain.Exceptions;
 
@@ -14,45 +10,11 @@ namespace RateTheWork.Domain.Entities;
 /// </summary>
 public class Notification : BaseEntity
 {
-    // Notification Types
-    public static class NotificationTypes
+    /// <summary>
+    /// EF Core için parametresiz private constructor
+    /// </summary>
+    private Notification() : base()
     {
-        // Account
-        public const string Welcome = "Account.Welcome";
-        public const string EmailVerified = "Account.EmailVerified";
-        public const string PhoneVerified = "Account.PhoneVerified";
-        public const string PasswordChanged = "Account.PasswordChanged";
-        public const string ProfileUpdated = "Account.ProfileUpdated";
-        
-        // Review
-        public const string ReviewApproved = "Review.Approved";
-        public const string ReviewRejected = "Review.Rejected";
-        public const string ReviewReceivesVote = "Review.ReceivedVote";
-        public const string ReviewReceivesComment = "Review.ReceivedComment";
-        public const string ReviewReported = "Review.Reported";
-        public const string ReviewHidden = "Review.Hidden";
-        
-        // Document
-        public const string DocumentVerified = "Document.Verified";
-        public const string DocumentRejected = "Document.Rejected";
-        
-        // Moderation
-        public const string WarningIssued = "Moderation.Warning";
-        public const string BanIssued = "Moderation.Ban";
-        public const string BanLifted = "Moderation.BanLifted";
-        
-        // Badge
-        public const string BadgeEarned = "Badge.Earned";
-        public const string BadgeRemoved = "Badge.Removed";
-        
-        // Company
-        public const string CompanyResponded = "Company.Responded";
-        public const string CompanyVerified = "Company.Verified";
-        
-        // System
-        public const string SystemAnnouncement = "System.Announcement";
-        public const string SystemMaintenance = "System.Maintenance";
-        public const string TermsUpdated = "System.TermsUpdated";
     }
 
 
@@ -76,28 +38,23 @@ public class Notification : BaseEntity
     public DateTime? ExpiresAt { get; private set; }
 
     /// <summary>
-    /// EF Core için parametresiz private constructor
-    /// </summary>
-    private Notification() : base()
-    {
-    }
-
-    /// <summary>
     /// Yeni bildirim oluşturur (Factory method)
     /// </summary>
-    public static Notification Create(
-        string userId,
-        NotificationType type,
-        string? title = null,
-        string? message = null,
-        NotificationPriority? priority = null,
-        NotificationChannel? channels = null,
-        string? relatedEntityType = null,
-        string? relatedEntityId = null,
-        string? actionUrl = null,
-        string? imageUrl = null,
-        Dictionary<string, object>? data = null,
-        int? expirationDays = null)
+    public static Notification Create
+    (
+        string userId
+        , NotificationType type
+        , string? title = null
+        , string? message = null
+        , NotificationPriority? priority = null
+        , NotificationChannel? channels = null
+        , string? relatedEntityType = null
+        , string? relatedEntityId = null
+        , string? actionUrl = null
+        , string? imageUrl = null
+        , Dictionary<string, object>? data = null
+        , int? expirationDays = null
+    )
     {
         // Varsayılan değerleri al
         var actualTitle = title ?? type.GetDefaultTitle();
@@ -110,18 +67,11 @@ public class Notification : BaseEntity
 
         var notification = new Notification
         {
-            UserId = userId ?? throw new ArgumentNullException(nameof(userId)),
-            Type = type,
-            Title = actualTitle,
-            Message = actualMessage,
-            Priority = actualPriority,
-            Channels = actualChannels,
-            RelatedEntityType = relatedEntityType,
-            RelatedEntityId = relatedEntityId,
-            ActionUrl = actionUrl,
-            ImageUrl = imageUrl,
-            Data = data,
-            ExpiresAt = expirationDays.HasValue ? DateTime.UtcNow.AddDays(expirationDays.Value) : null
+            UserId = userId ?? throw new ArgumentNullException(nameof(userId)), Type = type, Title = actualTitle
+            , Message = actualMessage, Priority = actualPriority, Channels = actualChannels
+            , RelatedEntityType = relatedEntityType, RelatedEntityId = relatedEntityId, ActionUrl = actionUrl
+            , ImageUrl = imageUrl, Data = data
+            , ExpiresAt = expirationDays.HasValue ? DateTime.UtcNow.AddDays(expirationDays.Value) : null
         };
 
         // Domain Event
@@ -131,7 +81,6 @@ public class Notification : BaseEntity
             type.ToString(),
             actualTitle,
             actualPriority.ToString(),
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
 
@@ -142,13 +91,15 @@ public class Notification : BaseEntity
     /// <summary>
     /// Toplu bildirim oluşturur (Factory method)
     /// </summary>
-    public static List<Notification> CreateBulk(
-        string[] userIds,
-        NotificationType type,
-        string? title = null,
-        string? message = null,
-        NotificationPriority? priority = null,
-        NotificationChannel? channels = null)
+    public static List<Notification> CreateBulk
+    (
+        string[] userIds
+        , NotificationType type
+        , string? title = null
+        , string? message = null
+        , NotificationPriority? priority = null
+        , NotificationChannel? channels = null
+    )
     {
         if (userIds == null || userIds.Length == 0)
             throw new ArgumentException("En az bir kullanıcı ID'si gerekli.", nameof(userIds));
@@ -169,16 +120,15 @@ public class Notification : BaseEntity
                 type.ToString(),
                 firstNotification.Title,
                 userIds.Length,
-                DateTime.UtcNow,
                 DateTime.UtcNow
             ));
         }
 
         return notifications;
     }
-    
+
     //TODO: Burayı yapmayı unutma factory metodları genişlet
-    
+
     // /// <summary>
     // /// Sistem duyurusu oluşturur (tüm kullanıcılara)
     // /// </summary>
@@ -251,6 +201,7 @@ public class Notification : BaseEntity
         {
             template = template.Replace($"{{{param.Key}}}", param.Value);
         }
+
         return template;
     }
 
@@ -270,7 +221,6 @@ public class Notification : BaseEntity
         AddDomainEvent(new NotificationReadEvent(
             Id,
             UserId,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }
@@ -355,5 +305,46 @@ public class Notification : BaseEntity
 
         if (message.Length > 500)
             throw new BusinessRuleException("Bildirim mesajı 500 karakterden uzun olamaz.");
+    }
+
+    // Notification Types
+    public static class NotificationTypes
+    {
+        // Account
+        public const string Welcome = "Account.Welcome";
+        public const string EmailVerified = "Account.EmailVerified";
+        public const string PhoneVerified = "Account.PhoneVerified";
+        public const string PasswordChanged = "Account.PasswordChanged";
+        public const string ProfileUpdated = "Account.ProfileUpdated";
+
+        // Review
+        public const string ReviewApproved = "Review.Approved";
+        public const string ReviewRejected = "Review.Rejected";
+        public const string ReviewReceivesVote = "Review.ReceivedVote";
+        public const string ReviewReceivesComment = "Review.ReceivedComment";
+        public const string ReviewReported = "Review.Reported";
+        public const string ReviewHidden = "Review.Hidden";
+
+        // Document
+        public const string DocumentVerified = "Document.Verified";
+        public const string DocumentRejected = "Document.Rejected";
+
+        // Moderation
+        public const string WarningIssued = "Moderation.Warning";
+        public const string BanIssued = "Moderation.Ban";
+        public const string BanLifted = "Moderation.BanLifted";
+
+        // Badge
+        public const string BadgeEarned = "Badge.Earned";
+        public const string BadgeRemoved = "Badge.Removed";
+
+        // Company
+        public const string CompanyResponded = "Company.Responded";
+        public const string CompanyVerified = "Company.Verified";
+
+        // System
+        public const string SystemAnnouncement = "System.Announcement";
+        public const string SystemMaintenance = "System.Maintenance";
+        public const string TermsUpdated = "System.TermsUpdated";
     }
 }

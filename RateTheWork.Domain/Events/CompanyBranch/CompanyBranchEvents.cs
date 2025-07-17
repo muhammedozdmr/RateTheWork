@@ -18,11 +18,7 @@ public record CompanyBranchCreatedEvent(
     , bool IsHeadquarters
     , string CreatedBy
     , DateTime CreatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 2. Şirket şubesi güncellendi event'i
@@ -35,11 +31,7 @@ public record CompanyBranchUpdatedEvent(
     , Dictionary<string, object>? NewValues
     , string UpdatedBy
     , DateTime UpdatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 3. Şirket şubesi merkez olarak belirlendi event'i
@@ -50,11 +42,7 @@ public record CompanyBranchSetAsHeadquartersEvent(
     , string? PreviousHeadquartersBranchId
     , string SetBy
     , DateTime SetAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 4. Şirket şubesi silindi event'i
@@ -66,11 +54,7 @@ public record CompanyBranchDeletedEvent(
     , string DeletionReason
     , bool IsHardDelete
     , DateTime DeletedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 5. Şirket şubesi deaktif edildi event'i
@@ -82,11 +66,7 @@ public record CompanyBranchDeactivatedEvent(
     , string Reason
     , DateTime? ReactivationDate
     , DateTime DeactivatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 6. Şirket şubesi yeniden aktif edildi event'i
@@ -96,8 +76,4 @@ public record CompanyBranchReactivatedEvent(
     , string CompanyId
     , string ReactivatedBy
     , DateTime ReactivatedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;

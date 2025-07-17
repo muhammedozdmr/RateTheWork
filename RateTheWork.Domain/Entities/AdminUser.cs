@@ -67,7 +67,7 @@ public class AdminUser : AuditableBaseEntity
             email,
             role.ToString(),
             createdByAdminId,
-            DateTime.UtcNow
+            adminUser.CreatedAt
         ));
 
         return adminUser;

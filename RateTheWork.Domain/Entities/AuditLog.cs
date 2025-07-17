@@ -68,8 +68,7 @@ public class AuditLog : BaseEntity
                 entityType,
                 entityId,
                 details ?? string.Empty,
-                auditLog.PerformedAt,
-                DateTime.UtcNow
+                auditLog.PerformedAt
             ));
         }
         else
@@ -82,8 +81,7 @@ public class AuditLog : BaseEntity
                 entityType,
                 entityId,
                 auditLog.Severity.ToString(),
-                auditLog.PerformedAt,
-                DateTime.UtcNow
+                auditLog.PerformedAt
             ));
         }
 

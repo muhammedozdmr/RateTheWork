@@ -201,7 +201,7 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
             company.EstablishedYear,
             null, // CreatedByUserId
             "SYSTEM", // CreatedByIp
-            DateTime.UtcNow
+            company.CreatedAt
         ));
 
         return company;
@@ -444,12 +444,12 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
         SetModifiedDate();
 
         // Domain event
-        // Domain event
         AddDomainEvent(new CompanyVerifiedEvent(
             Id,
-            verifiedBy,
             verificationMethod,
-            DateTime.UtcNow
+            verifiedBy,
+            DateTime.UtcNow,
+            metadata
         ));
     }
 
@@ -484,7 +484,7 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
         SetModifiedDate();
 
         AddDomainEvent(new CompanyBranchAddedEvent(Id, branch.Id, branch.Name, branch.City, branch.IsHeadquarters
-            , branch.CreatedAt));
+            , DateTime.UtcNow));
     }
 
     /// <summary>

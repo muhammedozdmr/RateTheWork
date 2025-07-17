@@ -68,8 +68,7 @@ public class VerificationRequest : ApprovableBaseEntity
             reviewId,
             documentType,
             verificationType.ToString(),
-            request.RequestedAt,
-            DateTime.UtcNow
+            request.RequestedAt
         ));
 
         return request;
@@ -195,8 +194,8 @@ public class VerificationRequest : ApprovableBaseEntity
         // Acil talep için özel event
         request.AddDomainEvent(new VerificationRequestMarkedUrgentEvent(
             request.Id,
-            urgencyReason,
             "SYSTEM",
+            urgencyReason,
             DateTime.UtcNow
         ));
 
@@ -219,7 +218,6 @@ public class VerificationRequest : ApprovableBaseEntity
         AddDomainEvent(new VerificationRequestProcessingStartedEvent(
             Id,
             adminId,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }
@@ -248,7 +246,6 @@ public class VerificationRequest : ApprovableBaseEntity
             approvedBy,
             DocumentType,
             ProcessingTimeHours,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }
@@ -276,7 +273,6 @@ public class VerificationRequest : ApprovableBaseEntity
             rejectedBy,
             reason,
             AllowResubmission,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }
@@ -307,7 +303,6 @@ public class VerificationRequest : ApprovableBaseEntity
             UserId,
             ReviewId,
             newDocumentUrl,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }
@@ -331,7 +326,6 @@ public class VerificationRequest : ApprovableBaseEntity
             Id,
             markedBy,
             reason,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }

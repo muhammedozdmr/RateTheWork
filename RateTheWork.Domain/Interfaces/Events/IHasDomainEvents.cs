@@ -1,3 +1,5 @@
+using RateTheWork.Domain.Events;
+
 namespace RateTheWork.Domain.Interfaces.Events;
 
 /// <summary>
@@ -9,15 +11,14 @@ public interface IHasDomainEvents
     /// Entity'nin domain event'leri
     /// </summary>
     IReadOnlyCollection<IDomainEvent> DomainEvents { get; }
-    
+
     /// <summary>
     /// Yeni domain event ekler
     /// </summary>
     void AddDomainEvent(IDomainEvent domainEvent);
-    
+
     /// <summary>
     /// Domain event'leri temizler
     /// </summary>
     void ClearDomainEvents();
 }
-

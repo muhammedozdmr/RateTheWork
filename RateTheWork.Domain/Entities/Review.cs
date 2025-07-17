@@ -80,7 +80,7 @@ public class Review : AuditableBaseEntity, IAggregateRoot
             null, // QualityScore
             "0.0.0.0", // UserIp - will be set by application layer
             "Unknown", // UserAgent - will be set by application layer
-            DateTime.UtcNow
+            review.CreatedAt
         ));
 
         return review;
@@ -100,7 +100,7 @@ public class Review : AuditableBaseEntity, IAggregateRoot
             // IsDraft = true // Eğer böyle bir property varsa
         };
 
-        review.AddDomainEvent(new ReviewDraftCreatedEvent(review.Id, userId, companyId, DateTime.UtcNow));
+        review.AddDomainEvent(new ReviewDraftCreatedEvent(review.Id, userId, companyId, review.CreatedAt));
 
         return review;
     }
@@ -126,7 +126,7 @@ public class Review : AuditableBaseEntity, IAggregateRoot
             review.Id,
             existingReview.Id,
             newCommentType.ToString(),
-            DateTime.UtcNow
+            review.CreatedAt
         ));
 
         return review;
@@ -237,7 +237,6 @@ public class Review : AuditableBaseEntity, IAggregateRoot
         SetModifiedDate();
 
         // Domain Event
-        //TODO: Eventi tamamla
         AddDomainEvent(new ReviewCompanyUpdatedEvent(
             Id,
             oldCompanyId,
@@ -387,9 +386,8 @@ public class Review : AuditableBaseEntity, IAggregateRoot
         if (Id != null)
             AddDomainEvent(new ReviewHelpfulnessUpdatedEvent(
                 Id,
-                oldScore,
                 score,
-                DateTime.UtcNow,
+                oldScore,
                 DateTime.UtcNow));
     }
 

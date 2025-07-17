@@ -74,8 +74,7 @@ public class Warning : BaseEntity
             severity.ToString(),
             warning.Points,
             0, // TotalWarnings will be calculated by handler
-            warning.IssuedAt,
-            DateTime.UtcNow
+            warning.IssuedAt
         ));
 
         return warning;
@@ -176,8 +175,7 @@ public class Warning : BaseEntity
             triggerRule,
             type.ToString(),
             severity.ToString(),
-            metadata,
-            DateTime.UtcNow
+            metadata
         ));
 
         return warning;
@@ -253,7 +251,6 @@ public class Warning : BaseEntity
         AddDomainEvent(new WarningAcknowledgedEvent(
             Id,
             UserId,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }
@@ -281,7 +278,6 @@ public class Warning : BaseEntity
             Id,
             UserId,
             appealNotes,
-            DateTime.UtcNow,
             DateTime.UtcNow
         ));
     }
@@ -303,7 +299,6 @@ public class Warning : BaseEntity
             AddDomainEvent(new WarningExpiredEvent(
                 Id,
                 UserId,
-                DateTime.UtcNow,
                 DateTime.UtcNow
             ));
         }

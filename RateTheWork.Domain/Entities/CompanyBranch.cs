@@ -87,7 +87,7 @@ public class CompanyBranch : BaseEntity
             email,
             isHeadquarters,
             "SYSTEM",
-            DateTime.UtcNow
+            branch.CreatedAt
         ));
 
         return branch;

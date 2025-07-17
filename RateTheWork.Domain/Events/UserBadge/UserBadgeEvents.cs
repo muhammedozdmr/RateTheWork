@@ -10,11 +10,7 @@ public record BadgeAwardedEvent(
     , DateTime AwardedAt
     , string? AwardReason
     , string? SpecialNote
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 2. Kullanıcı rozeti görüntüledi event'i
@@ -24,11 +20,7 @@ public record BadgeViewedEvent(
     , string? UserId
     , string? BadgeId
     , DateTime ViewedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 3. Kullanıcı rozeti gösterildi event'i
@@ -38,11 +30,7 @@ public record BadgeDisplayedEvent(
     , string? UserId
     , string? BadgeId
     , DateTime DisplayedAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 4. Kullanıcı rozeti gizlendi event'i
@@ -52,11 +40,7 @@ public record BadgeHiddenEvent(
     , string? UserId
     , string? BadgeId
     , DateTime HiddenAt
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 5. Otomatik rozet kazanıldı event'i
@@ -67,11 +51,7 @@ public record AutomaticBadgeAwardedEvent(
     , string? BadgeId
     , string TriggerCondition
     , Dictionary<string, object>? Metadata
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 6. Sezonluk rozet kazanıldı event'i
@@ -83,11 +63,7 @@ public record SeasonalBadgeAwardedEvent(
     , string SeasonName
     , DateTime SeasonStart
     , DateTime SeasonEnd
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
 
 /// <summary>
 /// 7. Manuel rozet verildi event'i
@@ -98,8 +74,4 @@ public record ManualBadgeAwardedEvent(
     , string? BadgeId
     , string AdminId
     , string Reason
-    , DateTime OccurredOn = default
-) : IDomainEvent
-{
-    public DateTime OccurredOn { get; } = OccurredOn == default ? DateTime.UtcNow : OccurredOn;
-}
+) : DomainEventBase;
