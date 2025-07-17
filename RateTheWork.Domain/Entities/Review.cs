@@ -32,6 +32,7 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     public int Downvotes { get; private set; } = 0;
     public int ReportCount { get; private set; } = 0;
     public bool IsActive { get; private set; } = true;
+    public bool IsPublished { get; private set; } = true; // Yayınlanmış mı?
     public DateTime? LastEditedAt { get; private set; }
     public string? EditReason { get; private set; }
     public int EditCount { get; private set; } = 0;

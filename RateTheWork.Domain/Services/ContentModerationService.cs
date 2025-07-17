@@ -1,7 +1,8 @@
 using System.Text.RegularExpressions;
 using RateTheWork.Domain.Interfaces.Security;
 using RateTheWork.Domain.Interfaces.Services;
-using RateTheWork.Domain.ValueObjects;
+using RateTheWork.Domain.ValueObjects.Moderation;
+using RateTheWork.Domain.ValueObjects.Review;
 
 namespace RateTheWork.Domain.Services;
 
@@ -151,8 +152,6 @@ public class ContentModerationService : IContentModerationService
         // Sentiment analiz simülasyonu
         await Task.Delay(30);
 
-        var result = new SentimentAnalysisResult();
-
         // Basit pozitif/negatif kelime analizi
         var positiveWords = new[] { "güzel", "harika", "mükemmel", "iyi", "başarılı", "memnun", "mutlu" };
         var negativeWords = new[] { "kötü", "berbat", "rezalet", "yetersiz", "başarısız", "mutsuz", "sorunlu" };
@@ -162,30 +161,38 @@ public class ContentModerationService : IContentModerationService
         var negativeCount = negativeWords.Count(word => lowerContent.Contains(word));
 
         var total = positiveCount + negativeCount;
+        double positiveScore, negativeScore, neutralScore;
+        string dominantSentiment;
+
         if (total == 0)
         {
-            result.NeutralScore = 1.0;
-            result.DominantSentiment = "Neutral";
+            positiveScore = 0.0;
+            negativeScore = 0.0;
+            neutralScore = 1.0;
+            dominantSentiment = "Neutral";
         }
         else
         {
-            result.PositiveScore = (double)positiveCount / total;
-            result.NegativeScore = (double)negativeCount / total;
-            result.NeutralScore = 1.0 - result.PositiveScore - result.NegativeScore;
+            positiveScore = (double)positiveCount / total;
+            negativeScore = (double)negativeCount / total;
+            neutralScore = 1.0 - positiveScore - negativeScore;
 
-            if (result.PositiveScore > result.NegativeScore)
-                result.DominantSentiment = "Positive";
-            else if (result.NegativeScore > result.PositiveScore)
-                result.DominantSentiment = "Negative";
+            if (positiveScore > negativeScore)
+                dominantSentiment = "Positive";
+            else if (negativeScore > positiveScore)
+                dominantSentiment = "Negative";
             else
-                result.DominantSentiment = "Neutral";
+                dominantSentiment = "Neutral";
         }
 
         // Emotion skorları (basit simülasyon)
-        result.EmotionScores["joy"] = result.PositiveScore * 0.6;
-        result.EmotionScores["sadness"] = result.NegativeScore * 0.4;
-        result.EmotionScores["anger"] = result.NegativeScore * 0.3;
-        result.EmotionScores["fear"] = result.NegativeScore * 0.3;
+        var emotionScores = new Dictionary<string, double>
+        {
+            ["joy"] = positiveScore * 0.6, ["sadness"] = negativeScore * 0.4, ["anger"] = negativeScore * 0.3
+            , ["fear"] = negativeScore * 0.3
+        };
+
+        var result = SentimentAnalysisResult.Create(positiveScore, negativeScore, neutralScore, emotionScores);
 
         return result;
     }
@@ -471,6 +478,27 @@ public class ContentModerationService : IContentModerationService
         return Math.Clamp(score, 0, 1);
     }
 
+    public async Task<bool> IsSpamPatternAsync(string content)
+    {
+        var lowerContent = content.ToLowerInvariant();
+
+        // Çok fazla büyük harf kontrolü
+        var upperCaseRatio = (double)content.Count(char.IsUpper) / content.Length;
+        if (upperCaseRatio > 0.6)
+            return true;
+
+        // Tekrarlayan karakter kontrolü
+        if (Regex.IsMatch(content, @"(.)\1{4,}"))
+            return true;
+
+        // Link sayısı kontrolü
+        var linkCount = Regex.Matches(content, @"https?://|www\.", RegexOptions.IgnoreCase).Count;
+        if (linkCount > 2)
+            return true;
+
+        return false;
+    }
+
     // Private helper methods
     private async Task<bool> ContainsPersonalInfoAsync(string content)
     {
@@ -607,27 +635,6 @@ public class ContentModerationService : IContentModerationService
     {
         var stopWords = new[] { "ve", "veya", "ile", "için", "ama", "ancak", "çünkü", "ki", "da", "de" };
         return stopWords.Contains(word);
-    }
-
-    private async Task<bool> IsSpamPatternAsync(string content)
-    {
-        var lowerContent = content.ToLowerInvariant();
-
-        // Çok fazla büyük harf kontrolü
-        var upperCaseRatio = (double)content.Count(char.IsUpper) / content.Length;
-        if (upperCaseRatio > 0.6)
-            return true;
-
-        // Tekrarlayan karakter kontrolü
-        if (Regex.IsMatch(content, @"(.)\1{4,}"))
-            return true;
-
-        // Link sayısı kontrolü
-        var linkCount = Regex.Matches(content, @"https?://|www\.", RegexOptions.IgnoreCase).Count;
-        if (linkCount > 2)
-            return true;
-
-        return false;
     }
 
     private bool IsSuspiciousCompanyName(string companyName)

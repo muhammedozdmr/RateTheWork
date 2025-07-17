@@ -3,7 +3,7 @@ namespace RateTheWork.Domain.Interfaces.Validators;
 /// <summary>
 /// TC Kimlik validatör interface'i
 /// </summary>
-public interface ITcIdentityValidator : IDomainValidator<string>
+public interface ITcIdentityValidator
 {
     /// <summary>
     /// TC Kimlik numarası algoritma kontrolü

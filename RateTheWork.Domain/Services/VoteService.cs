@@ -3,13 +3,12 @@ using RateTheWork.Domain.Enums.Notification;
 using RateTheWork.Domain.Enums.Report;
 using RateTheWork.Domain.Enums.Review;
 using RateTheWork.Domain.Exceptions;
+using RateTheWork.Domain.Extensions;
 using RateTheWork.Domain.Interfaces.Repositories;
 using RateTheWork.Domain.Interfaces.Services;
-using RateTheWork.Domain.ValueObjects;
+using RateTheWork.Domain.ValueObjects.Review;
 
 namespace RateTheWork.Domain.Services;
-
-//TODO: IsUpvote private set entitylerde UpdatedAt prop yok UpdateAsync ve DeleteAsync repoda yok targetType targetId CreatedAt prop yok
 
 /// <summary>
 /// Oylama işlemleri için domain service implementasyonu
@@ -135,7 +134,9 @@ public class VoteService : IVoteService
             throw new EntityNotFoundException(nameof(Review), reviewId);
 
         // Review vote count'larını güncelle
-        await _unitOfWork.Repository<Review>().UpdateReviewVoteCountsAsync(reviewId);
+        var upvoteCount = await _unitOfWork.Repository<ReviewVote>().GetUpvoteCountAsync(reviewId);
+        var downvoteCount = await _unitOfWork.Repository<ReviewVote>().GetDownvoteCountAsync(reviewId);
+        await _unitOfWork.Repository<Review>().UpdateReviewVoteCountsAsync(reviewId, upvoteCount, downvoteCount);
 
         // Güncel review'u tekrar getir
         review = await _unitOfWork.Repository<Review>().GetByIdAsync(reviewId);
@@ -190,11 +191,12 @@ public class VoteService : IVoteService
         var votes = await _unitOfWork.Repository<ReviewVote>()
             .GetUserVotesForReviewsAsync(userId, reviewIds);
 
+        var voteDict = votes.ToDictionary(v => v.ReviewId, v => v);
         var result = new Dictionary<string, VoteStatus>();
 
         foreach (var reviewId in reviewIds)
         {
-            var vote = votes.GetValueOrDefault(reviewId);
+            var vote = voteDict.GetValueOrDefault(reviewId);
             if (vote != null)
             {
                 result[reviewId] = new VoteStatus
@@ -252,7 +254,9 @@ public class VoteService : IVoteService
     private async Task UpdateReviewVoteCounts(string reviewId)
     {
         // Repository'deki metodu kullan
-        await _unitOfWork.Repository<Review>().UpdateReviewVoteCountsAsync(reviewId);
+        var upvoteCount = await _unitOfWork.Repository<ReviewVote>().GetUpvoteCountAsync(reviewId);
+        var downvoteCount = await _unitOfWork.Repository<ReviewVote>().GetDownvoteCountAsync(reviewId);
+        await _unitOfWork.Repository<Review>().UpdateReviewVoteCountsAsync(reviewId, upvoteCount, downvoteCount);
     }
 
     private async Task CheckHelpfulReviewerBadge(string userId, int upvotes, int downvotes)

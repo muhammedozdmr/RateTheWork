@@ -1,6 +1,7 @@
 using System.Reflection;
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Enums.Verification;
+using RateTheWork.Domain.Enums.VerificationRequest;
 using RateTheWork.Domain.Events.VerificationRequest;
 using RateTheWork.Domain.Exceptions;
 
@@ -21,13 +22,14 @@ public class VerificationRequest : ApprovableBaseEntity
     // Properties
     public string ReviewId { get; private set; } = string.Empty;
     public string UserId { get; private set; } = string.Empty;
+    public string CompanyId { get; private set; } = string.Empty;
     public string? AdminId { get; private set; }
     public string DocumentUrl { get; private set; } = string.Empty;
     public string DocumentName { get; private set; } = string.Empty;
     public string DocumentType { get; private set; } = string.Empty;
     public VerificationType Type { get; private set; }
     public DateTime RequestedAt { get; private set; }
-    public string Status { get; private set; } = "Pending";
+    public VerificationRequestStatus Status { get; private set; } = VerificationRequestStatus.Pending;
     public DateTime? ProcessedAt { get; private set; }
     public string? ProcessingNotes { get; private set; }
     public bool IsUrgent { get; private set; } = false;
@@ -42,6 +44,7 @@ public class VerificationRequest : ApprovableBaseEntity
     (
         string reviewId
         , string userId
+        , string companyId
         , string documentUrl
         , string documentName
         , string documentType
@@ -55,9 +58,12 @@ public class VerificationRequest : ApprovableBaseEntity
         var request = new VerificationRequest
         {
             ReviewId = reviewId ?? throw new ArgumentNullException(nameof(reviewId))
-            , UserId = userId ?? throw new ArgumentNullException(nameof(userId)), DocumentUrl = documentUrl
+            , UserId = userId ?? throw new ArgumentNullException(nameof(userId))
+            , CompanyId = companyId ?? throw new ArgumentNullException(nameof(companyId))
+            , DocumentUrl = documentUrl
             , DocumentName = documentName, DocumentType = documentType, Type = verificationType
-            , RequestedAt = DateTime.UtcNow, Status = "Pending", IsUrgent = DetermineUrgency(documentType)
+            , RequestedAt = DateTime.UtcNow, Status = VerificationRequestStatus.Pending
+            , IsUrgent = DetermineUrgency(documentType)
             , AllowResubmission = true
         };
 
@@ -81,6 +87,7 @@ public class VerificationRequest : ApprovableBaseEntity
     (
         string reviewId
         , string userId
+        , string companyId
         , string documentUrl
         , string documentName
         , string documentType
@@ -89,6 +96,7 @@ public class VerificationRequest : ApprovableBaseEntity
         return Create(
             reviewId,
             userId,
+            companyId,
             documentUrl,
             documentName,
             documentType,
@@ -109,8 +117,9 @@ public class VerificationRequest : ApprovableBaseEntity
     )
     {
         return Create(
-            companyId, // reviewId yerine companyId kullanıyoruz
+            string.Empty, // reviewId boş - şirket belgesi için review yok
             userId,
+            companyId,
             documentUrl,
             documentName,
             documentType,
@@ -129,8 +138,9 @@ public class VerificationRequest : ApprovableBaseEntity
     )
     {
         return Create(
-            userId, // reviewId yerine userId kullanıyoruz
+            string.Empty, // reviewId boş - kimlik doğrulama için
             userId,
+            string.Empty, // companyId boş - kimlik doğrulama için
             documentUrl,
             documentName,
             "Kimlik Belgesi",
@@ -145,6 +155,7 @@ public class VerificationRequest : ApprovableBaseEntity
     (
         string reviewId
         , string userId
+        , string companyId
         , string documentUrl
         , string documentName
         , string documentType
@@ -153,6 +164,7 @@ public class VerificationRequest : ApprovableBaseEntity
         var request = Create(
             reviewId,
             userId,
+            companyId,
             documentUrl,
             documentName,
             documentType,
@@ -172,6 +184,7 @@ public class VerificationRequest : ApprovableBaseEntity
     (
         string reviewId
         , string userId
+        , string companyId
         , string documentUrl
         , string documentName
         , string documentType
@@ -182,6 +195,7 @@ public class VerificationRequest : ApprovableBaseEntity
         var request = Create(
             reviewId,
             userId,
+            companyId,
             documentUrl,
             documentName,
             documentType,
@@ -207,11 +221,11 @@ public class VerificationRequest : ApprovableBaseEntity
     /// </summary>
     public void StartProcessing(string adminId)
     {
-        if (Status != "Pending")
+        if (Status != VerificationRequestStatus.Pending)
             throw new BusinessRuleException("Sadece beklemedeki talepler işleme alınabilir.");
 
         AdminId = adminId;
-        Status = "Processing";
+        Status = VerificationRequestStatus.Pending; // Keep as pending during processing
         SetModifiedDate();
 
         // Domain Event
@@ -227,12 +241,12 @@ public class VerificationRequest : ApprovableBaseEntity
     /// </summary>
     public override void Approve(string approvedBy, string? notes = null)
     {
-        if (Status != "Processing" && Status != "Pending")
+        if (Status != VerificationRequestStatus.Pending)
             throw new BusinessRuleException("Bu durumda talep onaylanamaz.");
 
         base.Approve(approvedBy, notes);
 
-        Status = "Approved";
+        Status = VerificationRequestStatus.Approved;
         AdminId = approvedBy;
         ProcessedAt = DateTime.UtcNow;
         ProcessingNotes = notes;
@@ -255,12 +269,12 @@ public class VerificationRequest : ApprovableBaseEntity
     /// </summary>
     public override void Reject(string rejectedBy, string reason)
     {
-        if (Status != "Processing" && Status != "Pending")
+        if (Status != VerificationRequestStatus.Pending)
             throw new BusinessRuleException("Bu durumda talep reddedilemez.");
 
         base.Reject(rejectedBy, reason);
 
-        Status = "Rejected";
+        Status = VerificationRequestStatus.Rejected;
         AdminId = rejectedBy;
         ProcessedAt = DateTime.UtcNow;
         ProcessingTimeHours = (int)(ProcessedAt.Value - RequestedAt).TotalHours;
@@ -282,7 +296,7 @@ public class VerificationRequest : ApprovableBaseEntity
     /// </summary>
     public void Resubmit(string newDocumentUrl, string newDocumentName)
     {
-        if (Status != "Rejected" || !AllowResubmission)
+        if (Status != VerificationRequestStatus.Rejected || !AllowResubmission)
             throw new BusinessRuleException("Belge yeniden gönderilemez.");
 
         ValidateDocumentUrl(newDocumentUrl);
@@ -290,7 +304,7 @@ public class VerificationRequest : ApprovableBaseEntity
 
         DocumentUrl = newDocumentUrl;
         DocumentName = newDocumentName;
-        Status = "Pending";
+        Status = VerificationRequestStatus.Pending;
         AdminId = null;
         ProcessedAt = null;
         ProcessingNotes = null;

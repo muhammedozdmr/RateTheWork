@@ -2,9 +2,10 @@ using System.Text.RegularExpressions;
 using RateTheWork.Domain.Constants;
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Exceptions;
+using RateTheWork.Domain.Extensions;
 using RateTheWork.Domain.Interfaces.Repositories;
 using RateTheWork.Domain.Interfaces.Services;
-using RateTheWork.Domain.ValueObjects;
+using RateTheWork.Domain.ValueObjects.Review;
 
 namespace RateTheWork.Domain.Services;
 
@@ -177,41 +178,43 @@ public class ReviewDomainService : IReviewDomainService
         if (review == null)
             throw new EntityNotFoundException(nameof(Review), reviewId);
 
-        var score = new ReviewQualityScore();
-
         // Uzunluk skoru (50-2000 karakter arası ideal)
         var length = review.CommentText.Length;
+        decimal lengthScore;
         if (length >= 200 && length <= 1000)
-            score.LengthScore = 100;
+            lengthScore = 100;
         else if (length >= 100 && length <= 2000)
-            score.LengthScore = 80;
+            lengthScore = 80;
         else if (length >= 50)
-            score.LengthScore = 60;
+            lengthScore = 60;
         else
-            score.LengthScore = 30;
+            lengthScore = 30;
 
         // Detay skoru (cümle sayısı, kelime çeşitliliği)
         var sentences = review.CommentText.Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
         var words = review.CommentText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var uniqueWords = words.Distinct(StringComparer.OrdinalIgnoreCase).Count();
 
-        score.DetailScore = Math.Min(100, (sentences.Length * 10) + (uniqueWords * 2));
+        var detailScore = Math.Min(100, (sentences.Length * 10) + (uniqueWords * 2));
 
         // Objektiflik skoru (subjektif kelimeler kontrolü)
         var subjectiveWords = new[] { "berbat", "mükemmel", "rezalet", "harika", "korkunç", "muhteşem" };
         var subjectiveCount = subjectiveWords.Count(word =>
             review.CommentText.Contains(word, StringComparison.OrdinalIgnoreCase));
 
-        score.ObjectivityScore = Math.Max(0, 100 - (subjectiveCount * 20));
+        var objectivityScore = Math.Max(0, 100 - (subjectiveCount * 20));
 
         // Helpfulness skoru
-        score.HelpfulnessScore = review.HelpfulnessScore;
+        var helpfulnessScore = review.HelpfulnessScore;
 
-        // Genel skor
-        score.OverallScore = (score.LengthScore * 0.2m +
-                              score.DetailScore * 0.3m +
-                              score.ObjectivityScore * 0.2m +
-                              score.HelpfulnessScore * 0.3m);
+        // İyileştirme önerileri
+        var suggestions = new List<string>();
+        if (lengthScore < 60) suggestions.Add("Daha detaylı açıklama yapılabilir");
+        if (detailScore < 50) suggestions.Add("Daha çok örnek verilebilir");
+        if (objectivityScore < 70) suggestions.Add("Daha objektif ifadeler kullanılabilir");
+
+        var score = ReviewQualityScore.Create(lengthScore, detailScore, objectivityScore, helpfulnessScore
+            , suggestions);
 
         // İyileştirme önerileri
         if (score.LengthScore < 60)
@@ -252,26 +255,20 @@ public class ReviewDomainService : IReviewDomainService
                            r.CreatedAt <= endDate &&
                            r.IsActive);
 
-        var trends = new ReviewTrends();
-
         // Kategori ortalamaları
-        var categoryGroups = reviews.GroupBy(r => r.CommentType);
-        foreach (var group in categoryGroups)
-        {
-            var average = group.Average(r => r.OverallRating);
-            trends.CategoryAverages[group.Key.ToString()] = Math.Round(average, 2);
-        }
+        var categoryAverages = reviews.GroupBy(r => r.CommentType)
+            .ToDictionary(g => g.Key.ToString(), g => Math.Round(g.Average(r => r.OverallRating), 2));
 
         // Tarih bazlı yorum sayıları
-        var dateGroups = reviews.GroupBy(r => r.CreatedAt.Date);
-        foreach (var group in dateGroups)
-        {
-            trends.ReviewCountByDate[group.Key] = group.Count();
-        }
+        var reviewCountByDate = reviews.GroupBy(r => r.CreatedAt.Date)
+            .ToDictionary(g => g.Key, g => g.Count());
 
         // En çok bahsedilen olumlu/olumsuz konular (basit kelime analizi)
         var positiveKeywords = new[] { "güzel", "iyi", "harika", "mükemmel", "başarılı", "kaliteli" };
         var negativeKeywords = new[] { "kötü", "berbat", "yetersiz", "zayıf", "sorunlu", "eksik" };
+
+        var positiveMatches = new List<string>();
+        var negativeMatches = new List<string>();
 
         foreach (var review in reviews)
         {
@@ -279,19 +276,17 @@ public class ReviewDomainService : IReviewDomainService
 
             foreach (var keyword in positiveKeywords)
             {
-                if (lowerText.Contains(keyword))
+                if (lowerText.Contains(keyword) && !positiveMatches.Contains(keyword))
                 {
-                    if (!trends.MostMentionedPositives.Contains(keyword))
-                        trends.MostMentionedPositives.Add(keyword);
+                    positiveMatches.Add(keyword);
                 }
             }
 
             foreach (var keyword in negativeKeywords)
             {
-                if (lowerText.Contains(keyword))
+                if (lowerText.Contains(keyword) && !negativeMatches.Contains(keyword))
                 {
-                    if (!trends.MostMentionedNegatives.Contains(keyword))
-                        trends.MostMentionedNegatives.Add(keyword);
+                    negativeMatches.Add(keyword);
                 }
             }
         }
@@ -303,14 +298,20 @@ public class ReviewDomainService : IReviewDomainService
             .OrderBy(x => x.Date.Year).ThenBy(x => x.Date.Month)
             .ToList();
 
+        decimal sentimentTrend = 0;
         if (avgRatingByMonth.Count >= 2)
         {
             var firstMonthAvg = avgRatingByMonth.First().Avg;
             var lastMonthAvg = avgRatingByMonth.Last().Avg;
-            trends.SentimentTrend = (lastMonthAvg - firstMonthAvg) / firstMonthAvg;
+            sentimentTrend = (lastMonthAvg - firstMonthAvg) / firstMonthAvg;
         }
 
-        return trends;
+        return ReviewTrends.Create(
+            categoryAverages,
+            reviewCountByDate,
+            positiveMatches,
+            negativeMatches,
+            sentimentTrend);
     }
 
     // Helper metodlar

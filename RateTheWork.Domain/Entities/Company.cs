@@ -4,7 +4,7 @@ using RateTheWork.Domain.Enums.Company;
 using RateTheWork.Domain.Events.Company;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Common;
-using RateTheWork.Domain.ValueObjects;
+using RateTheWork.Domain.ValueObjects.Company;
 
 namespace RateTheWork.Domain.Entities;
 
@@ -565,7 +565,6 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
             throw new BusinessRuleException("Şirket zaten aktif durumda.");
 
         IsActive = true;
-        //TODO: deactivated tarihini null yapamayız buna başka birşey yapmamız lazım
         DeactivatedAt = null;
         DeactivationReason = string.Empty;
         SetModifiedDate();

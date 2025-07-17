@@ -48,6 +48,7 @@ public class User : AuditableBaseEntity, IAggregateRoot
     // Properties - Doğrulama Durumları
     public bool IsEmailVerified { get; private set; } = false;
     public string? EmailVerificationToken { get; set; }
+    public bool IsActive { get; private set; } = true;
     public DateTime? EmailVerificationTokenExpiry { get; set; }
 
     public bool IsPhoneVerified { get; private set; } = false;
@@ -56,6 +57,9 @@ public class User : AuditableBaseEntity, IAggregateRoot
 
     public bool IsTcIdentityVerified { get; private set; } = false;
     public string? TcIdentityVerificationDocumentUrl { get; private set; }
+
+    // Computed property - en az bir doğrulama yapılmış mı?
+    public bool IsVerified => IsEmailVerified || IsPhoneVerified || IsTcIdentityVerified;
 
     // Properties - Platform Verileri
     public int WarningCount { get; private set; } = 0;

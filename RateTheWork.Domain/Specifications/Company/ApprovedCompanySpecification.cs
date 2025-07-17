@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using RateTheWork.Domain.Enums.Company;
+using RateTheWork.Domain.Specifications.Common;
 
 namespace RateTheWork.Domain.Specifications.Company;
 

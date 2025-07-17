@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using RateTheWork.Domain.Specifications.Common;
 
 namespace RateTheWork.Domain.Specifications.Review;
 

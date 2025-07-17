@@ -1,6 +1,5 @@
-using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Enums.Review;
-using RateTheWork.Domain.ValueObjects;
+using RateTheWork.Domain.ValueObjects.Review;
 
 namespace RateTheWork.Domain.Interfaces.Services;
 
@@ -13,32 +12,32 @@ public interface IVoteService
     /// Oy ekler veya günceller
     /// </summary>
     Task<bool> AddOrUpdateVoteAsync(string userId, string reviewId, bool isUpvote, VoteSource voteSource);
-    
+
     /// <summary>
     /// Oyu kaldırır
     /// </summary>
     Task<bool> RemoveVoteAsync(string userId, string reviewId);
-    
+
     /// <summary>
     /// Oy sayılarını getirir
     /// </summary>
     Task<(int upvotes, int downvotes)> GetVoteCountsAsync(string reviewId);
-    
+
     /// <summary>
     /// Kullanıcının oyunu getirir
     /// </summary>
     Task<bool?> GetUserVoteAsync(string userId, string reviewId);
-    
+
     /// <summary>
     /// Yorum skorunu yeniden hesaplar
     /// </summary>
     Task RecalculateReviewScoreAsync(string reviewId);
-    
+
     /// <summary>
     /// Toplu oy durumunu getirir
     /// </summary>
     Task<Dictionary<string, VoteStatus>> GetBulkVoteStatusAsync(string userId, List<string> reviewIds);
-    
+
     /// <summary>
     /// Oy manipülasyonu kontrolü
     /// </summary>

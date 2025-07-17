@@ -1,4 +1,5 @@
 using RateTheWork.Domain.Common;
+using RateTheWork.Domain.Entities;
 
 namespace RateTheWork.Domain.Interfaces.Repositories;
 
@@ -8,6 +9,22 @@ namespace RateTheWork.Domain.Interfaces.Repositories;
 /// </summary>
 public interface IUnitOfWork : IDisposable
 {
+    // Convenience properties for common repositories
+    /// <summary>
+    /// Company repository
+    /// </summary>
+    IRepository<Company> Companies => Repository<Company>();
+
+    /// <summary>
+    /// Review repository
+    /// </summary>
+    IRepository<Review> Reviews => Repository<Review>();
+
+    /// <summary>
+    /// User repository
+    /// </summary>
+    IRepository<User> Users => Repository<User>();
+
     /// <summary>
     /// Generic repository döndürür
     /// </summary>

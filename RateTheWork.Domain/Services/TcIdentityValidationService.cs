@@ -21,7 +21,8 @@ public class TcIdentityValidationService : ITcIdentityValidationService
         return _tcIdentityValidator.IsValidFormat(tcIdentity);
     }
 
-    public async Task<bool> ValidateWithMernisAsync(string tcIdentity, string firstName, string lastName, DateTime birthDate)
+    public async Task<bool> ValidateWithMernisAsync
+        (string tcIdentity, string firstName, string lastName, DateTime birthDate)
     {
         // Önce format kontrolü
         if (!IsValidTcIdentity(tcIdentity))
@@ -34,7 +35,7 @@ public class TcIdentityValidationService : ITcIdentityValidationService
         // Doğum tarihi kontrolü (18 yaşından büyük olmalı)
         var age = DateTime.Today.Year - birthDate.Year;
         if (birthDate.Date > DateTime.Today.AddYears(-age)) age--;
-        
+
         if (age < 18 || age > 120)
             return false;
 
@@ -42,14 +43,14 @@ public class TcIdentityValidationService : ITcIdentityValidationService
         {
             // TODO: Gerçek MERNİS entegrasyonu
             // KPSPublicSoapClient kullanarak doğrulama yapılacak
-            
+
             // Şimdilik simülasyon
             await Task.Delay(100);
-            
+
             // Test TC kimlikleri için özel kontrol
             if (tcIdentity == "11111111110") // Test TC
                 return true;
-            
+
             // Gerçek implementasyon için:
             // var client = new KPSPublicSoapClient(KPSPublicSoapClient.EndpointConfiguration.KPSPublicSoap);
             // var result = await client.TCKimlikNoDogrulaAsync(
@@ -140,9 +141,8 @@ public class TcIdentityValidator : ITcIdentityValidator
         {
             return ValidationResult.Failure(new ValidationError
             {
-                PropertyName = nameof(tcIdentity),
-                ErrorMessage = "TC Kimlik numarası boş olamaz.",
-                ErrorCode = "TC_IDENTITY_REQUIRED"
+                PropertyName = nameof(tcIdentity), ErrorMessage = "TC Kimlik numarası boş olamaz."
+                , ErrorCode = "TC_IDENTITY_REQUIRED"
             });
         }
 
@@ -150,10 +150,8 @@ public class TcIdentityValidator : ITcIdentityValidator
         {
             return ValidationResult.Failure(new ValidationError
             {
-                PropertyName = nameof(tcIdentity),
-                ErrorMessage = "Geçersiz TC Kimlik numarası.",
-                ErrorCode = "TC_IDENTITY_INVALID_FORMAT",
-                AttemptedValue = MaskValue(tcIdentity)
+                PropertyName = nameof(tcIdentity), ErrorMessage = "Geçersiz TC Kimlik numarası."
+                , ErrorCode = "TC_IDENTITY_INVALID_FORMAT", AttemptedValue = MaskValue(tcIdentity)
             });
         }
 

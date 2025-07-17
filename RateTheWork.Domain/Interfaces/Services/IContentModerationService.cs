@@ -1,5 +1,5 @@
-using RateTheWork.Domain.Entities;
-using RateTheWork.Domain.ValueObjects;
+using RateTheWork.Domain.ValueObjects.Moderation;
+using RateTheWork.Domain.ValueObjects.Review;
 
 namespace RateTheWork.Domain.Interfaces.Services;
 
@@ -15,7 +15,7 @@ public interface IContentModerationService
     /// <param name="language">İçeriğin dili (varsayılan: tr)</param>
     /// <returns>Moderasyon sonucu</returns>
     Task<ModerationResult> ModerateContentAsync(string content, string language = "tr");
-    
+
     /// <summary>
     /// İçeriği belirtilen dile çevirir
     /// </summary>
@@ -24,64 +24,69 @@ public interface IContentModerationService
     /// <param name="toLanguage">Hedef dil</param>
     /// <returns>Çevrilmiş içerik</returns>
     Task<string> TranslateContentAsync(string content, string fromLanguage, string toLanguage);
-    
+
     /// <summary>
     /// İçerik özetler
     /// </summary>
     Task<string> SummarizeContentAsync(string content, int maxLength = 200);
-    
+
     /// <summary>
     /// Duygu analizi yapar
     /// </summary>
     Task<SentimentAnalysisResult> AnalyzeSentimentAsync(string content);
-    
+
     /// <summary>
     /// Anahtar kelimeleri çıkarır
     /// </summary>
     Task<List<string>> ExtractKeywordsAsync(string content, int maxKeywords = 10);
-    
+
     /// <summary>
     /// İçeriği kategorize eder
     /// </summary>
     Task<List<ContentCategory>> CategorizeContentAsync(string content);
-    
+
     /// <summary>
     /// Yorum içeriğini kontrol eder
     /// </summary>
     Task<ModerationResult> ModerateReviewAsync(string commentText, string commentType);
-        
+
     /// <summary>
     /// Şirket bilgilerini kontrol eder
     /// </summary>
     Task<ModerationResult> ModerateCompanyInfoAsync(string companyName, string? description = null);
-        
+
     /// <summary>
     /// Kullanıcı adını kontrol eder
     /// </summary>
     Task<ModerationResult> ModerateUsernameAsync(string username);
-        
+
     /// <summary>
     /// Toplu içerik kontrolü yapar
     /// </summary>
     Task<List<ModerationResult>> ModerateBulkAsync(List<string> contents);
-        
+
     /// <summary>
     /// İçeriği temizler ve düzeltir
     /// </summary>
     Task<string> SanitizeContentAsync(string content);
-        
+
     /// <summary>
     /// Spam kontrolü yapar
     /// </summary>
     Task<bool> IsSpamAsync(string content, string userId);
-        
+
     /// <summary>
     /// Kelime filtreleme yapar
     /// </summary>
     List<string> FilterProhibitedWords(string content);
-        
+
     /// <summary>
     /// İçerik skorunu hesaplar
     /// </summary>
     double CalculateContentScore(string content);
+
+    /// <summary>
+    /// Spam pattern kontrolü yapar
+    /// </summary>
+    Task<bool> IsSpamPatternAsync(string content);
 }

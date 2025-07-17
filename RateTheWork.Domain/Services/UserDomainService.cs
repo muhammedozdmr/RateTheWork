@@ -1,10 +1,11 @@
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Enums.User;
-using RateTheWork.Domain.Enums.Verification;
+using RateTheWork.Domain.Enums.VerificationRequest;
 using RateTheWork.Domain.Exceptions;
+using RateTheWork.Domain.Extensions;
 using RateTheWork.Domain.Interfaces.Repositories;
 using RateTheWork.Domain.Interfaces.Services;
-using RateTheWork.Domain.ValueObjects;
+using RateTheWork.Domain.ValueObjects.User;
 
 namespace RateTheWork.Domain.Services;
 
@@ -176,15 +177,28 @@ public class UserDomainService : IUserDomainService
         var votes = await _unitOfWork.Repository<ReviewVote>()
             .GetAsync(v => v.UserId == userId && v.CreatedAt >= filterDate);
 
-        var summary = new UserActivitySummary
-        {
-            UserId = userId, PeriodStart = filterDate, PeriodEnd = DateTime.UtcNow, TotalReviews = reviews.Count
-            , TotalVotes = votes.Count, ReviewsReceived = reviews.Sum(r => r.Upvotes + r.Downvotes)
-            , AverageRating = reviews.Any() ? reviews.Average(r => r.OverallRating) : 0, MostActiveCategory = reviews
-                .GroupBy(r => r.CommentType)
-                .OrderByDescending(g => g.Count())
-                .FirstOrDefault()?.Key.ToString() ?? "N/A"
-        };
+        var totalReviews = reviews.Count;
+        var verifiedReviews = reviews.Count(r => r.IsDocumentVerified);
+        var helpfulVotes = votes.Count(v => v.IsUpvote);
+        var unhelpfulVotes = votes.Count(v => !v.IsUpvote);
+        var averageRating = reviews.Any() ? reviews.Average(r => r.OverallRating) : 0;
+
+        var mostReviewedSectors = reviews
+            .GroupBy(r => r.CommentType)
+            .OrderByDescending(g => g.Count())
+            .Take(5)
+            .Select(g => g.Key.ToString())
+            .ToList();
+
+        var activityByMonth = reviews
+            .GroupBy(r => new DateTime(r.CreatedAt.Year, r.CreatedAt.Month, 1))
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var consecutiveActiveDays = CalculateConsecutiveActiveDays(reviews);
+
+        var summary = UserActivitySummary.Create(
+            totalReviews, verifiedReviews, helpfulVotes, unhelpfulVotes,
+            averageRating, mostReviewedSectors, activityByMonth, consecutiveActiveDays);
 
         return summary;
     }
@@ -198,7 +212,7 @@ public class UserDomainService : IUserDomainService
 
         var preferences = new UserPreferences
         {
-            UserId = userId, PreferredCategories = new List<string>(), PreferredCompanySizes = new List<string>()
+            PreferredCategories = new List<string>(), PreferredCompanySizes = new List<string>()
             , PreferredSectors = new List<string>()
         };
 
@@ -282,46 +296,85 @@ public class UserDomainService : IUserDomainService
 
         var activeReviews = reviews.Where(r => r.IsActive).ToList();
 
-        var score = new UserBehaviorScore
-        {
-            UserId = userId, OverallScore = 0, ActivityScore = 0, QualityScore = 0, ConsistencyScore = 0
-            , EngagementScore = 0
-        };
-
         if (!activeReviews.Any())
-            return score;
+        {
+            return UserBehaviorScore.Create(
+                overallScore: 0,
+                consistencyScore: 0,
+                objectivityScore: 0,
+                engagementScore: 0,
+                trustworthinessScore: 0,
+                activityScore: 0,
+                qualityScore: 0,
+                positiveBehaviors: new List<string>(),
+                improvementAreas: new List<string> { "Hiç yorum yapılmamış" }
+            );
+        }
 
         // Aktivite skoru (yorum sayısı ve sıklığı)
         var reviewCount = activeReviews.Count;
         var daysSinceFirstReview = (DateTime.UtcNow - activeReviews.Min(r => r.CreatedAt)).TotalDays;
         var averageReviewsPerMonth = daysSinceFirstReview > 0 ? (reviewCount / daysSinceFirstReview) * 30 : 0;
-
-        score.ActivityScore = Math.Min(averageReviewsPerMonth * 20, 100);
+        var activityScore = Math.Min((decimal)(averageReviewsPerMonth * 20), 100);
 
         // Kalite skoru (ortalama helpfulness)
         var avgHelpfulness = activeReviews.Average(r => r.HelpfulnessScore);
-        score.QualityScore = Math.Min(avgHelpfulness, 100);
+        var qualityScore = Math.Min(avgHelpfulness, 100);
 
         // Tutarlılık skoru (puan sapması)
+        var consistencyScore = 0m;
         if (activeReviews.Count >= 3)
         {
             var averageRating = activeReviews.Average(r => r.OverallRating);
             var variance = activeReviews.Average(r => Math.Pow((double)(r.OverallRating - averageRating), 2));
-            score.ConsistencyScore = Math.Max(0, 100 - (variance * 20));
+            consistencyScore = Math.Max(0, 100 - (decimal)(variance * 20));
         }
 
         // Etkileşim skoru (aldığı oylar)
         var totalVotes = activeReviews.Sum(r => r.Upvotes + r.Downvotes);
         var avgVotesPerReview = reviewCount > 0 ? (double)totalVotes / reviewCount : 0;
-        score.EngagementScore = Math.Min(avgVotesPerReview * 10, 100);
+        var engagementScore = Math.Min((decimal)(avgVotesPerReview * 10), 100);
+
+        // Objektiflik skoru (çeşitli şirketlerde yorum yapma)
+        var uniqueCompanies = activeReviews.Select(r => r.CompanyId).Distinct().Count();
+        var objectivityScore = Math.Min(uniqueCompanies * 10, 100);
+
+        // Güvenilirlik skoru (doğrulanmış yorumlar)
+        var verifiedReviews = activeReviews.Count(r => r.IsDocumentVerified);
+        var trustworthinessScore = reviewCount > 0 ? (decimal)verifiedReviews / reviewCount * 100 : 0;
 
         // Genel skor
-        score.OverallScore = (score.ActivityScore * 0.2 +
-                              score.QualityScore * 0.3 +
-                              score.ConsistencyScore * 0.2 +
-                              score.EngagementScore * 0.3);
+        var overallScore = (activityScore * 0.2m +
+                            qualityScore * 0.3m +
+                            consistencyScore * 0.2m +
+                            engagementScore * 0.3m);
 
-        return score;
+        // Pozitif davranışlar ve gelişim alanları
+        var positiveBehaviors = new List<string>();
+        var improvementAreas = new List<string>();
+
+        if (activityScore >= 80) positiveBehaviors.Add("Yüksek aktivite");
+        if (qualityScore >= 80) positiveBehaviors.Add("Kaliteli yorumlar");
+        if (consistencyScore >= 80) positiveBehaviors.Add("Tutarlı değerlendirmeler");
+        if (engagementScore >= 80) positiveBehaviors.Add("Yüksek etkileşim");
+        if (trustworthinessScore >= 80) positiveBehaviors.Add("Güvenilir kullanıcı");
+
+        if (activityScore < 50) improvementAreas.Add("Daha fazla yorum yapılabilir");
+        if (qualityScore < 50) improvementAreas.Add("Daha faydalı yorumlar yazılabilir");
+        if (consistencyScore < 50) improvementAreas.Add("Daha tutarlı puanlama yapılabilir");
+        if (engagementScore < 50) improvementAreas.Add("Daha etkileşimli yorumlar yazılabilir");
+
+        return UserBehaviorScore.Create(
+            overallScore: overallScore,
+            consistencyScore: consistencyScore,
+            objectivityScore: objectivityScore,
+            engagementScore: engagementScore,
+            trustworthinessScore: trustworthinessScore,
+            activityScore: activityScore,
+            qualityScore: qualityScore,
+            positiveBehaviors: positiveBehaviors,
+            improvementAreas: improvementAreas
+        );
     }
 
     // Private helper methods
@@ -362,8 +415,34 @@ public class UserDomainService : IUserDomainService
         var verificationRequest = await _unitOfWork.Repository<VerificationRequest>()
             .GetFirstOrDefaultAsync(vr => vr.UserId == userId &&
                                           vr.CompanyId == companyId &&
-                                          vr.Status == VerificationStatus.Approved);
+                                          vr.Status == VerificationRequestStatus.Approved);
 
         return verificationRequest != null;
+    }
+
+    private static int CalculateConsecutiveActiveDays(IEnumerable<Review> reviews)
+    {
+        var activeDays = reviews
+            .Select(r => r.CreatedAt.Date)
+            .Distinct()
+            .OrderByDescending(d => d)
+            .ToList();
+
+        if (!activeDays.Any()) return 0;
+
+        var consecutiveDays = 1;
+        for (int i = 1; i < activeDays.Count; i++)
+        {
+            if (activeDays[i - 1].AddDays(-1) == activeDays[i])
+            {
+                consecutiveDays++;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return consecutiveDays;
     }
 }

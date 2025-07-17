@@ -1,7 +1,8 @@
 using RateTheWork.Domain.Entities;
+using RateTheWork.Domain.Extensions;
 using RateTheWork.Domain.Interfaces.Repositories;
 using RateTheWork.Domain.Interfaces.Services;
-using RateTheWork.Domain.ValueObjects;
+using RateTheWork.Domain.ValueObjects.Review;
 
 namespace RateTheWork.Domain.Services;
 
@@ -77,9 +78,9 @@ public class ReviewAnalyticsService : IReviewAnalyticsService
         var reviewList = activeReviews.ToList();
 
         if (!reviewList.Any())
-            return new SentimentAnalysisResult();
+            return SentimentAnalysisResult.CreateEmpty();
 
-        var result = new SentimentAnalysisResult();
+        var result = SentimentAnalysisResult.CreateEmpty();
 
         // Basit sentiment analizi - puan bazlı
         var positiveReviews = reviewList.Count(r => r.OverallRating >= 4);
@@ -88,23 +89,17 @@ public class ReviewAnalyticsService : IReviewAnalyticsService
 
         var total = reviewList.Count;
 
-        result.PositiveScore = (double)positiveReviews / total;
-        result.NegativeScore = (double)negativeReviews / total;
-        result.NeutralScore = (double)neutralReviews / total;
-
-        // Dominant sentiment belirleme
-        if (result.PositiveScore > result.NegativeScore && result.PositiveScore > result.NeutralScore)
-            result.DominantSentiment = "Positive";
-        else if (result.NegativeScore > result.PositiveScore && result.NegativeScore > result.NeutralScore)
-            result.DominantSentiment = "Negative";
-        else
-            result.DominantSentiment = "Neutral";
+        var positiveScore = (double)positiveReviews / total;
+        var negativeScore = (double)negativeReviews / total;
+        var neutralScore = (double)neutralReviews / total;
 
         // Emotion skorları (basit simülasyon)
-        result.EmotionScores["satisfaction"] = result.PositiveScore * 0.8;
-        result.EmotionScores["frustration"] = result.NegativeScore * 0.7;
-        result.EmotionScores["neutrality"] = result.NeutralScore * 0.9;
+        var emotionScores = new Dictionary<string, double>
+        {
+            ["satisfaction"] = positiveScore * 0.8, ["frustration"] = negativeScore * 0.7
+            , ["neutrality"] = neutralScore * 0.9
+        };
 
-        return result;
+        return SentimentAnalysisResult.Create(positiveScore, negativeScore, neutralScore, emotionScores);
     }
 }

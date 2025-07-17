@@ -1,6 +1,6 @@
 using RateTheWork.Domain.Interfaces.Repositories;
 using RateTheWork.Domain.Interfaces.Services;
-using RateTheWork.Domain.ValueObjects;
+using RateTheWork.Domain.ValueObjects.Review;
 
 namespace RateTheWork.Domain.Services;
 

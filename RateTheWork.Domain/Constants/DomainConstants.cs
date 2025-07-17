@@ -45,6 +45,7 @@ public static class DomainConstants
     public static class Company
     {
         public const int MaxNameLength = 200;
+        public const int MaxDescriptionLength = 2000;
         public const int MaxAddressLength = 500;
         public const int TaxIdLength = 10;
         public const int MersisNoLength = 16;
@@ -52,6 +53,17 @@ public static class DomainConstants
         public const int MinEmployeeCount = 1;
         public const int MaxWebsiteUrlLength = 255;
         public const int MaxSocialMediaUrlLength = 255;
+
+        // Tax ID validation constants
+        public const int TaxIdValidationMultiplier = 10;
+        public const int TaxIdValidationModulus = 11;
+        public const int TaxIdValidationLength = 9;
+
+        // MERSIS formatting constants
+        public const int MersisSegment1Length = 4;
+        public const int MersisSegment2Length = 4;
+        public const int MersisSegment3Length = 4;
+        public const int MersisSegment4Length = 4;
     }
 
     /// <summary>
@@ -137,7 +149,7 @@ public static class DomainConstants
         public const int HighSeverityPoints = 3;
         public const int CriticalSeverityPoints = 5;
         public const int DefaultWarningExpirationDays = 90;
-        
+
         // Ban
         public const int BanReasonMinLength = 5;
         public const int MaxTemporaryBanDays = 365;
@@ -189,5 +201,83 @@ public static class DomainConstants
         public const int ReportsPerDay = 10;
         public const int ApiCallsPerMinute = 60;
         public const int PasswordResetRequestsPerDay = 3;
+    }
+
+    /// <summary>
+    /// Kalite skoru ile ilgili sabitler
+    /// </summary>
+    public static class QualityScore
+    {
+        public const int MinQualityScore = 0;
+        public const int MaxQualityScore = 100;
+
+        // Score weight constants
+        public const decimal LengthScoreWeight = 0.2m;
+        public const decimal DetailScoreWeight = 0.3m;
+        public const decimal ObjectivityScoreWeight = 0.3m;
+        public const decimal HelpfulnessScoreWeight = 0.2m;
+
+        // Quality level thresholds
+        public const int ExcellentThreshold = 80;
+        public const int GoodThreshold = 60;
+        public const int FairThreshold = 40;
+        public const int PoorThreshold = 20;
+
+        // Low quality score constants
+        public const int LowLengthScore = 20;
+        public const int LowDetailScore = 30;
+        public const int LowObjectivityScore = 40;
+        public const int LowHelpfulnessScore = 30;
+
+        // High quality score constants
+        public const int HighLengthScore = 90;
+        public const int HighDetailScore = 85;
+        public const int HighObjectivityScore = 90;
+        public const int HighHelpfulnessScore = 95;
+    }
+
+    /// <summary>
+    /// Moderasyon ile ilgili sabitler
+    /// </summary>
+    public static class ModerationScore
+    {
+        public const double MinConfidenceScore = 0.0;
+        public const double MaxConfidenceScore = 1.0;
+        public const double DefaultHighConfidence = 0.7;
+        public const double DefaultMediumConfidence = 0.5;
+
+        // Severity thresholds
+        public const double CriticalSeverityThreshold = 0.9;
+        public const double HighSeverityThreshold = 0.7;
+        public const double MediumSeverityThreshold = 0.5;
+        public const double LowSeverityThreshold = 0.3;
+
+        // Hash calculation constants
+        public const int HashMultiplier = 17;
+        public const int HashBase = 23;
+    }
+
+    /// <summary>
+    /// Risk skoru ile ilgili sabitler
+    /// </summary>
+    public static class RiskScore
+    {
+        public const int MinRiskScore = 0;
+        public const int MaxRiskScore = 100;
+        public const int DefaultValidityDays = 30;
+        public const int CriticalRiskThreshold = 70;
+        public const int HighRiskThreshold = 50;
+        public const int MediumRiskThreshold = 30;
+        public const int LowRiskThreshold = 15;
+    }
+
+    /// <summary>
+    /// Değerlendirme ile ilgili sabitler
+    /// </summary>
+    public static class Rating
+    {
+        public const int MinRatingValue = 1;
+        public const int MaxRatingValue = 5;
+        public const int DefaultRatingDistributionValue = 0;
     }
 }

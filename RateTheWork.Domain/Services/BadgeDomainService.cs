@@ -3,9 +3,10 @@ using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Enums.Badge;
 using RateTheWork.Domain.Enums.Notification;
 using RateTheWork.Domain.Exceptions;
+using RateTheWork.Domain.Extensions;
 using RateTheWork.Domain.Interfaces.Repositories;
 using RateTheWork.Domain.Interfaces.Services;
-using RateTheWork.Domain.ValueObjects;
+using RateTheWork.Domain.ValueObjects.User;
 
 namespace RateTheWork.Domain.Services;
 
@@ -110,13 +111,13 @@ public class BadgeDomainService : IBadgeDomainService
                 return activeReviews.Any();
 
             case BadgeType.ActiveReviewer:
-                return activeReviews.Count >= DomainConstants.Badge.ActiveReviewerThreshold; // 10
+                return activeReviews.Count() >= DomainConstants.Badge.ActiveReviewerThreshold; // 10
 
             case BadgeType.TrustedReviewer:
-                return verifiedReviews.Count >= DomainConstants.Badge.TrustedReviewerThreshold; // 5
+                return verifiedReviews.Count() >= DomainConstants.Badge.TrustedReviewerThreshold; // 5
 
             case BadgeType.TopContributor:
-                return activeReviews.Count >= DomainConstants.Badge.TopContributorThreshold; // 50
+                return activeReviews.Count() >= DomainConstants.Badge.TopContributorThreshold; // 50
 
             case BadgeType.CompanyExplorer:
                 var uniqueCompanies = activeReviews
@@ -126,7 +127,7 @@ public class BadgeDomainService : IBadgeDomainService
                 return uniqueCompanies >= DomainConstants.Badge.CompanyExplorerThreshold; // 10
 
             case BadgeType.DetailedReviewer:
-                if (activeReviews.Count < 5) return false;
+                if (activeReviews.Count() < 5) return false;
                 var avgLength = activeReviews.Average(r => r.CommentText.Length);
                 return avgLength >= DomainConstants.Review.MinCharactersForDetailedReviewer; // 500
 
@@ -165,61 +166,43 @@ public class BadgeDomainService : IBadgeDomainService
 
         foreach (var badge in allBadges.Where(b => b.IsActive))
         {
-            var badgeProgress = new BadgeProgress
-            {
-                BadgeId = badge.Id, BadgeName = badge.Name, IsEarned = earnedBadgeIds.Contains(badge.Id)
-            };
+            var isEarned = earnedBadgeIds.Contains(badge.Id);
+            var currentProgress = 0;
+            var targetValue = 1;
 
-            if (!badgeProgress.IsEarned)
+            if (!isEarned)
             {
                 // İlerleme hesaplama
                 switch (badge.Type)
                 {
                     case BadgeType.FirstReview:
-                        badgeProgress.ProgressPercentage = activeReviews.Any() ? 100 : 0;
-                        badgeProgress.CurrentStatus = activeReviews.Any() ? "Tamamlandı!" : "İlk yorumunuzu yapın";
-                        badgeProgress.NextRequirement = activeReviews.Any() ? "" : "1 yorum yapmanız gerekiyor";
+                        currentProgress = activeReviews.Any() ? 1 : 0;
+                        targetValue = 1;
                         break;
 
                     case BadgeType.ActiveReviewer:
-                        var activeCount = activeReviews.Count;
-                        badgeProgress.ProgressPercentage = Math.Min(100
-                            , (activeCount * 100m) / DomainConstants.Badge.ActiveReviewerThreshold);
-                        badgeProgress.CurrentStatus = $"{activeCount}/10 yorum";
-                        badgeProgress.NextRequirement = $"{Math.Max(0, 10 - activeCount)} yorum daha yapın";
+                        currentProgress = activeReviews.Count();
+                        targetValue = DomainConstants.Badge.ActiveReviewerThreshold;
                         break;
 
                     case BadgeType.TrustedReviewer:
-                        var verifiedCount = verifiedReviews.Count;
-                        badgeProgress.ProgressPercentage = Math.Min(100
-                            , (verifiedCount * 100m) / DomainConstants.Badge.TrustedReviewerThreshold);
-                        badgeProgress.CurrentStatus = $"{verifiedCount}/5 doğrulanmış yorum";
-                        badgeProgress.NextRequirement = $"{Math.Max(0, 5 - verifiedCount)} doğrulanmış yorum daha";
+                        currentProgress = verifiedReviews.Count();
+                        targetValue = DomainConstants.Badge.TrustedReviewerThreshold;
                         break;
 
                     case BadgeType.CompanyExplorer:
-                        var uniqueCompanies = activeReviews.Select(r => r.CompanyId).Distinct().Count();
-                        badgeProgress.ProgressPercentage = Math.Min(100
-                            , (uniqueCompanies * 100m) / DomainConstants.Badge.CompanyExplorerThreshold);
-                        badgeProgress.CurrentStatus = $"{uniqueCompanies}/10 farklı şirket";
-                        badgeProgress.NextRequirement =
-                            $"{Math.Max(0, 10 - uniqueCompanies)} farklı şirkete daha yorum yapın";
+                        currentProgress = activeReviews.Select(r => r.CompanyId).Distinct().Count();
+                        targetValue = DomainConstants.Badge.CompanyExplorerThreshold;
                         break;
 
                     default:
-                        badgeProgress.ProgressPercentage = 0;
-                        badgeProgress.CurrentStatus = "Henüz başlanmadı";
-                        badgeProgress.NextRequirement = badge.Criteria;
+                        currentProgress = 0;
+                        targetValue = 1;
                         break;
                 }
             }
-            else
-            {
-                badgeProgress.ProgressPercentage = 100;
-                badgeProgress.CurrentStatus = "Kazanıldı!";
-                badgeProgress.NextRequirement = "";
-            }
 
+            var badgeProgress = BadgeProgress.Create(badge.Id, currentProgress, targetValue);
             progress[badge.Id] = badgeProgress;
         }
 

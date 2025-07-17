@@ -4,10 +4,11 @@ using RateTheWork.Domain.Enums.Company;
 using RateTheWork.Domain.Enums.Verification;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Exceptions.CompanyVerificationException;
+using RateTheWork.Domain.Extensions;
 using RateTheWork.Domain.Interfaces.Repositories;
 using RateTheWork.Domain.Interfaces.Services;
 using RateTheWork.Domain.Interfaces.Validators;
-using RateTheWork.Domain.ValueObjects;
+using RateTheWork.Domain.ValueObjects.Company;
 
 namespace RateTheWork.Domain.Services;
 
@@ -49,7 +50,6 @@ public class CompanyDomainService : ICompanyDomainService
                 var isValidTaxNumber = await ValidateTaxNumberAsync(company.TaxId);
                 if (isValidTaxNumber)
                 {
-                    //TODO: Verif metodunu kontol et Arguments mismatch hatası var
                     company.Verify(
                         "SYSTEM",
                         verificationMethod: VerificationMethod.TaxNumber.ToString(),
@@ -69,7 +69,6 @@ public class CompanyDomainService : ICompanyDomainService
                 var isValidMersis = await ValidateMersisNumberAsync(company.MersisNo);
                 if (isValidMersis)
                 {
-                    //TODO: verify metodunu kontol et
                     company.Verify(verifiedBy: "SYSTEM",
                         verificationMethod: VerificationMethod.Mersis.ToString(),
                         verificationNotes: "Mersis numarası MERSİS üzerinden doğrulandı",
@@ -88,7 +87,6 @@ public class CompanyDomainService : ICompanyDomainService
                 var isDomainVerified = await ValidateDomainOwnershipAsync(company.WebsiteUrl, company.Id);
                 if (isDomainVerified)
                 {
-                    //TODO: verify metodunu kontol et 4 parametre istiyor
                     company.Verify(verifiedBy: "SYSTEM",
                         verificationMethod: VerificationMethod.WebDomain.ToString(),
                         verificationNotes: "Web sitesi domain üzerinden doğrulandı",
