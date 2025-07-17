@@ -46,3 +46,11 @@ Thumbs.db
 # Test sonuçları
 TestResults/
 coverage/
+
+# NPM
+node_modules/
+package-lock.json
+package.json
+.npm/
+.claude/
+
