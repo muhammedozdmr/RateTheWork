@@ -1,8 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# 
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Domain", "RateTheWork.Domain\RateTheWork.Domain.csproj", "{481DF7BD-95C0-4AC2-9376-5A14F1D01266}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Application", "RateTheWork.Application\RateTheWork.Application.csproj", "{A464503E-ECF0-4A70-A665-85BCC28511B8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Infrastructure", "RateTheWork.Infrastructure\RateTheWork.Infrastructure.csproj", "{AC3823CA-6E77-4769-9C9C-24127458072A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,6 +21,10 @@ Global
 		{A464503E-ECF0-4A70-A665-85BCC28511B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A464503E-ECF0-4A70-A665-85BCC28511B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A464503E-ECF0-4A70-A665-85BCC28511B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC3823CA-6E77-4769-9C9C-24127458072A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC3823CA-6E77-4769-9C9C-24127458072A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC3823CA-6E77-4769-9C9C-24127458072A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC3823CA-6E77-4769-9C9C-24127458072A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
