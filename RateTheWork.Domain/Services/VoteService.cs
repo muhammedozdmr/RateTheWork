@@ -194,12 +194,21 @@ public class VoteService : IVoteService
 
         foreach (var reviewId in reviewIds)
         {
-            //TODO: vote bool dönüyor burada
             var vote = votes.GetValueOrDefault(reviewId);
-            result[reviewId] = new VoteStatus
+            if (vote != null)
             {
-                HasVoted = true, IsUpvote = true, VotedAt = DateTime.UtcNow
-            };
+                result[reviewId] = new VoteStatus
+                {
+                    HasVoted = true, IsUpvote = vote.IsUpvote, VotedAt = vote.CreatedAt
+                };
+            }
+            else
+            {
+                result[reviewId] = new VoteStatus
+                {
+                    HasVoted = false, IsUpvote = false, VotedAt = null
+                };
+            }
         }
 
         return result;
@@ -330,7 +339,6 @@ public class VoteService : IVoteService
     public async Task<bool> CheckVoteManipulation(string reviewId)
     {
         // Son 24 saatteki oyları kontrol et
-        //TODO: bu metod yok !
         var recentVotes = await GetRecentVotesAsync(reviewId, 24);
 
         // Hızlı oy artışı kontrolü - 24 saatte 20'den fazla oy şüpheli
@@ -338,13 +346,14 @@ public class VoteService : IVoteService
             return true;
 
         // Aynı IP'den çoklu oy kontrolü (IP bilgisi varsa)
-        var ipGroups = recentVotes
-            .Where(v => !string.IsNullOrEmpty(v.IpAddress))
-            .GroupBy(v => v.IpAddress)
-            .Where(g => g.Count() > 3); // Aynı IP'den 3'ten fazla oy
+        // TODO: IP address tracking eklendiğinde implement edilecek
+        // var ipGroups = recentVotes
+        //     .Where(v => !string.IsNullOrEmpty(v.IpAddress))
+        //     .GroupBy(v => v.IpAddress)
+        //     .Where(g => g.Count() > 3); // Aynı IP'den 3'ten fazla oy
 
-        if (ipGroups.Any())
-            return true;
+        // if (ipGroups.Any())
+        //     return true;
 
         // Yeni hesaplardan gelen oy oranı kontrolü
         var voterIds = recentVotes.Select(v => v.UserId).Distinct().ToList();
@@ -361,7 +370,7 @@ public class VoteService : IVoteService
 
         // Oy verme hızı kontrolü - 1 saatte 10'dan fazla oy
         var hourlyVotes = recentVotes
-            .Where(v => (DateTime.UtcNow - v.VotedAt).TotalHours <= 1)
+            .Where(v => (DateTime.UtcNow - v.CreatedAt).TotalHours <= 1)
             .Count();
 
         if (hourlyVotes > 10)
