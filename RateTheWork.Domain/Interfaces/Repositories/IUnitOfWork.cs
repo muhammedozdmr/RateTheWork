@@ -1,95 +1,44 @@
-using RateTheWork.Domain.Entities;
+using RateTheWork.Domain.Common;
 
 namespace RateTheWork.Domain.Interfaces.Repositories;
 
 /// <summary>
 /// Unit of Work pattern implementasyonu için interface.
-/// Tüm repository'lere tek bir noktadan erişim sağlar ve transaction yönetimi yapar.
+/// Transaction yönetimi ve repository erişimi sağlar.
 /// </summary>
 public interface IUnitOfWork : IDisposable
 {
     /// <summary>
-    /// Kullanıcı repository'si
+    /// Generic repository döndürür
     /// </summary>
-    IUserRepository Users { get; }
-    
+    /// <typeparam name="T">Entity tipi</typeparam>
+    /// <returns>İlgili entity için repository</returns>
+    IRepository<T> Repository<T>() where T : BaseEntity;
+
     /// <summary>
-    /// Şirket repository'si
+    /// Özelleşmiş repository döndürür
     /// </summary>
-    ICompanyRepository Companies { get; }
-    
-    /// <summary>
-    /// Yorum repository'si
-    /// </summary>
-    IReviewRepository Reviews { get; }
-    
-    /// <summary>
-    /// Admin kullanıcı repository'si
-    /// </summary>
-    IAdminUserRepository AdminUsers { get; }
-    
-    /// <summary>
-    /// Doğrulama talepleri repository'si
-    /// </summary>
-    IVerificationRequestRepository VerificationRequests { get; }
-    
-    /// <summary>
-    /// Yorum oyları repository'si
-    /// </summary>
-    IReviewVoteRepository ReviewVotes { get; }
-    
-    /// <summary>
-    /// Rozet repository'si
-    /// </summary>
-    IBaseRepository<Badge> Badges { get; }
-    
-    /// <summary>
-    /// Kullanıcı rozetleri repository'si
-    /// </summary>
-    IBaseRepository<UserBadge> UserBadges { get; }
-    
-    /// <summary>
-    /// Ban kayıtları repository'si
-    /// </summary>
-    IBaseRepository<Ban> Bans { get; }
-    
-    /// <summary>
-    /// Uyarı kayıtları repository'si
-    /// </summary>
-    IBaseRepository<Warning> Warnings { get; }
-    
-    /// <summary>
-    /// Şikayet kayıtları repository'si
-    /// </summary>
-    IBaseRepository<Report> Reports { get; }
-    
-    /// <summary>
-    /// Audit log kayıtları repository'si
-    /// </summary>
-    IBaseRepository<AuditLog> AuditLogs { get; }
-    
-    /// <summary>
-    /// Bildirim kayıtları repository'si
-    /// </summary>
-    IBaseRepository<Notification> Notifications { get; }
-    
+    /// <typeparam name="TRepository">Repository interface tipi</typeparam>
+    /// <returns>Özelleşmiş repository instance</returns>
+    TRepository GetCustomRepository<TRepository>() where TRepository : class;
+
     /// <summary>
     /// Tüm değişiklikleri veritabanına kaydeder
     /// </summary>
     /// <param name="cancellationToken">İşlem iptali için token</param>
     /// <returns>Etkilenen kayıt sayısı</returns>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Yeni bir transaction başlatır
     /// </summary>
     Task BeginTransactionAsync();
-    
+
     /// <summary>
     /// Aktif transaction'ı commit eder
     /// </summary>
     Task CommitTransactionAsync();
-    
+
     /// <summary>
     /// Aktif transaction'ı rollback eder
     /// </summary>
