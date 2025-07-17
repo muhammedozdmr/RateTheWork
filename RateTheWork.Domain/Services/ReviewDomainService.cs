@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using RateTheWork.Domain.Constants;
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Exceptions;
@@ -50,10 +51,10 @@ public class ReviewDomainService : IReviewDomainService
 
         // Aynı tip yorum için cooldown kontrolü
         var lastReview = await _unitOfWork.Reviews
-            .GetFirstOrDefaultAsync(r => 
-                r.UserId == userId && 
-                r.CompanyId == companyId && 
-                r.CommentType == commentType &&
+            .GetFirstOrDefaultAsync(r =>
+                r.UserId == userId &&
+                r.CompanyId == companyId &&
+                r.CommentType.ToString() == commentType &&
                 r.IsActive);
 
         if (lastReview != null)
@@ -75,10 +76,11 @@ public class ReviewDomainService : IReviewDomainService
         var positiveRatio = (decimal)upvotes / totalVotes;
         var z = 1.96m; // %95 güven aralığı için z-score
         var n = totalVotes;
-        
-        var wilsonScore = (positiveRatio + (z * z) / (2 * n) - 
-            z * (decimal)Math.Sqrt((double)(positiveRatio * (1 - positiveRatio) / n + (z * z) / (4 * n * n)))) / 
-            (1 + (z * z) / n);
+
+        var wilsonScore = (positiveRatio + (z * z) / (2 * n) -
+                           z * (decimal)Math.Sqrt((double)(positiveRatio * (1 - positiveRatio) / n +
+                                                           (z * z) / (4 * n * n)))) /
+                          (1 + (z * z) / n);
 
         // Doğrulanmış yorumlar için bonus
         if (isVerified)
@@ -115,7 +117,7 @@ public class ReviewDomainService : IReviewDomainService
         {
             // Doğrulanmış yorumlar daha yüksek ağırlık
             var weight = review.IsDocumentVerified ? 2.0m : 1.0m;
-            
+
             // Yardımcılık skoru yüksek olanlar daha yüksek ağırlık
             var helpfulnessMultiplier = 1 + (review.HelpfulnessScore / 100) * 0.5m;
             weight *= helpfulnessMultiplier;
@@ -126,7 +128,7 @@ public class ReviewDomainService : IReviewDomainService
 
         var weightedAverage = totalWeight > 0 ? weightedSum / totalWeight : 0;
         company.UpdateReviewStatistics(Math.Round(weightedAverage, 2), activeReviews.Count);
-        
+
         await _unitOfWork.Companies.UpdateAsync(company);
     }
 
@@ -154,15 +156,15 @@ public class ReviewDomainService : IReviewDomainService
         // Spam pattern kontrolü
         var spamPatterns = new[]
         {
-            @"(http|https|www\.)",
-            @"(\b\d{10,}\b)", // Uzun sayı dizileri
-            @"([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})", // Email
+            @"(http|https|www\.)", @"(\b\d{10,}\b)", // Uzun sayı dizileri
+            @"([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})"
+            , // Email
             @"(\+?\d{1,3}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9})" // Telefon
         };
 
         foreach (var pattern in spamPatterns)
         {
-            if (System.Text.RegularExpressions.Regex.IsMatch(commentText, pattern))
+            if (Regex.IsMatch(commentText, pattern))
                 return true;
         }
 
@@ -192,32 +194,32 @@ public class ReviewDomainService : IReviewDomainService
         var sentences = review.CommentText.Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
         var words = review.CommentText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var uniqueWords = words.Distinct(StringComparer.OrdinalIgnoreCase).Count();
-        
+
         score.DetailScore = Math.Min(100, (sentences.Length * 10) + (uniqueWords * 2));
 
         // Objektiflik skoru (subjektif kelimeler kontrolü)
         var subjectiveWords = new[] { "berbat", "mükemmel", "rezalet", "harika", "korkunç", "muhteşem" };
-        var subjectiveCount = subjectiveWords.Count(word => 
+        var subjectiveCount = subjectiveWords.Count(word =>
             review.CommentText.Contains(word, StringComparison.OrdinalIgnoreCase));
-        
+
         score.ObjectivityScore = Math.Max(0, 100 - (subjectiveCount * 20));
 
         // Helpfulness skoru
         score.HelpfulnessScore = review.HelpfulnessScore;
 
         // Genel skor
-        score.OverallScore = (score.LengthScore * 0.2m + 
-                             score.DetailScore * 0.3m + 
-                             score.ObjectivityScore * 0.2m + 
-                             score.HelpfulnessScore * 0.3m);
+        score.OverallScore = (score.LengthScore * 0.2m +
+                              score.DetailScore * 0.3m +
+                              score.ObjectivityScore * 0.2m +
+                              score.HelpfulnessScore * 0.3m);
 
         // İyileştirme önerileri
         if (score.LengthScore < 60)
             score.ImprovementSuggestions.Add("Yorumunuzu biraz daha detaylandırabilirsiniz.");
-        
+
         if (score.DetailScore < 60)
             score.ImprovementSuggestions.Add("Daha fazla örnek ve detay ekleyebilirsiniz.");
-        
+
         if (score.ObjectivityScore < 60)
             score.ImprovementSuggestions.Add("Daha objektif bir dil kullanmayı deneyebilirsiniz.");
 
@@ -245,10 +247,10 @@ public class ReviewDomainService : IReviewDomainService
     public async Task<ReviewTrends> AnalyzeReviewTrendsAsync(string companyId, DateTime startDate, DateTime endDate)
     {
         var reviews = await _unitOfWork.Reviews
-            .GetAsync(r => r.CompanyId == companyId && 
-                          r.CreatedAt >= startDate && 
-                          r.CreatedAt <= endDate &&
-                          r.IsActive);
+            .GetAsync(r => r.CompanyId == companyId &&
+                           r.CreatedAt >= startDate &&
+                           r.CreatedAt <= endDate &&
+                           r.IsActive);
 
         var trends = new ReviewTrends();
 
@@ -257,7 +259,7 @@ public class ReviewDomainService : IReviewDomainService
         foreach (var group in categoryGroups)
         {
             var average = group.Average(r => r.OverallRating);
-            trends.CategoryAverages[group.Key] = Math.Round(average, 2);
+            trends.CategoryAverages[group.Key.ToString()] = Math.Round(average, 2);
         }
 
         // Tarih bazlı yorum sayıları
@@ -274,7 +276,7 @@ public class ReviewDomainService : IReviewDomainService
         foreach (var review in reviews)
         {
             var lowerText = review.CommentText.ToLowerInvariant();
-            
+
             foreach (var keyword in positiveKeywords)
             {
                 if (lowerText.Contains(keyword))
@@ -316,8 +318,8 @@ public class ReviewDomainService : IReviewDomainService
     {
         // Küçük harfe çevir, noktalama işaretlerini kaldır
         var normalized = text.ToLowerInvariant();
-        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"[^\w\s]", " ");
-        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\s+", " ");
+        normalized = Regex.Replace(normalized, @"[^\w\s]", " ");
+        normalized = Regex.Replace(normalized, @"\s+", " ");
         return normalized.Trim();
     }
 

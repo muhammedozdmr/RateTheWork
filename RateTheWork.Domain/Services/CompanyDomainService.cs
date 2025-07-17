@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Enums.Company;
 using RateTheWork.Domain.Enums.Verification;
@@ -15,14 +16,16 @@ namespace RateTheWork.Domain.Services;
 /// </summary>
 public class CompanyDomainService : ICompanyDomainService
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ITaxNumberValidator _taxNumberValidator;
     private readonly ICompanyDomainValidator _companyValidator;
+    private readonly ITaxNumberValidator _taxNumberValidator;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public CompanyDomainService(
-        IUnitOfWork unitOfWork,
-        ITaxNumberValidator taxNumberValidator,
-        ICompanyDomainValidator companyValidator)
+    public CompanyDomainService
+    (
+        IUnitOfWork unitOfWork
+        , ITaxNumberValidator taxNumberValidator
+        , ICompanyDomainValidator companyValidator
+    )
     {
         _unitOfWork = unitOfWork;
         _taxNumberValidator = taxNumberValidator;
@@ -54,6 +57,7 @@ public class CompanyDomainService : ICompanyDomainService
                         new Dictionary<string, object> { ["Method"] = "TaxNumber" });
                     await _unitOfWork.Companies.UpdateAsync(company);
                 }
+
                 return isValidTaxNumber;
 
             case "TradeRegistry":
@@ -69,9 +73,10 @@ public class CompanyDomainService : ICompanyDomainService
                     company.Verify(verifiedBy: "SYSTEM",
                         verificationMethod: VerificationMethod.Mersis.ToString(),
                         verificationNotes: "Mersis numarası MERSİS üzerinden doğrulandı",
-                        metadata: new Dictionary<string, object> { ["MersisNo"] = company.MersisNo});
+                        metadata: new Dictionary<string, object> { ["MersisNo"] = company.MersisNo });
                     await _unitOfWork.Companies.UpdateAsync(company);
                 }
+
                 return isValidMersis;
 
             case "DomainOwnership":
@@ -90,10 +95,11 @@ public class CompanyDomainService : ICompanyDomainService
                         metadata: new Dictionary<string, object> { ["Domain"] = company.WebsiteUrl });
                     await _unitOfWork.Companies.UpdateAsync(company);
                 }
+
                 return isDomainVerified;
 
             default:
-                throw new BusinessRuleException("INVALID_VERIFICATION_METHOD", 
+                throw new BusinessRuleException("INVALID_VERIFICATION_METHOD",
                     $"Geçersiz doğrulama yöntemi: {verificationMethod}");
         }
     }
@@ -126,8 +132,7 @@ public class CompanyDomainService : ICompanyDomainService
                 g => g.Key,
                 g => new
                 {
-                    Average = g.Average(r => r.OverallRating),
-                    Count = g.Count()
+                    Average = g.Average(r => r.OverallRating), Count = g.Count()
                 }
             );
 
@@ -158,9 +163,9 @@ public class CompanyDomainService : ICompanyDomainService
 
         // Kara listede mi?
         var blacklisted = await _unitOfWork.Bans
-            .GetFirstOrDefaultAsync(b => 
-                b.TargetType == "Company" && 
-                b.TargetId == companyId && 
+            .GetFirstOrDefaultAsync(b =>
+                b.TargetType == "Company" &&
+                b.TargetId == companyId &&
                 b.IsActive &&
                 (b.UnbanDate == null || b.UnbanDate > DateTime.UtcNow));
 
@@ -192,11 +197,7 @@ public class CompanyDomainService : ICompanyDomainService
 
         return null;
     }
-    public async Task<bool> ValidateCompanyInformationAsync(Company company)
-    {
-        var validationResult = await _companyValidator.ValidateAsync(company.ToString() ?? string.Empty);
-        return validationResult.IsValid;
-    }
+
     public async Task<CompanyRiskScore> CalculateCompanyRiskScoreAsync(string companyId)
     {
         var company = await _unitOfWork.Companies.GetByIdAsync(companyId);
@@ -218,7 +219,7 @@ public class CompanyDomainService : ICompanyDomainService
         factors["HighReportRatio"] = Math.Min(reportRatio * 100, 30);
 
         // 3. Doğrulanmamış şirket riski
-        factors["UnverifiedCompany"] = company.ApprovalStatus.ToString() != ApprovalStatus.Approved.ToString() ? 20 : 0;
+        factors["UnverifiedCompany"] = company.ApprovalStatus != ApprovalStatus.Approved ? 20 : 0;
 
         // 4. Yeni şirket riski
         var companyAge = (DateTime.UtcNow - company.CreatedAt).TotalDays;
@@ -235,47 +236,12 @@ public class CompanyDomainService : ICompanyDomainService
         var totalScore = factors.Values.Sum();
         var riskLevel = totalScore switch
         {
-            >= 70 => "High",
-            >= 40 => "Medium",
-            >= 20 => "Low",
-            _ => "Minimal"
+            >= 70 => "High", >= 40 => "Medium", >= 20 => "Low", _ => "Minimal"
         };
 
         return CompanyRiskScore.Create(totalScore, riskLevel, factors);
     }
-    public async Task<CompanyReviewStatistics> CalculateCompanyStatisticsAsync(string companyId)
-    {
-        var reviews = await _unitOfWork.Reviews.GetReviewsByCompanyAsync(companyId, 1, int.MaxValue);
-        var activeReviews = reviews.Where(r => r.IsActive).ToList();
 
-        if (!activeReviews.Any())
-        {
-            return CompanyReviewStatistics.CreateEmpty();
-        }
-
-        var averageRating = activeReviews.Average(r => r.OverallRating);
-        var totalReviews = activeReviews.Count;
-        var verifiedReviews = activeReviews.Count(r => r.IsDocumentVerified);
-            
-        var ratingDistribution = activeReviews
-            .GroupBy(r => Math.Floor(r.OverallRating))
-            .ToDictionary(g => (int)g.Key, g => g.Count());
-
-        var categoryAverages = activeReviews
-            .GroupBy(r => r.CommentType)
-            .ToDictionary(
-                g => g.Key, 
-                g => g.Average(r => r.OverallRating)
-            );
-
-        return CompanyReviewStatistics.Create(
-            averageRating,
-            totalReviews,
-            verifiedReviews,
-            ratingDistribution,
-            categoryAverages
-        );
-    }
     public async Task<CompanyCategory> DetermineCompanyCategoryAsync(string companyId)
     {
         var company = await _unitOfWork.Companies.GetByIdAsync(companyId);
@@ -284,11 +250,11 @@ public class CompanyDomainService : ICompanyDomainService
 
         var category = new CompanyCategory
         {
-            MainCategory = company.Sector
+            MainCategory = company.Sector.ToString()
         };
 
         // Alt kategoriler (sektöre göre)
-        switch (company.Sector?.ToLowerInvariant())
+        switch (company.Sector.ToString().ToLowerInvariant())
         {
             case "teknoloji":
                 category.SubCategories = new List<string> { "Yazılım", "Donanım", "E-ticaret", "Oyun" };
@@ -300,7 +266,7 @@ public class CompanyDomainService : ICompanyDomainService
                 category.SubCategories = new List<string> { "Hastane", "İlaç", "Medikal Cihaz", "Sağlık Teknolojisi" };
                 break;
             default:
-                category.SubCategories = new List<string> { company.Sector ?? "Diğer" };
+                category.SubCategories = new List<string> { company.Sector.ToString() };
                 break;
         }
 
@@ -338,14 +304,14 @@ public class CompanyDomainService : ICompanyDomainService
 
         // Aynı sektördeki şirketler
         var competitors = await _unitOfWork.Companies
-            .GetAsync(c => 
-                c.Id != companyId && 
-                c.Sector == company.Sector && 
+            .GetAsync(c =>
+                c.Id != companyId &&
+                c.Sector == company.Sector &&
                 c.IsApproved);
 
         // Benzer büyüklükteki şirketleri önceliklendir
         var employeeCountRange = company.EmployeeCount * 0.5;
-        
+
         //TODO: 0 çıkma ihtimailinden dolayı abs metdou işlemiyor
         var similarSizeCompetitors = competitors
             .Where(c => Math.Abs((double)(c.EmployeeCount - company.EmployeeCount)!) <= employeeCountRange)
@@ -360,14 +326,15 @@ public class CompanyDomainService : ICompanyDomainService
                 .Where(c => !similarSizeCompetitors.Contains(c))
                 .OrderByDescending(c => c.ReviewStatistics.TotalReviews)
                 .Take(maxResults - similarSizeCompetitors.Count);
-            
+
             similarSizeCompetitors.AddRange(remaining);
         }
 
         return similarSizeCompetitors;
     }
 
-    public async Task<CompanyGrowthAnalysis> AnalyzeCompanyGrowthAsync(string companyId, DateTime startDate, DateTime endDate)
+    public async Task<CompanyGrowthAnalysis> AnalyzeCompanyGrowthAsync
+        (string companyId, DateTime startDate, DateTime endDate)
     {
         var company = await _unitOfWork.Companies.GetByIdAsync(companyId);
         if (company == null)
@@ -377,9 +344,9 @@ public class CompanyDomainService : ICompanyDomainService
 
         // Belirtilen dönemdeki yorumları al
         var reviews = await _unitOfWork.Reviews
-            .GetAsync(r => 
-                r.CompanyId == companyId && 
-                r.CreatedAt >= startDate && 
+            .GetAsync(r =>
+                r.CompanyId == companyId &&
+                r.CreatedAt >= startDate &&
                 r.CreatedAt <= endDate &&
                 r.IsActive);
 
@@ -389,9 +356,9 @@ public class CompanyDomainService : ICompanyDomainService
         var previousEndDate = startDate.AddDays(-1);
 
         var previousReviews = await _unitOfWork.Reviews
-            .GetAsync(r => 
-                r.CompanyId == companyId && 
-                r.CreatedAt >= previousStartDate && 
+            .GetAsync(r =>
+                r.CompanyId == companyId &&
+                r.CreatedAt >= previousStartDate &&
                 r.CreatedAt <= previousEndDate &&
                 r.IsActive);
 
@@ -412,30 +379,32 @@ public class CompanyDomainService : ICompanyDomainService
 
         // Kategori bazlı büyüme
         var categoryGroups = reviews.GroupBy(r => r.CommentType);
-        var previousCategoryGroups = previousReviews.GroupBy(r => r.CommentType).ToDictionary(g => g.Key, g => g.Count());
+        var previousCategoryGroups =
+            previousReviews.GroupBy(r => r.CommentType).ToDictionary(g => g.Key, g => g.Count());
 
         foreach (var category in categoryGroups)
         {
             var currentCount = category.Count();
             var previousCount = previousCategoryGroups.GetValueOrDefault(category.Key, 0);
-            
+
             if (previousCount > 0)
             {
-                analysis.CategoryGrowthRates[category.Key] = ((decimal)currentCount - previousCount) / previousCount * 100;
+                analysis.CategoryGrowthRates[category.Key.ToString()] =
+                    ((decimal)currentCount - previousCount) / previousCount * 100;
             }
             else
             {
-                analysis.CategoryGrowthRates[category.Key] = currentCount > 0 ? 100 : 0;
+                analysis.CategoryGrowthRates[category.Key.ToString()] = currentCount > 0 ? 100 : 0;
             }
         }
 
         // Büyüme göstergeleri
         if (analysis.ReviewGrowthRate > 50)
             analysis.GrowthIndicators.Add("Hızlı yorum artışı");
-        
+
         if (analysis.RatingTrend > 0.5m)
             analysis.GrowthIndicators.Add("Puan ortalaması yükseliyor");
-        
+
         if (analysis.CategoryGrowthRates.Any(c => c.Value > 100))
             analysis.GrowthIndicators.Add("Bazı kategorilerde %100+ büyüme");
 
@@ -451,64 +420,102 @@ public class CompanyDomainService : ICompanyDomainService
 
         return analysis;
     }
-    
-     public async Task<bool> MergeCompaniesAsync(string primaryCompanyId, string secondaryCompanyId, string mergedBy)
+
+    public async Task<bool> ValidateCompanyInformationAsync(Company company)
+    {
+        var validationResult = await _companyValidator.ValidateAsync(company.Name);
+        return validationResult.IsValid;
+    }
+
+    public async Task<CompanyReviewStatistics> CalculateCompanyStatisticsAsync(string companyId)
+    {
+        var reviews = await _unitOfWork.Reviews.GetReviewsByCompanyAsync(companyId, 1, int.MaxValue);
+        var activeReviews = reviews.Where(r => r.IsActive).ToList();
+
+        if (!activeReviews.Any())
         {
-            var primaryCompany = await _unitOfWork.Companies.GetByIdAsync(primaryCompanyId);
-            var secondaryCompany = await _unitOfWork.Companies.GetByIdAsync(secondaryCompanyId);
-
-            if (primaryCompany == null || secondaryCompany == null)
-                throw new EntityNotFoundException("Şirketlerden biri bulunamadı.");
-
-            // Merge işlemi öncesi kontroller
-            if (!primaryCompany.IsActive || !secondaryCompany.IsActive)
-                throw new CompanyNotActiveException(
-                    secondaryCompany.Id,
-                    secondaryCompany.IsActive ? "Active" : "Inactive",
-                    "Sadece aktif şirketler birleştirilebilir."
-                );
-
-            // Transaction başlat
-            await _unitOfWork.BeginTransactionAsync();
-
-            try
-            {
-                // Yorumları taşı
-                var secondaryReviews = await _unitOfWork.Reviews.GetReviewsByCompanyAsync(secondaryCompanyId, 1, int.MaxValue);
-                foreach (var review in secondaryReviews)
-                {
-                    review.UpdateCompanyId(primaryCompanyId);
-                    await _unitOfWork.Reviews.UpdateAsync(review);
-                }
-
-                // İkincil şirketi pasifleştir
-                secondaryCompany.Deactivate($"Merged with {primaryCompany.Name} (ID: {primaryCompanyId})");
-                await _unitOfWork.Companies.UpdateAsync(secondaryCompany);
-
-                // Birincil şirkete merge notu ekle
-                var mergeMetadata = new Dictionary<string, object>
-                {
-                    ["MergedCompanyId"] = secondaryCompanyId,
-                    ["MergedCompanyName"] = secondaryCompany.Name,
-                    ["MergeDate"] = DateTime.UtcNow,
-                    ["MergedBy"] = mergedBy,
-                    ["TransferredReviews"] = secondaryReviews.Count
-                };
-
-                primaryCompany.AddMetadata("CompanyMerge", mergeMetadata);
-                await _unitOfWork.Companies.UpdateAsync(primaryCompany);
-
-                await _unitOfWork.CommitTransactionAsync();
-                return true;
-            }
-            catch
-            {
-                await _unitOfWork.RollbackTransactionAsync();
-                throw;
-            }
+            return CompanyReviewStatistics.CreateEmpty();
         }
-     
-     
+
+        var averageRating = activeReviews.Average(r => r.OverallRating);
+        var totalReviews = activeReviews.Count;
+        var verifiedReviews = activeReviews.Count(r => r.IsDocumentVerified);
+
+        var ratingDistribution = activeReviews
+            .GroupBy(r => Math.Floor(r.OverallRating))
+            .ToDictionary(g => (int)g.Key, g => g.Count());
+
+        var categoryAverages = activeReviews
+            .GroupBy(r => r.CommentType)
+            .ToDictionary(
+                g => g.Key.ToString(),
+                g => g.Average(r => r.OverallRating)
+            );
+
+        return CompanyReviewStatistics.Create(
+            averageRating,
+            totalReviews,
+            verifiedReviews,
+            ratingDistribution,
+            categoryAverages
+        );
+    }
+
+    public async Task<bool> MergeCompaniesAsync(string primaryCompanyId, string secondaryCompanyId, string mergedBy)
+    {
+        var primaryCompany = await _unitOfWork.Companies.GetByIdAsync(primaryCompanyId);
+        var secondaryCompany = await _unitOfWork.Companies.GetByIdAsync(secondaryCompanyId);
+
+        if (primaryCompany == null || secondaryCompany == null)
+            throw new EntityNotFoundException("Şirketlerden biri bulunamadı.");
+
+        // Merge işlemi öncesi kontroller
+        if (!primaryCompany.IsActive || !secondaryCompany.IsActive)
+            throw new CompanyNotActiveException(
+                secondaryCompany.Id,
+                secondaryCompany.IsActive ? "Active" : "Inactive",
+                "Sadece aktif şirketler birleştirilebilir."
+            );
+
+        // Transaction başlat
+        await _unitOfWork.BeginTransactionAsync();
+
+        try
+        {
+            // Yorumları taşı
+            var secondaryReviews =
+                await _unitOfWork.Reviews.GetReviewsByCompanyAsync(secondaryCompanyId, 1, int.MaxValue);
+            foreach (var review in secondaryReviews)
+            {
+                review.UpdateCompanyId(primaryCompanyId);
+                await _unitOfWork.Reviews.UpdateAsync(review);
+            }
+
+            // İkincil şirketi pasifleştir
+            secondaryCompany.Deactivate($"Merged with {primaryCompany.Name} (ID: {primaryCompanyId})");
+            await _unitOfWork.Companies.UpdateAsync(secondaryCompany);
+
+            // Birincil şirkete merge notu ekle
+            var mergeMetadata = new Dictionary<string, object>
+            {
+                ["MergedCompanyId"] = secondaryCompanyId, ["MergedCompanyName"] = secondaryCompany.Name
+                , ["MergeDate"] = DateTime.UtcNow, ["MergedBy"] = mergedBy
+                , ["TransferredReviews"] = secondaryReviews.Count
+            };
+
+            primaryCompany.AddMetadata("CompanyMerge", mergeMetadata);
+            await _unitOfWork.Companies.UpdateAsync(primaryCompany);
+
+            await _unitOfWork.CommitTransactionAsync();
+            return true;
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
+        }
+    }
+
 
     // Private helper methods
     private bool IsValidLinkedInUrl(string url)
@@ -517,16 +524,17 @@ public class CompanyDomainService : ICompanyDomainService
             return false;
 
         var pattern = @"^https?://(www\.)?linkedin\.com/company/[\w-]+/?$";
-        return System.Text.RegularExpressions.Regex.IsMatch(url, pattern);
+        return Regex.IsMatch(url, pattern);
     }
+
     private async Task<bool> ValidateTaxNumberAsync(string taxNumber)
     {
         // Gerçek uygulamada vergi dairesi API'si çağrılacak
         await Task.Delay(100); // Simülasyon
-        
+
         // Basit format kontrolü (10 veya 11 haneli)
-        return !string.IsNullOrEmpty(taxNumber) && 
-               (taxNumber.Length == 10 || taxNumber.Length == 11) && 
+        return !string.IsNullOrEmpty(taxNumber) &&
+               (taxNumber.Length == 10 || taxNumber.Length == 11) &&
                taxNumber.All(char.IsDigit);
     }
 
@@ -534,10 +542,10 @@ public class CompanyDomainService : ICompanyDomainService
     {
         // Gerçek uygulamada MERSİS API'si çağrılacak
         await Task.Delay(100); // Simülasyon
-        
+
         // MERSİS no format: 16 haneli
-        return !string.IsNullOrEmpty(mersisNo) && 
-               mersisNo.Length == 16 && 
+        return !string.IsNullOrEmpty(mersisNo) &&
+               mersisNo.Length == 16 &&
                mersisNo.All(char.IsDigit);
     }
 
@@ -546,9 +554,9 @@ public class CompanyDomainService : ICompanyDomainService
         // Gerçek uygulamada DNS TXT kaydı kontrolü yapılacak
         // Örnek: ratethework-verify=companyId
         await Task.Delay(100); // Simülasyon
-        
+
         // URL format kontrolü
-        return !string.IsNullOrEmpty(websiteUrl) && 
+        return !string.IsNullOrEmpty(websiteUrl) &&
                Uri.TryCreate(websiteUrl, UriKind.Absolute, out var uri) &&
                (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
     }

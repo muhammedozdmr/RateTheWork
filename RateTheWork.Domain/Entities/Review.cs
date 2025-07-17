@@ -72,7 +72,14 @@ public class Review : AuditableBaseEntity, IAggregateRoot
             companyId,
             commentType.ToString(),
             overallRating,
+            commentText, // CommentText
             !string.IsNullOrEmpty(documentUrl),
+            documentUrl, // DocumentUrl
+            null, // DetailedRatings
+            null, // SentimentScore
+            null, // QualityScore
+            "0.0.0.0", // UserIp - will be set by application layer
+            "Unknown", // UserAgent - will be set by application layer
             DateTime.UtcNow
         ));
 
@@ -178,6 +185,9 @@ public class Review : AuditableBaseEntity, IAggregateRoot
             UserId,
             editReason,
             EditCount,
+            null, // OldValues
+            null, // NewValues
+            null, // ModerationNote
             DateTime.UtcNow
         ));
     }
@@ -333,6 +343,10 @@ public class Review : AuditableBaseEntity, IAggregateRoot
             hiddenBy,
             reason,
             isAutoHidden,
+            null, // ModerationDetails
+            null, // ViolatedPolicies
+            true, // CanAppeal
+            DateTime.UtcNow.AddDays(7), // AppealDeadline
             DateTime.UtcNow
         ));
     }

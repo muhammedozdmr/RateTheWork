@@ -8,26 +8,54 @@ public enum VoteSource
     /// <summary>
     /// Doğrudan yorum sayfasından
     /// </summary>
-    Direct,
-    
+    Direct
+
+    ,
+
     /// <summary>
     /// Yorum listesinden
     /// </summary>
-    ReviewList,
-    
+    ReviewList
+
+    ,
+
     /// <summary>
     /// Şirket profilinden
     /// </summary>
-    CompanyProfile,
-    
+    CompanyProfile
+
+    ,
+
     /// <summary>
     /// Kullanıcı profilinden
     /// </summary>
-    UserProfile,
-    
+    UserProfile
+
+    ,
+
     /// <summary>
     /// Arama sonuçlarından
     /// </summary>
     SearchResults
-}
 
+    ,
+
+    /// <summary>
+    /// Web uygulamasından
+    /// </summary>
+    Web
+
+    ,
+
+    /// <summary>
+    /// Mobil uygulamadan
+    /// </summary>
+    Mobile
+
+    ,
+
+    /// <summary>
+    /// API üzerinden
+    /// </summary>
+    Api
+}

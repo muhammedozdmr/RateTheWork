@@ -92,7 +92,12 @@ public class User : AuditableBaseEntity, IAggregateRoot
         // Validasyonlar
         ValidateUsername(anonymousUsername);
         ValidateEmail(email);
-        ValidateGender(gender);
+
+        // Parse gender string to enum
+        if (!Enum.TryParse<Gender>(gender, true, out var genderEnum))
+        {
+            throw new BusinessRuleException($"Geçersiz cinsiyet değeri: {gender}");
+        }
 
         var user = new User
         {
@@ -100,7 +105,7 @@ public class User : AuditableBaseEntity, IAggregateRoot
             , EncryptedFirstName = encryptedFirstName, EncryptedLastName = encryptedLastName, Profession = profession
             , EncryptedTcIdentityNumber = encryptedTcIdentityNumber, EncryptedAddress = encryptedAddress
             , EncryptedCity = encryptedCity, EncryptedDistrict = encryptedDistrict
-            , EncryptedPhoneNumber = encryptedPhoneNumber, Gender = gender, EncryptedBirthDate = encryptedBirthDate
+            , EncryptedPhoneNumber = encryptedPhoneNumber, Gender = genderEnum, EncryptedBirthDate = encryptedBirthDate
             , EmailHash = GenerateHash(email.ToLowerInvariant())
             , TcIdentityHash = GenerateHash(encryptedTcIdentityNumber)
         };
@@ -110,6 +115,10 @@ public class User : AuditableBaseEntity, IAggregateRoot
             user.Id,
             user.Email,
             user.AnonymousUsername,
+            "0.0.0.0", // RegisterIp - will be set by the application layer
+            "Unknown", // UserAgent - will be set by the application layer
+            null, // ReferrerUrl
+            "Web", // RegistrationSource
             DateTime.UtcNow
         ));
 
@@ -219,6 +228,8 @@ public class User : AuditableBaseEntity, IAggregateRoot
         AddDomainEvent(new UserEmailVerifiedEvent(
             Id,
             Email,
+            null, // PreviousEmail
+            "EmailToken", // VerificationMethod
             DateTime.UtcNow
         ));
     }
@@ -309,6 +320,9 @@ public class User : AuditableBaseEntity, IAggregateRoot
             AddDomainEvent(new UserProfileUpdatedEvent(
                 Id,
                 updatedFields.ToArray(),
+                null, // OldValues - can be populated by application layer if needed
+                null, // NewValues - can be populated by application layer if needed
+                0.0m, // ProfileCompleteness - can be calculated by domain service
                 DateTime.UtcNow
             ));
         }
@@ -426,6 +440,10 @@ public class User : AuditableBaseEntity, IAggregateRoot
         AddDomainEvent(new UserAccountDeletedEvent(
             Id,
             "User requested deletion",
+            0, // ReviewsCount - will be populated by application layer
+            0, // BadgesCount - will be populated by application layer
+            false, // DataExported - will be set by application layer
+            null, // FeedbackProvided
             DateTime.UtcNow
         ));
     }
