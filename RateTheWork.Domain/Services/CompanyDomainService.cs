@@ -311,7 +311,6 @@ public class CompanyDomainService : ICompanyDomainService
         // Benzer büyüklükteki şirketleri önceliklendir
         var employeeCountRange = company.EmployeeCount * 0.5;
 
-        //TODO: 0 çıkma ihtimailinden dolayı abs metdou işlemiyor
         var similarSizeCompetitors = competitors
             .Where(c => Math.Abs((double)(c.EmployeeCount - company.EmployeeCount)!) <= employeeCountRange)
             .OrderBy(c => Math.Abs((double)(c.EmployeeCount - company.EmployeeCount)!))
