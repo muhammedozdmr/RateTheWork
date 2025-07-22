@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# 
+#
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Domain", "RateTheWork.Domain\RateTheWork.Domain.csproj", "{481DF7BD-95C0-4AC2-9376-5A14F1D01266}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Application", "RateTheWork.Application\RateTheWork.Application.csproj", "{A464503E-ECF0-4A70-A665-85BCC28511B8}"

@@ -24,9 +24,5 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\RateTheWork.Application\RateTheWork.Application.csproj" />
-    <ProjectReference Include="..\RateTheWork.Domain\RateTheWork.Domain.csproj" />
-  </ItemGroup>
 
 </Project>
