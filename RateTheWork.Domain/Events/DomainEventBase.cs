@@ -1,11 +1,9 @@
-using MediatR;
-
 namespace RateTheWork.Domain.Events;
 
 /// <summary>
-/// Tüm domain event'lerin base class'ı
+/// Tüm domain event'leri için base class
 /// </summary>
-public abstract record DomainEventBase : INotification, IDomainEvent
+public abstract class DomainEventBase : IDomainEvent
 {
     protected DomainEventBase()
     {
@@ -14,28 +12,7 @@ public abstract record DomainEventBase : INotification, IDomainEvent
         Version = 1;
     }
 
-    /// <summary>
-    /// Event'i oluşturan kullanıcı/sistem
-    /// </summary>
-    public string? CreatedBy { get; init; }
-
-    /// <summary>
-    /// Event metadata'sı
-    /// </summary>
-    public Dictionary<string, object?>? Metadata { get; init; }
-
-    /// <summary>
-    /// Event'in gerçekleştiği zaman
-    /// </summary>
-    public DateTime OccurredOn { get; init; }
-
-    /// <summary>
-    /// Event'in benzersiz ID'si
-    /// </summary>
-    public Guid EventId { get; init; }
-
-    /// <summary>
-    /// Event version'u (event sourcing için)
-    /// </summary>
-    public int Version { get; init; }
+    public DateTime OccurredOn { get; }
+    public Guid EventId { get; }
+    public int Version { get; }
 }

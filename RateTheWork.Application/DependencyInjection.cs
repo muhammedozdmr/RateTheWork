@@ -4,6 +4,8 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using RateTheWork.Application.Common.Behaviors;
+using RateTheWork.Application.Services.Implementations;
+using RateTheWork.Application.Services.Interfaces;
 
 namespace RateTheWork.Application;
 
@@ -18,11 +20,12 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         var assembly = Assembly.GetExecutingAssembly();
-        
+
         // MediatR - CQRS Pattern
-        services.AddMediatR(cfg => 
+        services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(assembly);
+            cfg.NotificationPublisher = new TaskWhenAllPublisher();
         });
 
         // FluentValidation
@@ -32,9 +35,27 @@ public static class DependencyInjection
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuditingBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CachingBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
 
-        // AutoMapper - Extension paketi ile basit kullanım
+        // AutoMapper
         services.AddAutoMapper(assembly);
+        services.AddSingleton<IConfigurationProvider>(provider =>
+        {
+            var mapperConfig = new MapperConfiguration(cfg => { cfg.AddMaps(assembly); });
+            mapperConfig.AssertConfigurationIsValid();
+            return mapperConfig;
+        });
+        services.AddScoped<IMapper>(provider =>
+            new Mapper(provider.GetRequiredService<IConfigurationProvider>(), provider.GetService));
+
+        // Application Services
+        services.AddScoped<ISubscriptionService, SubscriptionService>();
+        services.AddScoped<IJobPostingService, JobPostingService>();
+        services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
+        services.AddScoped<IHRPersonnelService, HRPersonnelService>();
+        services.AddScoped<IJobApplicationService, JobApplicationService>();
 
         return services;
     }
