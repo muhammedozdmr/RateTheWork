@@ -4,33 +4,8 @@ namespace RateTheWork.Domain.Common;
 /// Audit bilgileri içeren entity'ler için temel sınıf.
 /// Kim tarafından ve ne zaman oluşturuldu/güncellendi bilgilerini tutar.
 /// </summary>
-public abstract class AuditableBaseEntity : BaseEntity
+public abstract class AuditableBaseEntity : BaseEntity, ISoftDelete
 {
-    /// <summary>
-    /// Entity'yi oluşturan kullanıcının ID'si
-    /// </summary>
-    public string? CreatedBy { get; set; }
-    
-    /// <summary>
-    /// Entity'yi son güncelleyen kullanıcının ID'si
-    /// </summary>
-    public string? ModifiedBy { get; protected set; }
-    
-    /// <summary>
-    /// Soft delete için silinme zamanı
-    /// </summary>
-    public DateTime? DeletedAt { get; protected set; }
-    
-    /// <summary>
-    /// Entity'yi silen kullanıcının ID'si
-    /// </summary>
-    public string? DeletedBy { get; protected set; }
-    
-    /// <summary>
-    /// Soft delete durumu
-    /// </summary>
-    public bool IsDeleted { get; protected set; }
-
     /// <summary>
     /// Yeni AuditableBaseEntity oluşturur
     /// </summary>
@@ -42,8 +17,17 @@ public abstract class AuditableBaseEntity : BaseEntity
     /// <summary>
     /// Varolan bir entity'yi yüklerken kullanılır
     /// </summary>
-    protected AuditableBaseEntity(string id, DateTime createdAt, DateTime? modifiedAt, 
-        string? createdBy, string? modifiedBy, DateTime? deletedAt, string? deletedBy, bool isDeleted) 
+    protected AuditableBaseEntity
+    (
+        string id
+        , DateTime createdAt
+        , DateTime? modifiedAt
+        , string? createdBy
+        , string? modifiedBy
+        , DateTime? deletedAt
+        , string? deletedBy
+        , bool isDeleted
+    )
         : base(id, createdAt, modifiedAt)
     {
         CreatedBy = createdBy;
@@ -52,6 +36,31 @@ public abstract class AuditableBaseEntity : BaseEntity
         DeletedBy = deletedBy;
         IsDeleted = isDeleted;
     }
+
+    /// <summary>
+    /// Entity'yi oluşturan kullanıcının ID'si
+    /// </summary>
+    public string? CreatedBy { get; set; }
+
+    /// <summary>
+    /// Entity'yi son güncelleyen kullanıcının ID'si
+    /// </summary>
+    public string? ModifiedBy { get; protected set; }
+
+    /// <summary>
+    /// Soft delete için silinme zamanı
+    /// </summary>
+    public DateTime? DeletedAt { get; protected set; }
+
+    /// <summary>
+    /// Entity'yi silen kullanıcının ID'si
+    /// </summary>
+    public string? DeletedBy { get; protected set; }
+
+    /// <summary>
+    /// Soft delete durumu
+    /// </summary>
+    public bool IsDeleted { get; protected set; }
 
     /// <summary>
     /// Entity oluşturulurken audit bilgilerini set eder

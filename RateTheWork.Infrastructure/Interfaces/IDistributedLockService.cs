@@ -1,34 +1,36 @@
 namespace RateTheWork.Infrastructure.Interfaces;
 
 /// <summary>
-/// Distributed lock service interface'i
-/// Redis, ZooKeeper veya benzeri sistemlerle implemente edilir.
+/// Dağıtık kilit servisi arayüzü
+/// Redis, ZooKeeper veya benzeri sistemlerle uygulanır.
 /// </summary>
 public interface IDistributedLockService
 {
     /// <summary>
-    /// Lock alır
+    /// Kilit alır
     /// </summary>
-    Task<IDistributedLock?> AcquireLockAsync(string resource, TimeSpan expiry, CancellationToken cancellationToken = default);
-    
+    Task<IDistributedLock?> AcquireLockAsync
+        (string resource, TimeSpan expiry, CancellationToken cancellationToken = default);
+
     /// <summary>
-    /// Lock almayı dener (bloklamaz)
+    /// Kilit almayı dener (engellemez)
     /// </summary>
-    Task<IDistributedLock?> TryAcquireLockAsync(string resource, TimeSpan expiry, TimeSpan timeout, CancellationToken cancellationToken = default);
-    
+    Task<IDistributedLock?> TryAcquireLockAsync
+        (string resource, TimeSpan expiry, TimeSpan timeout, CancellationToken cancellationToken = default);
+
     /// <summary>
-    /// Lock'ı serbest bırakır
+    /// Kilidi serbest bırakır
     /// </summary>
     Task ReleaseLockAsync(IDistributedLock distributedLock);
-    
+
     /// <summary>
-    /// Lock süresini uzatır
+    /// Kilit süresini uzatır
     /// </summary>
     Task<bool> ExtendLockAsync(IDistributedLock distributedLock, TimeSpan extension);
 }
 
 /// <summary>
-/// Distributed lock interface'i
+/// Dağıtık kilit arayüzü
 /// </summary>
 public interface IDistributedLock : IDisposable
 {

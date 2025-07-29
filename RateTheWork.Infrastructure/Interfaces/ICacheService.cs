@@ -1,53 +1,54 @@
 namespace RateTheWork.Infrastructure.Interfaces;
 
 /// <summary>
-/// Cache service interface'i
-/// Redis, Memcached veya In-Memory cache ile implemente edilir.
+/// Önbellek servisi arayüzü
+/// Redis, Memcached veya Bellek içi önbellek ile uygulanır.
 /// </summary>
 public interface ICacheService
 {
     /// <summary>
-    /// Cache'den veri okur
+    /// Önbellekten veri okur
     /// </summary>
     Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
-    /// Cache'den veri okur veya yoksa factory metodunu çalıştırır
+    /// Önbellekten veri okur veya yoksa üretici metodunu çalıştırır
     /// </summary>
-    Task<T> GetOrSetAsync<T>(string key, Func<Task<T>> factory, TimeSpan? expiry = null, CancellationToken cancellationToken = default);
-    
+    Task<T> GetOrSetAsync<T>
+        (string key, Func<Task<T>> factory, TimeSpan? expiry = null, CancellationToken cancellationToken = default);
+
     /// <summary>
-    /// Cache'e veri yazar
+    /// Önbelleğe veri yazar
     /// </summary>
     Task SetAsync<T>(string key, T value, TimeSpan? expiry = null, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
-    /// Cache'den veri siler
+    /// Önbellekten veri siler
     /// </summary>
     Task RemoveAsync(string key, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
-    /// Pattern'e göre cache temizleme
+    /// Desene göre önbellek temizleme
     /// </summary>
     Task RemoveByPatternAsync(string pattern, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
-    /// Birden fazla key'i aynı anda siler
+    /// Birden fazla anahtarı aynı anda siler
     /// </summary>
     Task RemoveManyAsync(IEnumerable<string> keys, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
-    /// Cache'de key var mı kontrolü
+    /// Önbellekte anahtar var mı kontrolü
     /// </summary>
     Task<bool> ExistsAsync(string key, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
-    /// Cache süresi uzatma
+    /// Önbellek süresi uzatma
     /// </summary>
     Task<bool> RefreshAsync(string key, TimeSpan expiry, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
-    /// Tüm cache'i temizler (dikkatli kullanılmalı)
+    /// Tüm önbelleği temizler (dikkatli kullanılmalı)
     /// </summary>
     Task FlushAsync(CancellationToken cancellationToken = default);
 }

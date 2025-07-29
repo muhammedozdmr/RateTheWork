@@ -1,48 +1,54 @@
 namespace RateTheWork.Infrastructure.Interfaces;
 
 /// <summary>
-/// Metrik toplama service interface'i
-/// Prometheus, ApplicationInsights veya benzeri sistemlerle implemente edilir.
+/// Metrik toplama servisi arayüzü
+/// Prometheus, ApplicationInsights veya benzeri sistemlerle uygulanır.
 /// </summary>
 public interface IMetricsService
 {
     /// <summary>
-    /// Counter artırır
+    /// Sayaç artırır
     /// </summary>
     void IncrementCounter(string name, Dictionary<string, string>? tags = null);
-    
+
     /// <summary>
-    /// Counter'ı belirli bir değer kadar artırır
+    /// Sayacı belirli bir değer kadar artırır
     /// </summary>
     void IncrementCounter(string name, double value, Dictionary<string, string>? tags = null);
-    
+
     /// <summary>
-    /// Gauge değeri kaydeder
+    /// Gösterge değeri kaydeder
     /// </summary>
     void RecordGauge(string name, double value, Dictionary<string, string>? tags = null);
-    
+
     /// <summary>
     /// Histogram değeri kaydeder
     /// </summary>
     void RecordHistogram(string name, double value, Dictionary<string, string>? tags = null);
-    
+
     /// <summary>
-    /// Timer başlatır
+    /// Zamanlayıcı başlatır
     /// </summary>
     IDisposable StartTimer(string name, Dictionary<string, string>? tags = null);
-    
+
     /// <summary>
-    /// Summary değeri kaydeder
+    /// Özet değeri kaydeder
     /// </summary>
     void RecordSummary(string name, double value, Dictionary<string, string>? tags = null);
-    
+
     /// <summary>
-    /// Custom event kaydeder
+    /// Özel olay kaydeder
     /// </summary>
-    void TrackEvent(string name, Dictionary<string, string>? properties = null, Dictionary<string, double>? metrics = null);
-    
+    void TrackEvent
+        (string name, Dictionary<string, string>? properties = null, Dictionary<string, double>? metrics = null);
+
     /// <summary>
-    /// Exception kaydeder
+    /// Hata kaydeder
     /// </summary>
-    void TrackException(Exception exception, Dictionary<string, string>? properties = null, Dictionary<string, double>? metrics = null);
+    void TrackException
+    (
+        Exception exception
+        , Dictionary<string, string>? properties = null
+        , Dictionary<string, double>? metrics = null
+    );
 }

@@ -20,7 +20,7 @@ public abstract class BaseRepository<T> : IBaseRepository<T> where T : BaseEntit
     {
         if (string.IsNullOrEmpty(id))
             return null;
-            
+
         return await _dbSet.FindAsync(id);
     }
 
@@ -39,9 +39,11 @@ public abstract class BaseRepository<T> : IBaseRepository<T> where T : BaseEntit
         return await _dbSet.FirstOrDefaultAsync(predicate);
     }
 
-    public virtual async Task<IReadOnlyList<T>> GetWithIncludesAsync(
-        Expression<Func<T, bool>>? predicate,
-        params Expression<Func<T, object>>[] includes)
+    public virtual async Task<IReadOnlyList<T>> GetWithIncludesAsync
+    (
+        Expression<Func<T, bool>>? predicate
+        , params Expression<Func<T, object>>[] includes
+    )
     {
         IQueryable<T> query = _dbSet;
 
@@ -58,12 +60,14 @@ public abstract class BaseRepository<T> : IBaseRepository<T> where T : BaseEntit
         return await query.ToListAsync();
     }
 
-    public virtual async Task<(IReadOnlyList<T> items, int totalCount)> GetPagedAsync(
-        Expression<Func<T, bool>>? predicate = null,
-        int pageNumber = 1,
-        int pageSize = 10,
-        Expression<Func<T, object>>? orderBy = null,
-        bool ascending = true)
+    public virtual async Task<(IReadOnlyList<T> items, int totalCount)> GetPagedAsync
+    (
+        Expression<Func<T, bool>>? predicate = null
+        , int pageNumber = 1
+        , int pageSize = 10
+        , Expression<Func<T, object>>? orderBy = null
+        , bool ascending = true
+    )
     {
         IQueryable<T> query = _dbSet;
 
@@ -93,15 +97,15 @@ public abstract class BaseRepository<T> : IBaseRepository<T> where T : BaseEntit
 
     public virtual async Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null)
     {
-        return predicate == null 
-            ? await _dbSet.CountAsync() 
+        return predicate == null
+            ? await _dbSet.CountAsync()
             : await _dbSet.CountAsync(predicate);
     }
 
     public virtual async Task<bool> AnyAsync(Expression<Func<T, bool>>? predicate = null)
     {
-        return predicate == null 
-            ? await _dbSet.AnyAsync() 
+        return predicate == null
+            ? await _dbSet.AnyAsync()
             : await _dbSet.AnyAsync(predicate);
     }
 
@@ -149,7 +153,7 @@ public abstract class BaseRepository<T> : IBaseRepository<T> where T : BaseEntit
         await Task.CompletedTask;
     }
 
-    // Old interface compatibility
+    // Eski arayüz uyumluluğu
     public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
     {
         return await GetAsync(predicate);

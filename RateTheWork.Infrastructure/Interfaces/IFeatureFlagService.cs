@@ -1,44 +1,44 @@
 namespace RateTheWork.Infrastructure.Interfaces;
 
 /// <summary>
-/// Feature flag service interface'i
-/// LaunchDarkly, ConfigCat veya custom implementation ile kullanılır.
+/// Özellik bayrağı servisi arayüzü
+/// LaunchDarkly, ConfigCat veya özel uygulama ile kullanılır.
 /// </summary>
 public interface IFeatureFlagService
 {
     /// <summary>
-    /// Feature aktif mi kontrolü
+    /// Özellik aktif mi kontrolü
     /// </summary>
     Task<bool> IsEnabledAsync(string feature, string? userId = null);
-    
+
     /// <summary>
-    /// Feature aktif mi kontrolü (context ile)
+    /// Özellik aktif mi kontrolü (bağlam ile)
     /// </summary>
     Task<bool> IsEnabledAsync(string feature, FeatureContext context);
-    
+
     /// <summary>
-    /// Feature variant'ını getirir
+    /// Özellik varyantını getirir
     /// </summary>
     Task<T?> GetVariantAsync<T>(string feature, string? userId = null);
-    
+
     /// <summary>
-    /// Feature variant'ını getirir (context ile)
+    /// Özellik varyantını getirir (bağlam ile)
     /// </summary>
     Task<T?> GetVariantAsync<T>(string feature, FeatureContext context);
-    
+
     /// <summary>
-    /// Tüm aktif feature'ları getirir
+    /// Tüm aktif özellikleri getirir
     /// </summary>
     Task<Dictionary<string, bool>> GetAllFeaturesAsync(string? userId = null);
-    
+
     /// <summary>
-    /// Feature evaluation detaylarını getirir
+    /// Özellik değerlendirme detaylarını getirir
     /// </summary>
     Task<FeatureEvaluation> EvaluateAsync(string feature, FeatureContext context);
 }
 
 /// <summary>
-/// Feature flag context
+/// Özellik bayrağı bağlamı
 /// </summary>
 public class FeatureContext
 {
@@ -49,7 +49,7 @@ public class FeatureContext
 }
 
 /// <summary>
-/// Feature evaluation sonucu
+/// Özellik değerlendirme sonucu
 /// </summary>
 public class FeatureEvaluation
 {

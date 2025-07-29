@@ -1,13 +1,20 @@
 using Microsoft.EntityFrameworkCore.Storage;
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Interfaces.Repositories;
+using IUnitOfWork = RateTheWork.Application.Common.Interfaces.IUnitOfWork;
 
 namespace RateTheWork.Infrastructure.Persistence.Repositories;
 
-public class UnitOfWork : Application.Common.Interfaces.IUnitOfWork, Domain.Interfaces.Repositories.IUnitOfWork
+public class UnitOfWork : IUnitOfWork, Domain.Interfaces.Repositories.IUnitOfWork
 {
     private readonly ApplicationDbContext _context;
+    private readonly Dictionary<Type, object> _repositories = new();
+    private ICompanyRepository? _companies;
+    private ICompanyBranchRepository? _companyBranches;
     private IDbContextTransaction? _currentTransaction;
+    private IJobApplicationRepository? _jobApplications;
+    private IJobPostingRepository? _jobPostings;
+    private IReviewRepository? _reviews;
     private IUserRepository? _users;
 
     public UnitOfWork(ApplicationDbContext context)
@@ -15,15 +22,15 @@ public class UnitOfWork : Application.Common.Interfaces.IUnitOfWork, Domain.Inte
         _context = context;
     }
 
-    // Application.Common.Interfaces.IUnitOfWork implementation
+    // Application.Common.Interfaces.IUnitOfWork uygulaması
     public IUserRepository Users => _users ??= new UserRepository(_context);
-    
-    // Stub implementations for now - TODO: Implement these repositories
-    public ICompanyRepository Companies => throw new NotImplementedException();
-    public IReviewRepository Reviews => throw new NotImplementedException();
-    public IJobPostingRepository JobPostings => throw new NotImplementedException();
-    public IJobApplicationRepository JobApplications => throw new NotImplementedException();
-    public ICompanyBranchRepository CompanyBranches => throw new NotImplementedException();
+    public ICompanyRepository Companies => _companies ??= new CompanyRepository(_context);
+    public IReviewRepository Reviews => _reviews ??= new ReviewRepository(_context);
+    public IJobPostingRepository JobPostings => _jobPostings ??= new JobPostingRepository(_context);
+    public IJobApplicationRepository JobApplications => _jobApplications ??= new JobApplicationRepository(_context);
+    public ICompanyBranchRepository CompanyBranches => _companyBranches ??= new CompanyBranchRepository(_context);
+
+    // TODO: Bu depoları uygula
     public IAuditLogRepository AuditLogs => throw new NotImplementedException();
     public INotificationRepository Notifications => throw new NotImplementedException();
     public IReviewVoteRepository ReviewVotes => throw new NotImplementedException();
@@ -38,7 +45,7 @@ public class UnitOfWork : Application.Common.Interfaces.IUnitOfWork, Domain.Inte
         return await _context.SaveChangesAsync(cancellationToken);
     }
 
-    // Application.Common.Interfaces.IUnitOfWork methods with CancellationToken
+    // CancellationToken ile Application.Common.Interfaces.IUnitOfWork metodları
     public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
         _currentTransaction = await _context.Database.BeginTransactionAsync(cancellationToken);
@@ -82,7 +89,7 @@ public class UnitOfWork : Application.Common.Interfaces.IUnitOfWork, Domain.Inte
         }
     }
 
-    // Domain.Interfaces.Repositories.IUnitOfWork methods without CancellationToken
+    // CancellationToken olmadan Domain.Interfaces.Repositories.IUnitOfWork metodları
     public async Task BeginTransactionAsync()
     {
         await BeginTransactionAsync(CancellationToken.None);
@@ -98,25 +105,42 @@ public class UnitOfWork : Application.Common.Interfaces.IUnitOfWork, Domain.Inte
         await RollbackTransactionAsync(CancellationToken.None);
     }
 
-    // Domain.Interfaces.Repositories.IUnitOfWork implementation
+    // Domain.Interfaces.Repositories.IUnitOfWork uygulaması
     public IRepository<T> Repository<T>() where T : BaseEntity
     {
-        throw new NotImplementedException();
+        var type = typeof(T);
+        if (!_repositories.ContainsKey(type))
+        {
+            _repositories[type] = new GenericRepository<T>(_context);
+        }
+
+        return (IRepository<T>)_repositories[type];
     }
 
     public TRepository GetCustomRepository<TRepository>() where TRepository : class
     {
-        throw new NotImplementedException();
-    }
+        var repositoryType = typeof(TRepository);
 
-    public async Task<int> CompleteAsync()
-    {
-        return await SaveChangesAsync();
+        return repositoryType.Name switch
+        {
+            nameof(IUserRepository) => (TRepository)(object)Users
+            , nameof(ICompanyRepository) => (TRepository)(object)Companies
+            , nameof(IReviewRepository) => (TRepository)(object)Reviews
+            , nameof(IJobPostingRepository) => (TRepository)(object)JobPostings
+            , nameof(IJobApplicationRepository) => (TRepository)(object)JobApplications
+            , nameof(ICompanyBranchRepository) => (TRepository)(object)CompanyBranches
+            , _ => throw new NotImplementedException($"Repository {repositoryType.Name} not implemented")
+        };
     }
 
     public void Dispose()
     {
         _context.Dispose();
         _currentTransaction?.Dispose();
+    }
+
+    public async Task<int> CompleteAsync()
+    {
+        return await SaveChangesAsync();
     }
 }

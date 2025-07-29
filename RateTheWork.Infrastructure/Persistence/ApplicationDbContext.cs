@@ -1,7 +1,13 @@
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using RateTheWork.Domain.Entities;
-using RateTheWork.Domain.Common;
-using System.Reflection;
+using RateTheWork.Domain.ValueObjects.Common;
+using RateTheWork.Domain.ValueObjects.Company;
+using RateTheWork.Domain.ValueObjects.CV;
+using RateTheWork.Domain.ValueObjects.Moderation;
+using RateTheWork.Domain.ValueObjects.Review;
+using RateTheWork.Domain.ValueObjects.Subscription;
+using RateTheWork.Domain.ValueObjects.User;
 
 namespace RateTheWork.Infrastructure.Persistence;
 
@@ -35,56 +41,56 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
-        // Ignore value objects that are not entities
-        // Company value objects
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Company.CompanyReviewStatistics>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Company.CompanyGrowthAnalysis>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Company.CompanyRiskScore>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Company.CompanyCategory>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Company.TaxId>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Company.MersisNo>();
-        
-        // CV value objects
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.CV.CVAnalysisResult>();
-        
-        // Moderation value objects
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Moderation.ModerationResult>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Moderation.ModerationDetails>();
-        
-        // Review value objects
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Review.ReviewQualityScore>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Review.SentimentAnalysisResult>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Review.ReviewTrends>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Review.ContentCategory>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Review.VoteStatus>();
-        
-        // User value objects
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.User.UserActivitySummary>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.User.UserBehaviorScore>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.User.UserPreferences>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.User.BadgeProgress>();
-        
-        // Subscription value objects
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Subscription.SubscriptionPlan>();
-        
-        // Common value objects
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Common.Address>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Common.Coordinate>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Common.DateRange>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Common.Email>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Common.Money>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Common.PhoneNumber>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Common.Rating>();
-        modelBuilder.Ignore<RateTheWork.Domain.ValueObjects.Common.ValueObject>();
-        
+
+        // Entity olmayan değer nesnelerini yok say
+        // Şirket değer nesneleri
+        modelBuilder.Ignore<CompanyReviewStatistics>();
+        modelBuilder.Ignore<CompanyGrowthAnalysis>();
+        modelBuilder.Ignore<CompanyRiskScore>();
+        modelBuilder.Ignore<CompanyCategory>();
+        modelBuilder.Ignore<TaxId>();
+        modelBuilder.Ignore<MersisNo>();
+
+        // CV değer nesneleri
+        modelBuilder.Ignore<CVAnalysisResult>();
+
+        // Moderasyon değer nesneleri
+        modelBuilder.Ignore<ModerationResult>();
+        modelBuilder.Ignore<ModerationDetails>();
+
+        // İnceleme değer nesneleri
+        modelBuilder.Ignore<ReviewQualityScore>();
+        modelBuilder.Ignore<SentimentAnalysisResult>();
+        modelBuilder.Ignore<ReviewTrends>();
+        modelBuilder.Ignore<ContentCategory>();
+        modelBuilder.Ignore<VoteStatus>();
+
+        // Kullanıcı değer nesneleri
+        modelBuilder.Ignore<UserActivitySummary>();
+        modelBuilder.Ignore<UserBehaviorScore>();
+        modelBuilder.Ignore<UserPreferences>();
+        modelBuilder.Ignore<BadgeProgress>();
+
+        // Abonelik değer nesneleri
+        modelBuilder.Ignore<SubscriptionPlan>();
+
+        // Ortak değer nesneleri
+        modelBuilder.Ignore<Address>();
+        modelBuilder.Ignore<Coordinate>();
+        modelBuilder.Ignore<DateRange>();
+        modelBuilder.Ignore<Email>();
+        modelBuilder.Ignore<Money>();
+        modelBuilder.Ignore<PhoneNumber>();
+        modelBuilder.Ignore<Rating>();
+        modelBuilder.Ignore<ValueObject>();
+
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // BaseEntity's CreatedAt is set in constructor, ModifiedAt is managed by domain logic
-        // No need to override timestamps here
+        // BaseEntity'nin CreatedAt değeri yapıcıda ayarlanır, ModifiedAt alan adı mantığı tarafından yönetilir
+        // Burada zaman damgalarını geçersiz kılmaya gerek yok
         return base.SaveChangesAsync(cancellationToken);
     }
 }

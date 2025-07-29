@@ -9,50 +9,50 @@ namespace RateTheWork.Infrastructure.Interfaces;
 public interface IBackgroundJobService
 {
     /// <summary>
-    /// Job'ı hemen çalıştırır
+    /// İşi hemen çalıştırır
     /// </summary>
     Task<string> EnqueueAsync<T>(Expression<Func<T, Task>> methodCall);
-    
+
     /// <summary>
-    /// Job'ı zamanlanmış olarak ekler
+    /// İşi zamanlanmış olarak ekler
     /// </summary>
     Task<string> ScheduleAsync<T>(Expression<Func<T, Task>> methodCall, TimeSpan delay);
-    
+
     /// <summary>
-    /// Job'ı belirli bir tarihte çalıştırır
+    /// İşi belirli bir tarihte çalıştırır
     /// </summary>
     Task<string> ScheduleAsync<T>(Expression<Func<T, Task>> methodCall, DateTimeOffset enqueueAt);
-    
+
     /// <summary>
-    /// Tekrarlı job ekler
+    /// Tekrarlı iş ekler
     /// </summary>
     Task AddRecurringAsync<T>(string jobId, Expression<Func<T, Task>> methodCall, string cronExpression);
-    
+
     /// <summary>
-    /// Job'ı iptal eder
+    /// İşi iptal eder
     /// </summary>
     Task<bool> DeleteAsync(string jobId);
-    
+
     /// <summary>
-    /// Tekrarlı job'ı siler
+    /// Tekrarlı işi siler
     /// </summary>
     Task<bool> RemoveRecurringAsync(string jobId);
-    
+
     /// <summary>
-    /// Job durumunu sorgular
+    /// İş durumunu sorgular
     /// </summary>
     Task<JobStatus> GetJobStatusAsync(string jobId);
 }
 
 /// <summary>
-/// Job durumu
+/// İş durumu
 /// </summary>
 public enum JobStatus
 {
-    Scheduled,
-    Enqueued,
-    Processing,
-    Succeeded,
-    Failed,
-    Deleted
+    Scheduled
+    , Enqueued
+    , Processing
+    , Succeeded
+    , Failed
+    , Deleted
 }

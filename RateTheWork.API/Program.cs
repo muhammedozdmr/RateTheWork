@@ -1,17 +1,49 @@
+using Hangfire;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using RateTheWork.API.Filters;
+using RateTheWork.Api.Middleware;
 using RateTheWork.Application;
 using RateTheWork.Infrastructure;
+using RateTheWork.Infrastructure.Configuration;
+using RateTheWork.Infrastructure.HealthChecks;
+using RateTheWork.Infrastructure.Jobs;
+using RateTheWork.Infrastructure.Metrics;
+using RateTheWork.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog yapılandırması
+builder.Host.UseSerilog(SerilogConfiguration.Configure);
+
+// Add environment variables to configuration
+builder.Configuration.AddEnvironmentVariables();
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// OpenTelemetry yapılandırması
+builder.Services.AddOpenTelemetryConfiguration();
+
 // Add Health Checks
 builder.Services.AddHealthChecks()
-    .AddDbContextCheck<RateTheWork.Infrastructure.Persistence.ApplicationDbContext>("database");
+    .AddDbContextCheck<ApplicationDbContext>(
+        name: "database-context",
+        tags: new[] { "ready", "database" })
+    .AddCheck<DatabaseWriteHealthCheck>(
+        name: "database-write",
+        tags: new[] { "ready", "database" })
+    .AddCheck<DatabaseMigrationHealthCheck>(
+        name: "database-migrations",
+        tags: new[] { "ready", "database" })
+    .AddCheck<CloudflareKVHealthCheck>(
+        name: "cloudflare-kv",
+        tags: new[] { "ready", "external" })
+    .AddCheck<RedisHealthCheck>(
+        name: "redis",
+        tags: new[] { "ready", "external", "cache" });
 
 // Add Application Layer
 builder.Services.AddApplication();
@@ -33,12 +65,33 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Background job'ları zamanla
+RecurringJob.AddOrUpdate<DataCleanupJob>(
+    "cleanup-soft-deleted",
+    job => job.CleanupSoftDeletedRecordsAsync(90),
+    Cron.Daily(3, 0)); // Her gün saat 03:00'te
+
+RecurringJob.AddOrUpdate<DataCleanupJob>(
+    "cleanup-expired-verifications",
+    job => job.CleanupExpiredVerificationRequestsAsync(),
+    Cron.Hourly); // Her saat başı
+
+RecurringJob.AddOrUpdate<DataCleanupJob>(
+    "close-expired-job-postings",
+    job => job.CloseExpiredJobPostingsAsync(),
+    Cron.Daily(0, 0)); // Her gün gece yarısı
+
+RecurringJob.AddOrUpdate<ReportGenerationJob>(
+    "weekly-system-report",
+    job => job.GenerateWeeklySystemReportAsync(),
+    Cron.Weekly(DayOfWeek.Monday, 9, 0)); // Her pazartesi sabah 09:00'da
+
 // Apply migrations on startup
 using (var scope = app.Services.CreateScope())
 {
     try
     {
-        var dbContext = scope.ServiceProvider.GetRequiredService<RateTheWork.Infrastructure.Persistence.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         dbContext.Database.Migrate();
         Console.WriteLine("Database migrations applied successfully.");
     }
@@ -60,27 +113,57 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+
+// Metrics middleware
+app.UseMiddleware<MetricsMiddleware>();
+
+// Rate limiting middleware
+app.UseMiddleware<RateLimitingMiddleware>();
+
 app.UseAuthorization();
 
-app.MapControllers();
-app.MapHealthChecks("/health");
-app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+// Hangfire Dashboard
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
-    Predicate = check => check.Tags.Contains("ready")
+    DashboardTitle = "RateTheWork Background Jobs", Authorization = new[] { new HangfireAuthorizationFilter() }
 });
-app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+
+app.MapControllers();
+
+// Health check endpoints with detailed responses
+app.MapHealthChecks("/health", new HealthCheckOptions
 {
-    Predicate = _ => false
+    ResponseWriter = HealthCheckResponseWriter.WriteResponse
+});
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready"), ResponseWriter = HealthCheckResponseWriter.WriteResponse
+});
+
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false, ResponseWriter = HealthCheckResponseWriter.WriteResponse
+});
+
+app.MapHealthChecks("/health/database", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("database"), ResponseWriter = HealthCheckResponseWriter.WriteResponse
+});
+
+app.MapHealthChecks("/health/external", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("external"), ResponseWriter = HealthCheckResponseWriter.WriteResponse
 });
 
 // Root endpoint
-app.MapGet("/", () => Results.Ok(new 
+app.MapGet("/", () => Results.Ok(new
 {
-    service = "RateTheWork API",
-    version = "1.0.0",
-    status = "running",
-    documentation = "/swagger",
-    health = "/health"
+    service = "RateTheWork API", version = "1.0.0", status = "running", documentation = "/swagger", health = new
+    {
+        all = "/health", ready = "/health/ready", live = "/health/live", database = "/health/database"
+        , external = "/health/external"
+    }
 }));
 
 app.Run();
