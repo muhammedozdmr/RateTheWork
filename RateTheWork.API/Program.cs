@@ -9,6 +9,10 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Add Health Checks
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<RateTheWork.Infrastructure.Persistence.ApplicationDbContext>("database");
+
 // Add Application Layer
 builder.Services.AddApplication();
 
@@ -57,6 +61,26 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthorization();
+
 app.MapControllers();
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false
+});
+
+// Root endpoint
+app.MapGet("/", () => Results.Ok(new 
+{
+    service = "RateTheWork API",
+    version = "1.0.0",
+    status = "running",
+    documentation = "/swagger",
+    health = "/health"
+}));
 
 app.Run();
