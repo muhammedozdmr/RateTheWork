@@ -19,14 +19,24 @@ public static class DependencyInjection
             ?? Environment.GetEnvironmentVariable("DATABASE_URL")
             ?? throw new InvalidOperationException("DATABASE_URL not configured");
             
-        // Convert Railway DATABASE_URL to Npgsql format
-        var builder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString)
+        // Convert Railway DATABASE_URL to Npgsql format if it's a URL
+        string npgsqlConnectionString;
+        if (connectionString.StartsWith("postgresql://") || connectionString.StartsWith("postgres://"))
         {
-            SslMode = Npgsql.SslMode.Require
-        };
+            // Parse URL format: postgresql://user:password@host:port/database
+            var uri = new Uri(connectionString.Replace("postgres://", "postgresql://"));
+            var userInfo = uri.UserInfo.Split(':');
+            
+            npgsqlConnectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+        }
+        else
+        {
+            // Already in standard format
+            npgsqlConnectionString = connectionString;
+        }
 
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(builder.ConnectionString));
+            options.UseNpgsql(npgsqlConnectionString));
 
         // Secret Management
         services.AddSingleton<ISecretService, CloudflareKVService>();
