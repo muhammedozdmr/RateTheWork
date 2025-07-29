@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-#
+# 
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Domain", "RateTheWork.Domain\RateTheWork.Domain.csproj", "{481DF7BD-95C0-4AC2-9376-5A14F1D01266}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Application", "RateTheWork.Application\RateTheWork.Application.csproj", "{A464503E-ECF0-4A70-A665-85BCC28511B8}"
@@ -16,6 +16,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Integration.Tests", "RateTheWork.Integration.Tests\RateTheWork.Integration.Tests.csproj", "{B2C3D4E5-F6A7-8901-BC23-45678901BCDE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.E2E.Tests", "RateTheWork.E2E.Tests\RateTheWork.E2E.Tests.csproj", "{C3D4E5F6-A7B8-9012-CD34-56789012CDEF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.API", "RateTheWork.API\RateTheWork.API.csproj", "{096ACFB9-D198-406B-825A-20C8E7578091}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,6 +57,10 @@ Global
 		{C3D4E5F6-A7B8-9012-CD34-56789012CDEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C3D4E5F6-A7B8-9012-CD34-56789012CDEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C3D4E5F6-A7B8-9012-CD34-56789012CDEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{096ACFB9-D198-406B-825A-20C8E7578091}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{096ACFB9-D198-406B-825A-20C8E7578091}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{096ACFB9-D198-406B-825A-20C8E7578091}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{096ACFB9-D198-406B-825A-20C8E7578091}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
