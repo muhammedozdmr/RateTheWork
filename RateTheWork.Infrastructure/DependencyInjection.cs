@@ -30,24 +30,17 @@ public static class DependencyInjection
         services.AddSingleton<ISecretService, CloudflareKVService>();
         
         // Email Service
-        services.AddScoped<IEmailService, SendGridEmailService>();
+        // TODO: Implement SendGridEmailService
+        // services.AddScoped<IEmailService, SendGridEmailService>();
         
         // SMS Service  
-        services.AddScoped<IPushNotificationService, TwilioSmsService>();
+        // TODO: Implement TwilioSmsService
+        // services.AddScoped<IPushNotificationService, TwilioSmsService>();
         
         // Repositories
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<Application.Common.Interfaces.IUnitOfWork, UnitOfWork>();
+        services.AddScoped<Domain.Interfaces.Repositories.IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<ICompanyRepository, CompanyRepository>();
-        services.AddScoped<IReviewRepository, ReviewRepository>();
-        services.AddScoped<IReviewVoteRepository, ReviewVoteRepository>();
-        services.AddScoped<IReportRepository, ReportRepository>();
-        services.AddScoped<IJobPostingRepository, JobPostingRepository>();
-        services.AddScoped<IDepartmentRepository, DepartmentRepository>();
-        services.AddScoped<IContractorReviewRepository, ContractorReviewRepository>();
-        services.AddScoped<ICVApplicationRepository, CVApplicationRepository>();
-        services.AddScoped<IJobApplicationRepository, JobApplicationRepository>();
-        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
         return services;
     }
