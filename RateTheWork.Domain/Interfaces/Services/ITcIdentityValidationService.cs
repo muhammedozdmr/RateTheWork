@@ -24,4 +24,9 @@ public interface ITcIdentityValidationService
     /// Yabancı kimlik numarası kontrolü
     /// </summary>
     bool IsValidForeignIdentity(string identityNumber);
+    
+    /// <summary>
+    /// Devlet servisi üzerinden doğrulama (MERNİS alias)
+    /// </summary>
+    Task<bool> ValidateWithGovernmentServiceAsync(string tcIdentity, string firstName, string lastName, DateTime birthDate);
 }

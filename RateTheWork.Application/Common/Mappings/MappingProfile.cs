@@ -143,7 +143,7 @@ public class MappingProfile : Profile
         CreateMap<AuditLog, AuditLogDto>()
             .ForMember(dest => dest.LogId, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.AdminUsername, opt => opt.Ignore()) // Handler'da AdminUser'dan alınacak
-            .ForMember(dest => dest.ActionDate, opt => opt.MapFrom(src => src.Timestamp));
+            .ForMember(dest => dest.ActionDate, opt => opt.MapFrom(src => src.CreatedAt));
     }
 }
 

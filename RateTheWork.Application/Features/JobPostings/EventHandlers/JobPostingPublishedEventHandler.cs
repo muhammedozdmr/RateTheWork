@@ -70,7 +70,7 @@ public class JobPostingPublishedEventHandler : INotificationHandler<JobPostingPu
                                 ja.IsActive &&
                                 (ja.Keywords.Contains(jobPosting.Title) ||
                                  ja.City == jobPosting.City ||
-                                 ja.JobType == jobPosting.JobType)))
+                                 ja.JobType == jobPosting.JobType.ToString())))
                 .Take(1000) // Performans için limit
                 .ToListAsync(cancellationToken);
 
@@ -102,26 +102,19 @@ public class JobPostingPublishedEventHandler : INotificationHandler<JobPostingPu
                 await _emailService.SendEmailAsync(
                     to: user.Email,
                     subject: $"Yeni İş İlanı: {jobPosting.Title}",
-                    template: "job.alert.new_posting",
-                    model: new
-                    {
-                        UserName = user.AnonymousUsername, JobTitle = jobPosting.Title
-                        , CompanyName = jobPosting.Company?.Name, City = jobPosting.City
-                        , JobType = jobPosting.JobType.ToString(), ViewUrl = $"/jobs/{jobPosting.Id}"
-                    },
-                    cancellationToken);
+                    body: $"Merhaba {user.AnonymousUsername},\n\n{jobPosting.Company?.Name} firması {jobPosting.Title} pozisyonu için ilan verdi.",
+                    cancellationToken: cancellationToken);
             }
 
             // Push notification
             await _pushNotificationService.SendAsync(
                 userId: user.Id,
-                title: "Yeni İş İlanı",
                 message: $"{jobPosting.Company?.Name} firması {jobPosting.Title} pozisyonu için arama yapıyor",
                 data: new Dictionary<string, string>
                 {
                     ["jobPostingId"] = jobPosting.Id, ["companyId"] = jobPosting.CompanyId
                 },
-                cancellationToken);
+                cancellationToken: cancellationToken);
         }
         catch (Exception ex)
         {

@@ -89,4 +89,9 @@ public interface IContentModerationService
     /// Spam pattern kontrolü yapar
     /// </summary>
     Task<bool> IsSpamPatternAsync(string content);
+    
+    /// <summary>
+    /// Metin içeriğini modere eder (alias for ModerateContentAsync)
+    /// </summary>
+    Task<ModerationResult> ModerateTextAsync(string text, string language = "tr");
 }

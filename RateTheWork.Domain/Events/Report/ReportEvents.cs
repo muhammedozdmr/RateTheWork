@@ -1,3 +1,5 @@
+using RateTheWork.Domain.Events;
+
 namespace RateTheWork.Domain.Events.Report;
 
 /// <summary>

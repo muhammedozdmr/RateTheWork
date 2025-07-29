@@ -69,38 +69,70 @@ public class AuditingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest,
             userName, userId, requestName, timestamp);
 
         var startTime = _dateTimeService.Now;
-        var response = default(TResponse);
         var success = false;
         string? errorMessage = null;
+        Exception? thrownException = null;
 
         try
         {
-            response = await next();
+            var response = await next();
             success = true;
+            
+            var duration = _dateTimeService.Now - startTime;
+            await LogAuditIfNeeded(request, requestData, requestName, userId, userName, 
+                duration, success, errorMessage, cancellationToken);
+                
             return response;
         }
         catch (Exception ex)
         {
             errorMessage = ex.Message;
+            thrownException = ex;
+            
+            var duration = _dateTimeService.Now - startTime;
+            await LogAuditIfNeeded(request, requestData, requestName, userId, userName, 
+                duration, success, errorMessage, cancellationToken);
+                
             throw;
         }
-        finally
+    }
+    
+    private async Task LogAuditIfNeeded(TRequest request, string requestData, string requestName, 
+        string? userId, string? userName, TimeSpan duration, bool success, string? errorMessage, 
+        CancellationToken cancellationToken)
+    {
+        // Skip audit logging for non-admin users
+        if (!_currentUserService.Roles.Contains("Admin"))
         {
-            var duration = _dateTimeService.Now - startTime;
+            _logger.LogInformation(
+                "User {UserName} ({UserId}) completed {RequestName} in {Duration}ms with result: {Success}",
+                userName, userId, requestName, duration.TotalMilliseconds, success);
+            return;
+        }
 
-            // Create audit log entry
-            var auditLog = new AuditLog
+        // Create audit log entry for admin actions
+        var entityType = GetEntityType(request);
+        var entityId = GetEntityId(request);
+        
+        if (!string.IsNullOrEmpty(entityType) && !string.IsNullOrEmpty(entityId) && !string.IsNullOrEmpty(userId))
+        {
+            var auditLog = AuditLog.Create(
+                adminUserId: userId,
+                actionType: requestName,
+                entityType: entityType,
+                entityId: entityId,
+                details: requestData,
+                ipAddress: GetIpAddress(),
+                userAgent: GetUserAgent()
+            );
+
+            if (!success)
             {
-                UserId = userId, UserName = userName, Action = requestName, EntityType = GetEntityType(request)
-                , EntityId = GetEntityId(request), Timestamp = timestamp, Duration = (int)duration.TotalMilliseconds
-                , Success = success, ErrorMessage = errorMessage, IpAddress = _currentUserService.IpAddress
-                , UserAgent = _currentUserService.UserAgent, RequestData = requestData
-                , ResponseData = success && response != null ? SerializeResponse(response) : null
-                , Changes = GetChanges(request, response)
-            };
+                auditLog.MarkAsFailed(errorMessage ?? "Unknown error");
+            }
 
             _context.AuditLogs.Add(auditLog);
-
+            
             try
             {
                 await _context.SaveChangesAsync(cancellationToken);
@@ -109,12 +141,26 @@ public class AuditingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest,
             {
                 _logger.LogError(ex, "Failed to save audit log for {RequestName}", requestName);
             }
-
-            // Log completion
-            _logger.LogInformation(
-                "User {UserName} ({UserId}) completed {RequestName} in {Duration}ms with result: {Success}",
-                userName, userId, requestName, duration.TotalMilliseconds, success);
         }
+
+        // Log completion
+        _logger.LogInformation(
+            "User {UserName} ({UserId}) completed {RequestName} in {Duration}ms with result: {Success}",
+            userName, userId, requestName, duration.TotalMilliseconds, success);
+    }
+    
+    private string? GetIpAddress()
+    {
+        // This would typically come from HttpContext in the infrastructure layer
+        // For now, return null as it should be injected via ICurrentUserService
+        return null;
+    }
+    
+    private string? GetUserAgent()
+    {
+        // This would typically come from HttpContext in the infrastructure layer
+        // For now, return null as it should be injected via ICurrentUserService
+        return null;
     }
 
     private static string? GetEntityType(TRequest request)

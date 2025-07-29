@@ -66,17 +66,18 @@ public class GetReviewDetailsQueryHandler : IRequestHandler<GetReviewDetailsQuer
         {
             // Önce kullanıcı rozetlerini al
             var badgeList = new List<BadgeInfo>();
-            var userBadges = await _unitOfWork.UserBadges.GetAsync(ub => ub.UserId == author.Id);
-            if (userBadges.Any())
-            {
-                List<string?> badgeIds = userBadges.Select(ub => ub.BadgeId).ToList();
-                var badges = await _unitOfWork.Badges.GetAsync(b => badgeIds.Contains(b.Id));
-                badgeList = badges.Select(b => new BadgeInfo
-                {
-                    Name = b.Name,
-                    IconUrl = b.IconUrl
-                }).ToList();
-            }
+            // Temporarily comment out badge loading
+            // var userBadges = await _unitOfWork.UserBadges.GetAsync(ub => ub.UserId == author.Id);
+            // if (userBadges.Any())
+            // {
+            //     List<string?> badgeIds = userBadges.Select(ub => ub.BadgeId).ToList();
+            //     var badges = await _unitOfWork.Badges.GetAsync(b => badgeIds.Contains(b.Id));
+            //     badgeList = badges.Select(b => new BadgeInfo
+            //     {
+            //         Name = b.Name,
+            //         IconUrl = b.IconUrl
+            //     }).ToList();
+            // }
 
             // Tek seferde tüm author bilgilerini ata
             reviewDetail = reviewDetail with 
@@ -105,7 +106,7 @@ public class GetReviewDetailsQueryHandler : IRequestHandler<GetReviewDetailsQuer
                 {
                     CompanyId = company.Id,
                     Name = company.Name,
-                    Sector = company.Sector,
+                    Sector = company.Sector.ToString(),
                     LogoUrl = company.LogoUrl,
                     AverageRating = company.AverageRating,
                     TotalReviews = company.TotalReviews
@@ -169,7 +170,7 @@ public class GetReviewDetailsQueryHandler : IRequestHandler<GetReviewDetailsQuer
                     Reason = r.ReportReason, 
                     Details = r.ReportDetails, 
                     ReportedAt = r.ReportedAt,
-                    Status = r.Status
+                    Status = r.Status.ToString()
                 }).ToList();
             }
     

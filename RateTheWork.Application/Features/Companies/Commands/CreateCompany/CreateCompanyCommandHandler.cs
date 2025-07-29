@@ -3,9 +3,8 @@ using MediatR;
 using RateTheWork.Application.Common.Exceptions;
 using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Domain.Entities;
-using RateTheWork.Domain.Enums;
+using RateTheWork.Domain.Enums.Company;
 using RateTheWork.Domain.Interfaces;
-using RateTheWork.Domain.Interfaces.Repositories;
 
 namespace RateTheWork.Application.Features.Companies.Commands.CreateCompany;
 /// <summary>
@@ -77,6 +76,21 @@ public record CreateCompanyCommand : IRequest<CreateCompanyResult>
     /// Facebook URL (opsiyonel)
     /// </summary>
     public string? FacebookUrl { get; init; }
+    
+    /// <summary>
+    /// Şehir
+    /// </summary>
+    public string City { get; init; } = string.Empty;
+    
+    /// <summary>
+    /// Kuruluş yılı
+    /// </summary>
+    public int EstablishedYear { get; init; }
+    
+    /// <summary>
+    /// Şirket tipi
+    /// </summary>
+    public string CompanyType { get; init; } = string.Empty;
 }
 
 /// <summary>
@@ -146,17 +160,30 @@ public class CreateCompanyCommandHandler : IRequestHandler<CreateCompanyCommand,
             throw new BusinessRuleException("MERSIS_EXISTS", "Bu MERSİS numarası ile kayıtlı bir şirket zaten mevcut.");
         }
 
-        //TODO: prevate constructordan dolayı atama yapamıyorum
-        // 5. Yeni şirket oluştur
-        var company = new Company.Create(
-            name = request.Name.Trim(),
-            taxId = request.TaxId.Trim(),
-            mersisNo = request.MersisNo.Trim(),
-            sector = request.Sector,
-            address = request.Address.Trim(),
-            phoneNumber = request.PhoneNumber.Trim(),
-            email = request.Email.Trim().ToLowerInvariant(),
-            websiteUrl = request.WebsiteUrl.Trim()
+        // 5. Enum dönüşümleri
+        if (!Enum.TryParse<Domain.Enums.Company.CompanyType>(request.CompanyType, out var companyType))
+        {
+            throw new BusinessRuleException("INVALID_COMPANY_TYPE", "Geçersiz şirket tipi.");
+        }
+        
+        if (!Enum.TryParse<Domain.Enums.Company.CompanySector>(request.Sector, out var companySector))
+        {
+            throw new BusinessRuleException("INVALID_SECTOR", "Geçersiz sektör.");
+        }
+        
+        // 6. Yeni şirket oluştur
+        var company = Company.Create(
+            name: request.Name.Trim(),
+            taxId: request.TaxId.Trim(),
+            mersisNo: request.MersisNo.Trim(),
+            companyType: companyType,
+            sector: companySector,
+            city: request.City.Trim(),
+            address: request.Address.Trim(),
+            phoneNumber: request.PhoneNumber.Trim(),
+            email: request.Email.Trim().ToLowerInvariant(),
+            websiteUrl: request.WebsiteUrl.Trim(),
+            establishedYear: request.EstablishedYear
         );
 
         // 6. Opsiyonel alanları set et
@@ -287,7 +314,7 @@ public class CreateCompanyCommandValidator : AbstractValidator<CreateCompanyComm
 
     private bool BeValidSector(string sector)
     {
-        return Sectors.GetAll().Contains(sector);
+        return Sectors.All.Contains(sector);
     }
 
     private bool BeAValidUrl(string? url)

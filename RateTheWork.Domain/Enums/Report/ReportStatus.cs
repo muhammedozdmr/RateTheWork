@@ -6,27 +6,32 @@ namespace RateTheWork.Domain.Enums.Report;
 public enum ReportStatus
 {
     /// <summary>
-    /// Beklemede
+    /// İnceleme bekliyor
     /// </summary>
-    Pending,
+    Pending = 1,
     
     /// <summary>
     /// İnceleniyor
     /// </summary>
-    UnderReview,
+    InReview = 2,
+    
+    /// <summary>
+    /// İnceleniyor (eski kod uyumluluğu)
+    /// </summary>
+    UnderReview = 2,
     
     /// <summary>
     /// Çözümlendi
     /// </summary>
-    Resolved,
+    Resolved = 3,
     
     /// <summary>
     /// Reddedildi
     /// </summary>
-    Dismissed,
+    Rejected = 4,
     
     /// <summary>
-    /// Üst yönetime iletildi
+    /// Yükseltildi (üst yönetime)
     /// </summary>
-    Escalated
+    Escalated = 5
 }

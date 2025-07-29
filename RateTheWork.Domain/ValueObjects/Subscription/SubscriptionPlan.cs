@@ -191,4 +191,20 @@ public sealed class SubscriptionPlan : ValueObject
         yield return MonthlyPrice;
         yield return AnnualPrice;
     }
+    
+    /// <summary>
+    /// Plan tipine göre plan detaylarını getirir
+    /// </summary>
+    public static SubscriptionPlan GetPlan(SubscriptionType type)
+    {
+        return type switch
+        {
+            SubscriptionType.Free => CreateFreePlan(),
+            SubscriptionType.IndividualPremium => CreateIndividualPremium(),
+            SubscriptionType.CompanyBasic => CreateCompanyBasic(),
+            SubscriptionType.CompanyProfessional => CreateCompanyProfessional(),
+            SubscriptionType.CompanyEnterprise => CreateCompanyEnterprise(),
+            _ => throw new ArgumentException($"Unknown subscription type: {type}")
+        };
+    }
 }

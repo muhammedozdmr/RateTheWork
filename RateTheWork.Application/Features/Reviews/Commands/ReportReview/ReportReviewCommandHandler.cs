@@ -4,7 +4,10 @@ using RateTheWork.Application.Common.Exceptions;
 using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Enums;
+using RateTheWork.Domain.Enums.Report;
 using RateTheWork.Domain.Interfaces;
+using RateTheWork.Domain.Enums.Notification;
+using RateTheWork.Application.Common.Constants;
 
 namespace RateTheWork.Application.Features.Reviews.Commands.ReportReview;
 
@@ -108,9 +111,9 @@ public class ReportReviewCommandHandler : IRequestHandler<ReportReviewCommand, R
 
         // 5. Daha önce şikayet etmiş mi?
         var existingReport = await _unitOfWork.Reports.GetFirstOrDefaultAsync(r => 
-            r.ReviewId == request.ReviewId && 
+            r.ReportedEntityId == request.ReviewId && 
             r.ReporterUserId == _currentUserService.UserId &&
-            r.Status == "Pending");
+            r.Status == Domain.Enums.Report.ReportStatus.Pending);
         
         if (existingReport != null)
         {
@@ -119,28 +122,27 @@ public class ReportReviewCommandHandler : IRequestHandler<ReportReviewCommand, R
         }
 
         // 6. Yeni şikayet oluştur
-        var report = new Report(
-            reviewId: request.ReviewId,
-            reporterUserId: _currentUserService.UserId,
-            reportReason: request.ReportReason
-        )
-        {
-            ReportDetails = request.ReportDetails
-        };
+        var parsedReason = Enum.Parse<Domain.Enums.Report.ReportReason>(request.ReportReason);
+        var report = Report.Create(
+            reportedEntityType: "Review",
+            reportedEntityId: request.ReviewId!,
+            reporterUserId: _currentUserService.UserId!,
+            reason: parsedReason,
+            description: request.ReportDetails ?? string.Empty
+        );
 
         await _unitOfWork.Reports.AddAsync(report);
 
         // 7. Yorumun şikayet sayısını artır
-        review.ReportCount++;
+        review.IncrementReportCount();
         
         // 8. Otomatik aksiyon kontrolü
         var autoActionTaken = false;
         string? autoAction = null;
         
-        // 5 şikayette otomatik gizle
-        if (review.ReportCount >= 5 && review.IsActive)
+        // Domain modelindeki IncrementReportCount metodu otomatik gizleme yapar
+        if (!review.IsActive)
         {
-            review.IsActive = false;
             autoActionTaken = true;
             autoAction = "ReviewAutoHidden";
             
@@ -151,25 +153,24 @@ public class ReportReviewCommandHandler : IRequestHandler<ReportReviewCommand, R
             );
             
             // Yorum sahibine bildirim
-            var reviewNotification = new Notification(
+            var reviewNotification = Notification.Create(
                 userId: review.UserId,
-                type: NotificationTypes.ReviewReply,
-                message: "Yorumunuz çok sayıda şikayet aldığı için incelemeye alındı."
-            )
-            {
-                RelatedEntityId = review.Id,
-                RelatedEntityType = "Review"
-            };
+                title: "Yorumunuz Gizlendi",
+                message: "Yorumunuz çok fazla şikayet aldığı için otomatik olarak gizlenmiştir.",
+                type: NotificationType.SystemAnnouncement,
+                relatedEntityId: review.Id,
+                relatedEntityType: "Review"
+            );
             
             await _unitOfWork.Notifications.AddAsync(reviewNotification);
         }
         
         // Spam şikayetleri için özel kontrol
-        if (request.ReportReason == ReportReasons.Spam)
+        if (parsedReason == Domain.Enums.Report.ReportReason.Spam)
         {
-            var spamReportCount = await _unitOfWork.Reports.GetCountAsync(r => 
-                r.ReviewId == request.ReviewId && 
-                r.ReportReason == ReportReasons.Spam);
+            var spamReportCount = (await _unitOfWork.Reports.GetAsync(r => 
+                r.ReportedEntityId == request.ReviewId && 
+                r.Reason == Domain.Enums.Report.ReportReason.Spam)).Count;
             
             // 3 spam şikayetinde otomatik incelemeye al
             if (spamReportCount >= 3)
@@ -211,21 +212,20 @@ public class ReportReviewCommandHandler : IRequestHandler<ReportReviewCommand, R
     private async Task CreateAdminNotification(string message, string? reviewId)
     {
         // Tüm moderatör ve admin'leri bul
-        var admins = await _unitOfWork.AdminUsers.GetAsync(a => 
-            a.IsActive && 
-            (a.Role == AdminRoles.SuperAdmin || a.Role == AdminRoles.Moderator));
+        var admins = await _unitOfWork.Users.GetAsync(u => 
+            u.IsActive && 
+            (u.Roles.Contains(AdminRoles.SuperAdmin) || u.Roles.Contains(AdminRoles.ContentManager)));
 
         foreach (var admin in admins)
         {
-            var notification = new Notification(
+            var notification = Notification.Create(
                 userId: admin.Id,
-                type: "AdminAlert",
-                message: message
-            )
-            {
-                RelatedEntityId = reviewId,
-                RelatedEntityType = "Review"
-            };
+                title: "Yönetici Uyarısı",
+                message: message,
+                type: NotificationType.SystemAnnouncement,
+                relatedEntityId: reviewId,
+                relatedEntityType: "Review"
+            );
             
             await _unitOfWork.Notifications.AddAsync(notification);
         }
@@ -237,22 +237,20 @@ public class ReportReviewCommandHandler : IRequestHandler<ReportReviewCommand, R
     private async Task CheckUserReportingPattern(string userId, CancellationToken cancellationToken)
     {
         // Son 24 saatte yapılan şikayet sayısı
-        var recentReportCount = await _unitOfWork.Reports.GetCountAsync(r => 
+        var recentReportCount = (await _unitOfWork.Reports.GetAsync(r => 
             r.ReporterUserId == userId && 
-            r.ReportedAt >= DateTime.UtcNow.AddHours(-24));
+            r.CreatedAt >= DateTime.UtcNow.AddHours(-24))).Count;
         
         // 10'dan fazla şikayet varsa uyarı
         if (recentReportCount > 10)
         {
-            var auditLog = new AuditLog(
+            var auditLog = AuditLog.Create(
                 adminUserId: "SYSTEM",
                 actionType: "ExcessiveReporting",
                 entityType: "User",
-                entityId: userId
-            )
-            {
-                Details = $"Kullanıcı 24 saatte {recentReportCount} şikayet gönderdi."
-            };
+                entityId: userId,
+                details: $"Kullanıcı 24 saatte {recentReportCount} şikayet gönderdi."
+            );
             
             await _unitOfWork.AuditLogs.AddAsync(auditLog);
         }
@@ -283,7 +281,7 @@ public class ReportReviewCommandValidator : AbstractValidator<ReportReviewComman
         });
 
         // "Diğer" seçiliyse detay zorunlu
-        When(x => x.ReportReason == ReportReasons.Other, () =>
+        When(x => x.ReportReason == ReportReasons.Other.ToString(), () =>
         {
             RuleFor(x => x.ReportDetails)
                 .NotEmpty().WithMessage("'Diğer' seçeneğini seçtiniz. Lütfen detay giriniz.")
@@ -298,6 +296,6 @@ public class ReportReviewCommandValidator : AbstractValidator<ReportReviewComman
 
     private bool BeValidReportReason(string reason)
     {
-        return ReportReasons.GetAll().Contains(reason);
+        return Enum.TryParse<Domain.Enums.Report.ReportReason>(reason, out _);
     }
 }

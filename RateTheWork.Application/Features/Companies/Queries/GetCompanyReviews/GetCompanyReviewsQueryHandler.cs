@@ -7,6 +7,7 @@ using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Application.Common.Mappings;
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Interfaces;
+using RateTheWork.Domain.Enums.Review;
 
 namespace RateTheWork.Application.Features.Companies.Queries.GetCompanyReviews;
 
@@ -147,7 +148,7 @@ public class GetCompanyReviewsQueryHandler : IRequestHandler<GetCompanyReviewsQu
         // 3. Yorum türü filtresi
         if (!string.IsNullOrWhiteSpace(request.CommentType))
         {
-            query = query.Where(r => r.CommentType == request.CommentType);
+            query = query.Where(r => r.CommentType.ToString() == request.CommentType);
         }
 
         // 4. Minimum puan filtresi
@@ -211,7 +212,7 @@ public class GetCompanyReviewsQueryHandler : IRequestHandler<GetCompanyReviewsQu
             AuthorUsername = userDict.TryGetValue(review.UserId, out var user) 
                 ? user.AnonymousUsername 
                 : "Anonim Kullanıcı",
-            CommentType = review.CommentType,
+            CommentType = review.CommentType.ToString(),
             OverallRating = review.OverallRating,
             CommentText = review.CommentText,
             PostedDate = review.CreatedAt,
@@ -272,7 +273,7 @@ public class GetCompanyReviewsQueryValidator : AbstractValidator<GetCompanyRevie
 
     private bool BeValidCommentType(string? commentType)
     {
-        return commentType != null && Domain.Enums.CommentTypes.IsValid(commentType);
+        return commentType != null && Enum.TryParse<Domain.Enums.Review.CommentType>(commentType, out _);
     }
 
     private bool BeValidSortField(string sortBy)

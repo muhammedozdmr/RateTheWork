@@ -33,6 +33,23 @@ public class ReviewVote : BaseEntity
     public string? TargetType { get; private set; }
     public string? TargetId { get; private set; }
     public VoteType VoteType { get; private set; }
+    
+    /// <summary>
+    /// Yeni oy oluşturur (Factory method)
+    /// </summary>
+    public static ReviewVote Create(string userId, string reviewId, bool isUpvote)
+    {
+        return new ReviewVote
+        {
+            UserId = userId,
+            ReviewId = reviewId,
+            IsUpvote = isUpvote,
+            VotedAt = DateTime.UtcNow,
+            VoteType = isUpvote ? VoteType.Upvote : VoteType.Downvote,
+            Source = VoteSource.Web,
+            IsVerifiedUser = true
+        };
+    }
 
     /// <summary>
     /// Oy tipini günceller

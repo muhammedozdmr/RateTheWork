@@ -6,6 +6,7 @@ using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Application.Common.Mappings;
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Interfaces;
+using RateTheWork.Domain.Enums.Review;
 
 namespace RateTheWork.Application.Features.Reviews.Queries.SearchReviews;
 
@@ -178,7 +179,10 @@ public class SearchReviewsQueryHandler : IRequestHandler<SearchReviewsQuery, Pag
         // 4. Yorum türü filtresi
         if (!string.IsNullOrWhiteSpace(request.CommentType))
         {
-            query = query.Where(x => x.review.CommentType == request.CommentType);
+            if (Enum.TryParse<Domain.Enums.Review.CommentType>(request.CommentType, out var commentTypeEnum))
+            {
+                query = query.Where(x => x.review.CommentType == commentTypeEnum);
+            }
         }
 
         // 5. Puan aralığı filtresi
@@ -258,7 +262,7 @@ public class SearchReviewsQueryHandler : IRequestHandler<SearchReviewsQuery, Pag
             AuthorUsername = userDict.TryGetValue(result.review.UserId, out var user) 
                 ? user.AnonymousUsername 
                 : "Anonim Kullanıcı",
-            CommentType = result.review.CommentType,
+            CommentType = result.review.CommentType.ToString(),
             OverallRating = result.review.OverallRating,
             CommentSummary = TruncateText(result.review.CommentText, 200),
             PostedDate = result.review.CreatedAt,
@@ -398,7 +402,7 @@ public class SearchReviewsQueryValidator : AbstractValidator<SearchReviewsQuery>
 
     private bool BeValidCommentType(string commentType)
     {
-        return Domain.Enums.CommentTypes.IsValid(commentType);
+        return Enum.TryParse<Domain.Enums.Review.CommentType>(commentType, out _);
     }
 
     private bool BeValidSortField(string sortBy)

@@ -83,4 +83,20 @@ public interface ICompanyRepository : IBaseRepository<Company>
     /// <param name="companyId">Şirket ID'si</param>
     /// <returns>Ağırlıklı ortalama puan</returns>
     Task<decimal> CalculateWeightedAverageRatingAsync(string companyId);
+    
+    /// <summary>
+    /// IQueryable erişimi sağlar
+    /// </summary>
+    /// <returns>IQueryable<Company></returns>
+    IQueryable<Company> GetQueryable();
+    
+    /// <summary>
+    /// Şirketi günceller
+    /// </summary>
+    Task UpdateAsync(Company company);
+    
+    /// <summary>
+    /// Şirketi günceller (senkron)
+    /// </summary>
+    void Update(Company company);
 }

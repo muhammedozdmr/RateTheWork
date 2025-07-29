@@ -12,4 +12,20 @@ public interface IReviewRepository : IBaseRepository<Review>
     Task<decimal> GetCompanyAverageRatingAsync(string companyId);
     Task<int> GetCompanyReviewCountAsync(string companyId);
     Task UpdateReviewVoteCountsAsync(string? reviewId); // Upvote/Downvote count'larını güncelle
+    IQueryable<Review> GetQueryable();
+    
+    /// <summary>
+    /// Yorumu günceller
+    /// </summary>
+    Task UpdateAsync(Review review);
+    
+    /// <summary>
+    /// Yorumu günceller (senkron)
+    /// </summary>
+    void Update(Review review);
+    
+    /// <summary>
+    /// Belirli kriterlere göre yorum sayısını getirir
+    /// </summary>
+    Task<int> GetCountAsync(Func<Review, bool> predicate);
 }

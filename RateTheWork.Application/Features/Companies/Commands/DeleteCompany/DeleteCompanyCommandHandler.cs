@@ -1,5 +1,6 @@
 using FluentValidation;
 using MediatR;
+using RateTheWork.Application.Common.Constants;
 using RateTheWork.Application.Common.Exceptions;
 using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Domain.Enums;
@@ -112,11 +113,7 @@ public class DeleteCompanyCommandHandler : IRequestHandler<DeleteCompanyCommand,
         try
         {
             // 5. Şirketi soft delete yap
-            company.IsDeleted = true;
-            company.DeletedAt = DateTime.UtcNow;
-            company.DeletedBy = _currentUserService.UserId;
-            company.ModifiedAt = DateTime.UtcNow;
-            company.ModifiedBy = _currentUserService.UserId;
+            company.SoftDelete(_currentUserService.UserId!);
 
             _unitOfWork.Companies.Update(company);
 
@@ -126,41 +123,32 @@ public class DeleteCompanyCommandHandler : IRequestHandler<DeleteCompanyCommand,
 
             foreach (var review in reviews)
             {
-                review.IsActive = false;
-                review.ModifiedAt = DateTime.UtcNow;
-                review.ModifiedBy = _currentUserService.UserId;
+                review.Hide(_currentUserService.UserId, "Şirket silindiği için gizlendi");
                 _unitOfWork.Reviews.Update(review);
                 hiddenReviewsCount++;
             }
 
-            // 7. Bekleyen doğrulama taleplerini iptal et
-            var pendingRequests = await _unitOfWork.VerificationRequests.GetAsync(vr => 
-                vr.Status == VerificationStatuses.Pending &&
-                reviews.Select(r => r.Id).Contains(vr.ReviewId));
+            // 7. Bekleyen şikayetleri iptal et 
+            var pendingReports = await _unitOfWork.Reports.GetAsync(r => 
+                r.Status == Domain.Enums.Report.ReportStatus.Pending &&
+                reviews.Select(review => review.Id).Contains(r.ReportedEntityId));
 
             var cancelledRequestsCount = 0;
-            foreach (var pendingRequest in pendingRequests)
+            foreach (var pendingReport in pendingReports)
             {
-                pendingRequest.Status = VerificationStatuses.Rejected;
-                pendingRequest.ApprovalNotes = "Şirket silindiği için otomatik iptal edildi.";
-                pendingRequest.ModifiedAt = DateTime.UtcNow;
-                pendingRequest.ModifiedBy = _currentUserService.UserId;
-                _unitOfWork.VerificationRequests.Update(pendingRequest);
+                pendingReport.Reject(_currentUserService.UserId!, "Şirket silindiği için otomatik iptal edildi.");
+                await _unitOfWork.Reports.UpdateAsync(pendingReport);
                 cancelledRequestsCount++;
             }
 
             // 8. Audit log oluştur
-            var auditLog = new Domain.Entities.AuditLog(
+            var auditLog = Domain.Entities.AuditLog.Create(
                 adminUserId: _currentUserService.UserId!,
-                actionType: "CompanyDeleted",
+                actionType: "Company.Deleted",
                 entityType: "Company",
-                entityId: company.Id
-            )
-            {
-                Details = $"Silme nedeni: {request.Reason}. " +
-                         $"Gizlenen yorum: {hiddenReviewsCount}, " +
-                         $"İptal edilen doğrulama talebi: {cancelledRequestsCount}"
-            };
+                entityId: company.Id,
+                details: $"Silme nedeni: {request.Reason}. Gizlenen yorum: {hiddenReviewsCount}, İptal edilen doğrulama talebi: {cancelledRequestsCount}"
+            );
             
             await _unitOfWork.AuditLogs.AddAsync(auditLog);
 

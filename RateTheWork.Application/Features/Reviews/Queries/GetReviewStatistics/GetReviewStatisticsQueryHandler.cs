@@ -224,7 +224,7 @@ public class GetReviewStatisticsQueryHandler : IRequestHandler<GetReviewStatisti
         var commentTypeGroups = reviews.GroupBy(r => r.CommentType)
             .Select(g => new CommentTypeBreakdown
             {
-                CommentType = g.Key,
+                CommentType = g.Key.ToString(),
                 Count = g.Count(),
                 Percentage = totalReviews > 0 ? (g.Count() * 100.0 / totalReviews) : 0,
                 AverageRating = g.Average(r => r.OverallRating)

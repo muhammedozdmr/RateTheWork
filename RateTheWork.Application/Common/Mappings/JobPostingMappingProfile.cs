@@ -14,7 +14,7 @@ public class JobPostingMappingProfile : Profile
         // JobPosting -> JobPostingDto
         CreateMap<JobPosting, JobPostingDto>()
             .ForMember(dest => dest.DaysUntilExpiry, opt => opt.MapFrom(src =>
-                (int)(src.ExpiryDate - DateTime.UtcNow).TotalDays))
+                (int)(src.ApplicationDeadline - DateTime.UtcNow).TotalDays))
             .ForMember(dest => dest.DaysUntilFirstInterview, opt => opt.MapFrom(src =>
                 (int)(src.FirstInterviewDate - DateTime.UtcNow).TotalDays))
             .ForMember(dest => dest.ApplicationProgress, opt => opt.MapFrom(src =>
@@ -31,8 +31,8 @@ public class JobPostingMappingProfile : Profile
         CreateMap<HRPersonnel, HRPersonnelDto>()
             .ForMember(dest => dest.PerformanceMetrics, opt => opt.MapFrom(src => new HRPerformanceMetricsDto
             {
-                PostedJobs = src.PostedJobs, HiredCandidates = src.HiredCandidates
-                , AverageHiringTime = src.AverageHiringTime, ResponseRate = src.ResponseRate
+                PostedJobs = src.TotalJobPostings, HiredCandidates = src.TotalHiredCandidates
+                , AverageHiringTime = src.AverageHiringDays, ResponseRate = src.ResponseRate
                 , TrustScore = src.TrustScore
             }));
     }
@@ -98,7 +98,7 @@ public record JobApplicationDto
     public string ApplicantUserId { get; init; } = string.Empty;
     public string ApplicantName { get; init; } = string.Empty;
     public string ApplicantEmail { get; init; } = string.Empty;
-    public Domain.Enums.JobApplication.JobApplicationStatus Status { get; init; }
+    public Domain.Enums.JobApplication.ApplicationStatus Status { get; init; }
     public DateTime AppliedAt { get; init; }
     public string? CoverLetter { get; init; }
     public string? ResumeUrl { get; init; }

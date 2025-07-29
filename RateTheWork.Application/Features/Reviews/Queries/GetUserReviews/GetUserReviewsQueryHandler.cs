@@ -207,7 +207,7 @@ public class GetUserReviewsQueryHandler : IRequestHandler<GetUserReviewsQuery, P
             CompanyName = companyDict.TryGetValue(review.CompanyId, out var company) 
                 ? company.Name 
                 : "Bilinmeyen Şirket",
-            CommentType = review.CommentType,
+            CommentType = review.CommentType.ToString(),
             OverallRating = review.OverallRating,
             CommentText = review.CommentText,
             PostedDate = review.CreatedAt,

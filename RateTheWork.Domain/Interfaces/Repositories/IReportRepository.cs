@@ -6,45 +6,44 @@ namespace RateTheWork.Domain.Interfaces.Repositories;
 /// <summary>
 /// Şikayet repository interface'i
 /// </summary>
-public interface IReportRepository : IRepository<Report>
+public interface IReportRepository : IBaseRepository<Report>
 {
     /// <summary>
-    /// Bekleyen şikayetleri getirir
+    /// Queryable interface sağlar
     /// </summary>
-    Task<IReadOnlyList<Report>> GetPendingReportsAsync();
-
+    IQueryable<Report> GetQueryable();
     /// <summary>
-    /// Belirli bir hedef için şikayetleri getirir
+    /// Belirli bir entity'ye yapılan şikayetleri getirir
     /// </summary>
-    Task<IReadOnlyList<Report>> GetReportsByTargetAsync(string targetType, string targetId);
-
+    Task<List<Report>> GetReportsByEntityAsync(string entityType, string entityId);
+    
     /// <summary>
     /// Kullanıcının yaptığı şikayetleri getirir
     /// </summary>
-    Task<IReadOnlyList<Report>> GetReportsByReporterAsync(string reporterId);
-
+    Task<List<Report>> GetReportsByUserAsync(string userId);
+    
     /// <summary>
-    /// Öncelikli şikayetleri getirir
+    /// Bekleyen şikayetleri getirir
     /// </summary>
-    Task<IReadOnlyList<Report>> GetHighPriorityReportsAsync();
-
+    Task<List<Report>> GetPendingReportsAsync();
+    
     /// <summary>
-    /// Belirli durumdaki şikayetleri sayfalı getirir
+    /// Belirli durumdaki şikayetleri getirir
     /// </summary>
-    Task<(IReadOnlyList<Report> items, int totalCount)> GetReportsByStatusPagedAsync
-    (
-        ReportStatus status
-        , int pageNumber
-        , int pageSize
-    );
-
+    Task<List<Report>> GetReportsByStatusAsync(ReportStatus status);
+    
     /// <summary>
-    /// Kullanıcının aynı hedef için daha önce şikayet yapıp yapmadığını kontrol eder
+    /// Kullanıcının belirli bir entity'ye daha önce şikayet yapıp yapmadığını kontrol eder
     /// </summary>
-    Task<bool> HasUserReportedTargetAsync(string userId, string targetType, string targetId);
-
+    Task<bool> HasUserReportedEntityAsync(string userId, string entityType, string entityId);
+    
     /// <summary>
-    /// Belirli bir süre içinde yapılan şikayet sayısını getirir
+    /// Belirli bir tarih aralığındaki şikayetleri getirir
     /// </summary>
-    Task<int> GetReportCountInPeriodAsync(string reporterId, DateTime startDate, DateTime endDate);
+    Task<List<Report>> GetReportsByDateRangeAsync(DateTime startDate, DateTime endDate);
+    
+    /// <summary>
+    /// En çok şikayet edilen entity'leri getirir
+    /// </summary>
+    Task<Dictionary<string, int>> GetMostReportedEntitiesAsync(string entityType, int topCount = 10);
 }

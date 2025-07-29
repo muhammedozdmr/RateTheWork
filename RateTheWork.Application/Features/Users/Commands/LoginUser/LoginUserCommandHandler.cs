@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using RateTheWork.Application.Common.Exceptions;
+using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Domain.Interfaces;
 using RateTheWork.Domain.Services;
 using ValidationException = RateTheWork.Application.Common.Exceptions.ValidationException;
@@ -31,6 +32,11 @@ public record LoginUserCommand : IRequest<LoginUserResult>
     /// Beni hatırla seçeneği (30 gün token süresi)
     /// </summary>
     public bool RememberMe { get; init; }
+    
+    /// <summary>
+    /// Kullanıcının IP adresi (güvenlik için)
+    /// </summary>
+    public string? IpAddress { get; init; }
 }
 
 /// <summary>
@@ -154,8 +160,9 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, LoginUs
         // await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // 6. Son giriş zamanını güncelle
-        user.ModifiedAt = DateTime.UtcNow;
-        _unitOfWork.Users.Update(user);
+        user.UpdateLoginInfo(request.IpAddress ?? "Unknown");
+        user.UpdateRefreshToken(refreshToken);
+        await _unitOfWork.Users.UpdateAsync(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new LoginUserResult

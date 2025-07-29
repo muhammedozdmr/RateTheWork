@@ -26,6 +26,26 @@ public interface IUnitOfWork : IDisposable
     IRepository<User> Users => Repository<User>();
 
     /// <summary>
+    /// Badge repository - Application katmanı uyumluluğu için
+    /// </summary>
+    IRepository<Badge> Badges => Repository<Badge>();
+    
+    /// <summary>
+    /// UserBadge repository - Application katmanı uyumluluğu için
+    /// </summary>
+    IRepository<UserBadge> UserBadges => Repository<UserBadge>();
+    
+    /// <summary>
+    /// Warning repository - Application katmanı uyumluluğu için
+    /// </summary>
+    IRepository<Warning> Warnings => Repository<Warning>();
+    
+    /// <summary>
+    /// Ban repository - Application katmanı uyumluluğu için
+    /// </summary>
+    IRepository<Ban> Bans => Repository<Ban>();
+
+    /// <summary>
     /// Generic repository döndürür
     /// </summary>
     /// <typeparam name="T">Entity tipi</typeparam>

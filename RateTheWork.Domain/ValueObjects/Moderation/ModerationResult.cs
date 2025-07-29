@@ -61,6 +61,11 @@ public sealed class ModerationResult : ValueObject
     /// Önerilen düzeltmeler
     /// </summary>
     public List<string> SuggestedCorrections { get; }
+    
+    /// <summary>
+    /// Red nedenleri (Application katmanı uyumluluğu için)
+    /// </summary>
+    public List<string> RejectionReasons => !IsApproved ? new List<string> { Reason ?? "Bilinmeyen neden" } : new List<string>();
 
     /// <summary>
     /// Moderasyon detayları

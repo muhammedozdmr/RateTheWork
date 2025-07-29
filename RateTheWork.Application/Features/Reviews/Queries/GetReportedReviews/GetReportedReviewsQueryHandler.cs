@@ -169,6 +169,19 @@ public record PreviousAction
 }
 
 /// <summary>
+/// Generic extension methods for GetReportedReviewsQuery
+/// </summary>
+public static class GetReportedReviewsExtensions
+{
+    public static (int pageNumber, int pageSize) GetValidatedPaginationParams(this GetReportedReviewsQuery request)
+    {
+        var pageNumber = Math.Max(1, request.PageNumber > 0 ? request.PageNumber : 1);
+        var pageSize = Math.Min(100, Math.Max(1, request.PageSize > 0 ? request.PageSize : 10));
+        return (pageNumber, pageSize);
+    }
+}
+
+/// <summary>
 /// GetReportedReviewsQuery handler
 /// </summary>
 public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviewsQuery, PagedList<ReportedReviewDto>>
@@ -204,7 +217,7 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
         // 3. Durum filtresi
         if (!string.IsNullOrWhiteSpace(request.Status))
         {
-            reportsQuery = reportsQuery.Where(r => r.Status == request.Status);
+            reportsQuery = reportsQuery.Where(r => r.Status.ToString() == request.Status);
         }
 
         // 4. Tarih filtresi
@@ -340,7 +353,7 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
                     ReportReason = report.ReportReason,
                     ReportDetails = report.ReportDetails,
                     ReportedAt = report.ReportedAt,
-                    Status = report.Status
+                    Status = report.Status.ToString()
                 })
                 .ToList();
 
@@ -367,7 +380,7 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
                 },
                 Content = new ReviewContent
                 {
-                    CommentType = review.CommentType,
+                    CommentType = review.CommentType.ToString(),
                     OverallRating = review.OverallRating,
                     CommentText = review.CommentText,
                     PostedDate = review.CreatedAt,

@@ -27,11 +27,23 @@ public class SubscriptionMappingProfile : Profile
 
         // CompanySubscription -> CompanySubscriptionDto
         CreateMap<CompanySubscription, CompanySubscriptionDto>()
-            .ForMember(dest => dest.ActiveJobPostings, opt => opt.MapFrom(src => src.ActiveJobPostings))
-            .ForMember(dest => dest.RemainingJobPostings
-                , opt => opt.MapFrom(src => src.MaxJobPostings - src.ActiveJobPostings))
-            .ForMember(dest => dest.RemainingHRPersonnel
-                , opt => opt.MapFrom(src => src.MaxHRPersonnel - src.AuthorizedPersonnel.Count));
+            .ForMember(dest => dest.MaxJobPostings, 
+                opt => opt.MapFrom(src => src.UsageLimits.ContainsKey("MaxJobPostings") ? src.UsageLimits["MaxJobPostings"] : 0))
+            .ForMember(dest => dest.ActiveJobPostings, 
+                opt => opt.MapFrom(src => src.CurrentUsage.ContainsKey("JobPostings") ? src.CurrentUsage["JobPostings"] : 0))
+            .ForMember(dest => dest.RemainingJobPostings,
+                opt => opt.MapFrom(src => 
+                    (src.UsageLimits.ContainsKey("MaxJobPostings") ? src.UsageLimits["MaxJobPostings"] : 0) -
+                    (src.CurrentUsage.ContainsKey("JobPostings") ? src.CurrentUsage["JobPostings"] : 0)))
+            .ForMember(dest => dest.MaxHRPersonnel,
+                opt => opt.MapFrom(src => src.UsageLimits.ContainsKey("MaxHRPersonnel") ? src.UsageLimits["MaxHRPersonnel"] : 0))
+            .ForMember(dest => dest.RemainingHRPersonnel,
+                opt => opt.MapFrom(src => 
+                    (src.UsageLimits.ContainsKey("MaxHRPersonnel") ? src.UsageLimits["MaxHRPersonnel"] : 0) -
+                    src.AuthorizedHRPersonnelIds.Count))
+            .ForMember(dest => dest.AuthorizedPersonnelIds, opt => opt.MapFrom(src => src.AuthorizedHRPersonnelIds))
+            .ForMember(dest => dest.CanPostJobs, opt => opt.MapFrom(src => src.Features.Contains(FeatureType.PostJobListing)))
+            .ForMember(dest => dest.CanReplyToReviews, opt => opt.MapFrom(src => src.Features.Contains(FeatureType.RespondToReviews)));
     }
 }
 

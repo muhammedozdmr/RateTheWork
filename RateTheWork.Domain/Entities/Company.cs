@@ -111,6 +111,7 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
 
     public decimal AverageRating { get; private set; } = 0;
     public int TotalReviewCount { get; private set; } = 0;
+    public int TotalReviews => TotalReviewCount; // Application katmanı için alias
     public DateTime? LastReviewDate { get; private set; }
     public Dictionary<string, object> Metadata { get; set; } = new();
     public Dictionary<string, decimal> RatingBreakdown { get; private set; } = new(); // Kategori bazlı puanlar
@@ -147,7 +148,13 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     public int BranchCount { get; private set; } = 1;
     public List<CompanyBranch> Branches { get; private set; } = new();
 
-    public ApprovalStatus ApprovalStatus { get; private set; }
+    // ========== İLİŞKİLER ==========
+    
+    public virtual ICollection<Department> Departments { get; private set; } = new List<Department>();
+    public virtual ICollection<CVApplication> CVApplications { get; private set; } = new List<CVApplication>();
+    public virtual ICollection<ContractorReview> ContractorReviews { get; private set; } = new List<ContractorReview>();
+
+    public new ApprovalStatus ApprovalStatus { get; private set; }
 
     /// <summary>
     /// Yeni şirket oluşturur (Factory method)
@@ -670,5 +677,72 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
         var currentYear = DateTime.Now.Year;
         if (year < 1900 || year > currentYear)
             throw new BusinessRuleException($"Kuruluş yılı 1900 ile {currentYear} arasında olmalıdır.");
+    }
+    
+    /// <summary>
+    /// Şirketin temel bilgilerini günceller
+    /// </summary>
+    public void UpdateBasicInfo(
+        string? name = null,
+        CompanySector? sector = null,
+        string? websiteUrl = null)
+    {
+        if (!string.IsNullOrWhiteSpace(name) && name != Name)
+        {
+            ValidateName(name);
+            Name = name;
+        }
+        
+        if (sector.HasValue && sector.Value != Sector)
+        {
+            Sector = sector.Value;
+        }
+        
+        if (!string.IsNullOrWhiteSpace(websiteUrl) && websiteUrl != WebsiteUrl)
+        {
+            ValidateWebsiteUrl(websiteUrl);
+            WebsiteUrl = websiteUrl;
+        }
+        
+        SetModifiedDate();
+        
+        // Domain Event
+        var updatedFields = new List<string>();
+        var oldValues = new Dictionary<string, object>();
+        var newValues = new Dictionary<string, object>();
+        
+        if (!string.IsNullOrWhiteSpace(name) && name != Name)
+        {
+            updatedFields.Add("Name");
+            oldValues["Name"] = Name;
+            newValues["Name"] = name;
+        }
+        
+        if (sector.HasValue && sector.Value != Sector)
+        {
+            updatedFields.Add("Sector");
+            oldValues["Sector"] = Sector.ToString();
+            newValues["Sector"] = sector.Value.ToString();
+        }
+        
+        if (!string.IsNullOrWhiteSpace(websiteUrl) && websiteUrl != WebsiteUrl)
+        {
+            updatedFields.Add("WebsiteUrl");
+            oldValues["WebsiteUrl"] = WebsiteUrl;
+            newValues["WebsiteUrl"] = websiteUrl;
+        }
+        
+        if (updatedFields.Any())
+        {
+            AddDomainEvent(new CompanyInfoUpdatedEvent(
+                companyId: Id,
+                updatedFields: updatedFields.ToArray(),
+                oldValues: oldValues,
+                newValues: newValues,
+                updatedBy: ModifiedBy ?? "System",
+                updateReason: null,
+                updatedAt: DateTime.UtcNow
+            ));
+        }
     }
 }

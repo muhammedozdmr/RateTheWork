@@ -3,6 +3,7 @@ using MediatR;
 using RateTheWork.Application.Common.Exceptions;
 using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Domain.Interfaces;
+using RateTheWork.Domain.Interfaces.Services;
 using RateTheWork.Domain.Services;
 
 namespace RateTheWork.Application.Features.Reviews.Commands.UpdateReview;
@@ -130,7 +131,8 @@ public class UpdateReviewCommandHandler : IRequestHandler<UpdateReviewCommand, U
         // 7. Puan güncelleme
         if (request.OverallRating.HasValue && request.OverallRating.Value != review.OverallRating)
         {
-            review.OverallRating = request.OverallRating.Value;
+            // Domain method kullanarak rating güncelle
+            review.UpdateRating(request.OverallRating.Value);
             updatedFieldsCount++;
         }
 
@@ -147,7 +149,7 @@ public class UpdateReviewCommandHandler : IRequestHandler<UpdateReviewCommand, U
                     Success = false,
                     ModerationStatus = "Rejected",
                     UpdatedFieldsCount = 0,
-                    Message = $"Güncelleme reddedildi: {moderationResult.RejectionReason}"
+                    Message = $"Güncelleme reddedildi: {moderationResult.Reason}"
                 };
             }
 
@@ -157,7 +159,8 @@ public class UpdateReviewCommandHandler : IRequestHandler<UpdateReviewCommand, U
                 requiresModeration = true;
             }
 
-            review.CommentText = request.CommentText;
+            // Domain method kullanarak yorum güncelle
+            review.Update(request.CommentText, "Kullanıcı düzenledi");
             updatedFieldsCount++;
         }
 
@@ -173,14 +176,13 @@ public class UpdateReviewCommandHandler : IRequestHandler<UpdateReviewCommand, U
             };
         }
 
-        // 10. Güncelleme bilgilerini set et
-        review.ModifiedAt = _dateTimeService.UtcNow;
-        review.ModifiedBy = _currentUserService.UserId;
+        // 10. Güncelleme bilgilerini set et - Domain method kullan
+        review.SetModifiedAudit(_currentUserService.UserId!);
 
         // 11. Manuel inceleme gerekiyorsa yorumu geçici olarak gizle
         if (requiresModeration)
         {
-            review.IsActive = false;
+            review.Hide(_currentUserService.UserId, "Güncelleme sonrası moderasyon gerekiyor");
         }
 
         // 12. Değişiklikleri kaydet

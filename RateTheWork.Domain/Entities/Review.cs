@@ -248,6 +248,33 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     }
 
     /// <summary>
+    /// Puanı günceller
+    /// </summary>
+    public void UpdateRating(decimal newRating)
+    {
+        ValidateRating(newRating);
+        
+        if (OverallRating == newRating)
+            return; // Değişiklik yok
+            
+        var oldRating = OverallRating;
+        OverallRating = newRating;
+        SetModifiedDate();
+        
+        // Domain Event - ReviewUpdatedEvent kullan
+        AddDomainEvent(new ReviewUpdatedEvent(
+            Id,
+            UserId,
+            $"Puan güncellendi: {oldRating} -> {newRating}",
+            EditCount + 1,
+            new Dictionary<string, object> { { "OverallRating", oldRating } },
+            new Dictionary<string, object> { { "OverallRating", newRating } },
+            null,
+            DateTime.UtcNow
+        ));
+    }
+
+    /// <summary>
     /// Belgeyi doğrula
     /// </summary>
     public void VerifyDocument(string verifiedBy)
@@ -374,15 +401,13 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     // HelpfulnessScore güncelleme metodu
     public void UpdateHelpfulnessScore(decimal score)
     {
-        var oldScore = HelpfulnessScore; // Eski skoru sakla
-        HelpfulnessScore = score;
-        SetModifiedDate();
-
         if (score < 0 || score > 100)
             throw new ArgumentException("Helpfulness score must be between 0 and 100");
 
+        var oldScore = HelpfulnessScore; // Eski skoru sakla
         HelpfulnessScore = score;
         UpdatedAt = DateTime.UtcNow;
+        SetModifiedDate();
 
         if (Id != null)
             AddDomainEvent(new ReviewHelpfulnessUpdatedEvent(
@@ -444,5 +469,23 @@ public class Review : AuditableBaseEntity, IAggregateRoot
 
         if (editReason.Length < 10)
             throw new BusinessRuleException("Düzenleme nedeni en az 10 karakter olmalıdır.");
+    }
+    
+    /// <summary>
+    /// Yorumu deaktive et
+    /// </summary>
+    public void Deactivate()
+    {
+        IsActive = false;
+        SetModifiedDate();
+    }
+    
+    /// <summary>
+    /// Yorumu aktive et
+    /// </summary>
+    public void Activate()
+    {
+        IsActive = true;
+        SetModifiedDate();
     }
 }

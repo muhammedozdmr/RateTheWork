@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using RateTheWork.Application.Common.Exceptions;
 using RateTheWork.Application.Common.Interfaces;
+using RateTheWork.Application.Common.Constants;
 using RateTheWork.Domain.Enums;
 using RateTheWork.Domain.Interfaces;
 
@@ -77,7 +78,7 @@ public class RejectCompanyCommandHandler : IRequestHandler<RejectCompanyCommand,
     {
         // 1. Admin kontrolü
         var isAdmin = _currentUserService.Roles.Contains(AdminRoles.SuperAdmin) || 
-                     _currentUserService.Roles.Contains(AdminRoles.ContentManager) ||
+                     _currentUserService.Roles.Contains(AdminRoles.CompanyAdmin) ||
                      _currentUserService.Roles.Contains(AdminRoles.Moderator);
         
         if (!isAdmin)
@@ -112,33 +113,24 @@ public class RejectCompanyCommandHandler : IRequestHandler<RejectCompanyCommand,
         }
 
         // 5. Şirketi reddet
-        company.IsApproved = false;
-        company.ApprovedBy = _currentUserService.UserId;
-        company.ApprovedAt = DateTime.UtcNow;
-        company.ApprovalNotes = $"RED: {request.RejectionReason}";
-        company.ModifiedAt = DateTime.UtcNow;
-        company.ModifiedBy = _currentUserService.UserId;
+        company.Reject(_currentUserService.UserId!, request.RejectionReason);
 
         // 6. Kalıcı red ise sil
         if (request.IsPermanentRejection)
         {
-            company.IsDeleted = true;
-            company.DeletedAt = DateTime.UtcNow;
-            company.DeletedBy = _currentUserService.UserId;
+            company.SoftDelete(_currentUserService.UserId!);
         }
 
         _unitOfWork.Companies.Update(company);
 
         // 7. Audit log oluştur
-        var auditLog = new Domain.Entities.AuditLog(
+        var auditLog = Domain.Entities.AuditLog.Create(
             adminUserId: _currentUserService.UserId!,
-            actionType: request.IsPermanentRejection ? "CompanyPermanentlyRejected" : "CompanyRejected",
+            actionType: request.IsPermanentRejection ? "Company.PermanentlyRejected" : Domain.Entities.AuditLog.ActionTypes.CompanyRejected,
             entityType: "Company",
-            entityId: company.Id
-        )
-        {
-            Details = $"Red nedeni: {request.RejectionReason}"
-        };
+            entityId: company.Id,
+            details: $"Red nedeni: {request.RejectionReason}"
+        );
         
         await _unitOfWork.AuditLogs.AddAsync(auditLog);
 
@@ -150,15 +142,12 @@ public class RejectCompanyCommandHandler : IRequestHandler<RejectCompanyCommand,
             if (user != null)
             {
                 // Bildirim oluştur
-                var notification = new Domain.Entities.Notification(
+                var notification = Domain.Entities.Notification.Create(
                     userId: user.Id,
-                    type: "CompanyRejected",
-                    message: $"Eklediğiniz '{company.Name}' şirketi reddedildi."
-                )
-                {
-                    RelatedEntityId = company.Id,
-                    RelatedEntityType = "Company"
-                };
+                    type: Domain.Enums.Notification.NotificationType.CompanyStatusChanged,
+                    title: "Şirket Reddedildi",
+                    message: $"Eklediğiniz '{company.Name}' şirketi reddedildi. Nedeni: {request.RejectionReason}"
+                );
                 
                 await _unitOfWork.Notifications.AddAsync(notification);
 

@@ -67,11 +67,20 @@ public class User : AuditableBaseEntity, IAggregateRoot
     public DateTime? LastLoginAt { get; private set; }
     public string? LastLoginIp { get; private set; }
     public string? RefreshToken { get; private set; }
+    
+    // Application katmanı uyumluluğu için ek property'ler
+    public List<JobAlert> JobAlerts { get; private set; } = new();
     public DateTime? RefreshTokenExpiry { get; private set; }
 
     // Properties - Arama İndeksleri
     public string? EmailHash { get; private set; }
     public string? TcIdentityHash { get; private set; }
+    
+    // Application katmanı uyumluluğu için ek property'ler
+    public List<string> Roles { get; private set; } = new List<string> { "User" };
+    public List<string> UserRoles => Roles; // Alias
+    public string FullName => $"{EncryptedFirstName} {EncryptedLastName}"; // Computed
+    public string PhoneNumber => EncryptedPhoneNumber; // Alias
 
     /// <summary>
     /// Yeni kullanıcı oluşturur (Factory method)
@@ -280,6 +289,21 @@ public class User : AuditableBaseEntity, IAggregateRoot
     }
 
     /// <summary>
+    /// Telefon numarasını günceller
+    /// </summary>
+    public void UpdatePhoneNumber(string encryptedPhoneNumber)
+    {
+        if (string.IsNullOrEmpty(encryptedPhoneNumber))
+            throw new ArgumentNullException(nameof(encryptedPhoneNumber));
+            
+        EncryptedPhoneNumber = encryptedPhoneNumber;
+        IsPhoneVerified = false;
+        PhoneVerificationCode = null;
+        PhoneVerificationCodeExpiry = null;
+        SetModifiedDate();
+    }
+    
+    /// <summary>
     /// Kullanıcı profilini günceller
     /// </summary>
     public void UpdateProfile
@@ -348,6 +372,18 @@ public class User : AuditableBaseEntity, IAggregateRoot
             Id,
             DateTime.UtcNow
         ));
+    }
+    
+    /// <summary>
+    /// Şifre belirle (test için)
+    /// </summary>
+    public void SetPassword(string hashedPassword)
+    {
+        if (string.IsNullOrEmpty(hashedPassword))
+            throw new ArgumentNullException(nameof(hashedPassword));
+            
+        HashedPassword = hashedPassword;
+        SetModifiedDate();
     }
 
     /// <summary>

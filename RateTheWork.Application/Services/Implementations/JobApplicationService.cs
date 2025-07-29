@@ -1,6 +1,7 @@
 using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Application.Common.Models;
 using RateTheWork.Application.Services.Interfaces;
+using RateTheWork.Domain.Enums.JobApplication;
 
 namespace RateTheWork.Application.Services.Implementations;
 
@@ -25,7 +26,7 @@ public class JobApplicationService : IJobApplicationService
     public Task<Result> UpdateApplicationStatusAsync
     (
         string applicationId
-        , JobApplicationStatus newStatus
+        , ApplicationStatus newStatus
         , string? notes = null
         , CancellationToken cancellationToken = default
     )
@@ -36,7 +37,7 @@ public class JobApplicationService : IJobApplicationService
     public Task<Result<BatchUpdateResult>> BatchUpdateStatusAsync
     (
         List<string> applicationIds
-        , JobApplicationStatus newStatus
+        , ApplicationStatus newStatus
         , string? notes = null
         , CancellationToken cancellationToken = default
     )

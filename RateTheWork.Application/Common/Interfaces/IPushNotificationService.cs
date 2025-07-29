@@ -10,6 +10,11 @@ public interface IPushNotificationService
     /// Push notification gönderir
     /// </summary>
     Task<bool> SendAsync(string userId, PushNotification notification, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Basit push notification gönderir
+    /// </summary>
+    Task<bool> SendAsync(string userId, string message, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Device token'a göre notification gönderir

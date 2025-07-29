@@ -1,6 +1,6 @@
 using MediatR;
 using RateTheWork.Domain.Entities;
-using RateTheWork.Domain.Interfaces;
+using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Domain.Services;
 
 namespace RateTheWork.Application.Features.Users.Commands.RegisterUser;
@@ -146,7 +146,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
             request.TcIdentityNumber,
             request.FirstName,
             request.LastName,
-            request.BirthDate);
+            request.BirthDate.Year);
 
         if (!isTcValid)
         {
@@ -195,9 +195,8 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         // 6. Password Hash'le - BCrypt kullanarak güvenli hash
         var hashedPassword = _passwordHashingService.HashPassword(request.Password);
 
-        //TODO: private const sorunu        
         // 7. User Entity Oluştur
-        var user = new User(
+        var user = Domain.Entities.User.Create(
             anonymousUsername: anonymousUsername,
             hashedPassword: hashedPassword,
             email: request.Email,
@@ -214,8 +213,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         );
 
         // 8. Email Doğrulama Token'ı Oluştur - 24 saat geçerli
-        user.EmailVerificationToken = GenerateVerificationToken();
-        user.EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24);
+        var verificationToken = user.GenerateEmailVerificationToken();
 
         // 9. Veritabanına Kaydet
         await _unitOfWork.Users.AddAsync(user);

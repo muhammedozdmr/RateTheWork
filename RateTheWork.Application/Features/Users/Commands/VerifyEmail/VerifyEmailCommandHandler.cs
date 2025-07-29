@@ -1,7 +1,7 @@
 using FluentValidation;
 using MediatR;
 using RateTheWork.Application.Common.Exceptions;
-using RateTheWork.Domain.Interfaces;
+using RateTheWork.Application.Common.Interfaces;
 using ValidationException = RateTheWork.Application.Common.Exceptions.ValidationException;
 
 namespace RateTheWork.Application.Features.Users.Commands.VerifyEmail;
@@ -84,12 +84,9 @@ public class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, Ver
         }
 
         // 5. Email'i doğrula
-        user.IsEmailVerified = true;
-        user.EmailVerificationToken = null; // Token'ı temizle
-        user.EmailVerificationTokenExpiry = null;
-        user.ModifiedAt = DateTime.UtcNow;
+        user.VerifyEmail();
 
-        _unitOfWork.Users.Update(user);
+        await _unitOfWork.Users.UpdateAsync(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // 6. Hoşgeldin rozeti ver (ileride)

@@ -1,4 +1,5 @@
 using RateTheWork.Application.Common.Models;
+using RateTheWork.Domain.Enums.JobApplication;
 
 namespace RateTheWork.Application.Services.Interfaces;
 
@@ -18,7 +19,7 @@ public interface IJobApplicationService
     Task<Result> UpdateApplicationStatusAsync
     (
         string applicationId
-        , JobApplicationStatus newStatus
+        , ApplicationStatus newStatus
         , string? notes = null
         , CancellationToken cancellationToken = default
     );
@@ -29,7 +30,7 @@ public interface IJobApplicationService
     Task<Result<BatchUpdateResult>> BatchUpdateStatusAsync
     (
         List<string> applicationIds
-        , JobApplicationStatus newStatus
+        , ApplicationStatus newStatus
         , string? notes = null
         , CancellationToken cancellationToken = default
     );
@@ -102,7 +103,7 @@ public record ApplicationStatistics
 {
     public string JobPostingId { get; init; } = string.Empty;
     public int TotalApplications { get; init; }
-    public Dictionary<JobApplicationStatus, int> StatusBreakdown { get; init; } = new();
+    public Dictionary<ApplicationStatus, int> StatusBreakdown { get; init; } = new();
     public decimal AverageTimeToRespond { get; init; }
     public decimal ConversionRate { get; init; }
     public Dictionary<DateTime, int> DailyApplications { get; init; } = new();
@@ -142,7 +143,7 @@ public record ApplicationSummary
     public string ApplicationId { get; init; } = string.Empty;
     public string JobTitle { get; init; } = string.Empty;
     public string CompanyName { get; init; } = string.Empty;
-    public JobApplicationStatus Status { get; init; }
+    public ApplicationStatus Status { get; init; }
     public DateTime AppliedDate { get; init; }
     public DateTime? LastUpdateDate { get; init; }
 }

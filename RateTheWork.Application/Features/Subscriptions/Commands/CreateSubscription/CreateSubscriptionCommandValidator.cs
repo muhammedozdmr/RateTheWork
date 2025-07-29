@@ -29,7 +29,7 @@ public class CreateSubscriptionCommandValidator : AbstractValidator<CreateSubscr
             .WithMessage("Payment method should not be provided for trial subscriptions");
 
         RuleFor(x => x.Type)
-            .NotEqual(SubscriptionType.Enterprise)
+            .NotEqual(SubscriptionType.CompanyEnterprise)
             .WithMessage("Enterprise subscriptions must be created through company subscription process");
     }
 }

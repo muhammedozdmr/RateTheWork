@@ -47,6 +47,10 @@ public class JobPosting : AuditableBaseEntity
     public JobPostingStatus Status { get; private set; } = JobPostingStatus.Draft;
     public DateTime? PublishedAt { get; private set; }
     public DateTime? ExpiredAt { get; private set; }
+    
+    // Navigation Properties - Application katmanı uyumluluğu için
+    public Company? Company { get; private set; }
+    public string City => Location; // Alias for Location
     public string? RejectionReason { get; private set; }
 
     // İstatistikler

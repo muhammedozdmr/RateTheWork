@@ -13,7 +13,8 @@ public interface IEmailService
     /// <param name="subject">Email konusu</param>
     /// <param name="body">Email içeriği (HTML olabilir)</param>
     /// <param name="isHtml">Email HTML formatında mı?</param>
-    Task SendEmailAsync(string to, string subject, string body, bool isHtml = true);
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task SendEmailAsync(string to, string subject, string body, bool isHtml = true, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Email mesajı ile gönderim

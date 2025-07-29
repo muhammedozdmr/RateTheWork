@@ -103,8 +103,8 @@ public class VoteReviewCommandHandler : IRequestHandler<VoteReviewCommand, VoteR
         if (existingVote == null)
         {
             // 5a. İlk kez oy veriyor
-            var newVote = new ReviewVote(
-                userId: _currentUserService.UserId,
+            var newVote = ReviewVote.Create(
+                userId: _currentUserService.UserId!,
                 reviewId: request.ReviewId,
                 isUpvote: request.IsUpvote
             );

@@ -117,7 +117,7 @@ public class GetCompanyDetailsQueryHandler : IRequestHandler<GetCompanyDetailsQu
         // Yorum türü dağılımı
         var commentTypeBreakdown = reviews
             .GroupBy(r => r.CommentType)
-            .ToDictionary(g => g.Key, g => g.Count());
+            .ToDictionary(g => g.Key.ToString(), g => g.Count());
 
         return new ReviewStatistics
         {
@@ -140,7 +140,7 @@ public class GetCompanyDetailsQueryHandler : IRequestHandler<GetCompanyDetailsQu
             r.UserId == userId && 
             r.IsActive);
 
-        return userReviews.Select(r => r.CommentType).ToList();
+        return userReviews.Select(r => r.CommentType.ToString()).ToList();
     }
 
     /// <summary>

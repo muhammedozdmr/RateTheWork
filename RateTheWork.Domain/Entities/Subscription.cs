@@ -261,4 +261,16 @@ public class Subscription : AuditableBaseEntity
             , _ => fromDate.AddMonths(1)
         };
     }
+    
+    /// <summary>
+    /// Ödeme yöntemini ayarlar
+    /// </summary>
+    public void SetPaymentMethod(string paymentMethodId)
+    {
+        if (string.IsNullOrWhiteSpace(paymentMethodId))
+            throw new ArgumentException("Ödeme yöntemi ID'si boş olamaz", nameof(paymentMethodId));
+            
+        PaymentMethodId = paymentMethodId;
+        ModifiedAt = DateTime.UtcNow;
+    }
 }

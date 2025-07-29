@@ -5,6 +5,7 @@ using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Enums;
 using RateTheWork.Domain.Interfaces;
+using RateTheWork.Domain.Interfaces.Services;
 using RateTheWork.Domain.Services;
 
 namespace RateTheWork.Application.Features.Reviews.Commands.CreateReview;
@@ -132,30 +133,27 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, C
         // 6. AI ile içerik moderasyonu
         var moderationResult = await _moderationService.ModerateContentAsync(request.CommentText);
         
-        // 7. Yorum entity'si oluştur
-        var review = new Review(
+        // 7. CommentType enum'a çevir
+        if (!Enum.TryParse<Domain.Enums.Review.CommentType>(request.CommentType, out var commentType))
+        {
+            throw new BusinessRuleException("INVALID_COMMENT_TYPE", "Geçersiz yorum tipi.");
+        }
+        
+        // 8. Yorum entity'si oluştur
+        var review = Domain.Entities.Review.Create(
             companyId: company.Id,
             userId: user.Id,
-            commentType: request.CommentType,
+            commentType: commentType,
             overallRating: request.OverallRating,
-            commentText: request.CommentText
+            commentText: request.CommentText,
+            documentUrl: request.DocumentUrl
         );
-
-        // 8. Doküman varsa ekle
-        if (!string.IsNullOrWhiteSpace(request.DocumentUrl))
-        {
-            review.DocumentUrl = request.DocumentUrl;
-            review.IsDocumentVerified = false; // Admin onayı bekleyecek
-        }
-
-        // 9. Audit bilgileri
-        review.CreatedBy = user.Id;
 
         // 10. Moderasyon sonucuna göre işle
         if (!moderationResult.IsApproved)
         {
             // Yorum reddedildi ama yine de kaydet (admin panelinde görünsün)
-            review.IsActive = false;
+            review.Deactivate();
             await _unitOfWork.Reviews.AddAsync(review);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -168,14 +166,14 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, C
                 Success = false,
                 ModerationStatus = "Rejected",
                 Message = "Yorumunuz içerik kurallarına aykırı bulundu.",
-                RejectionReason = moderationResult.RejectionReason
+                RejectionReason = moderationResult.RejectionReasons?.FirstOrDefault()
             };
         }
 
         // 11. Toxicity score yüksekse manuel incelemeye al
         if (moderationResult.ToxicityScore > 0.7)
         {
-            review.IsActive = false; // Manuel onay bekleyecek
+            review.Deactivate(); // Manuel onay bekleyecek
             await _unitOfWork.Reviews.AddAsync(review);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -189,7 +187,6 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, C
         }
 
         // 12. Yorum onaylandı - yayınla
-        review.IsActive = true;
         await _unitOfWork.Reviews.AddAsync(review);
 
         // 13. Şirketin puan ortalamasını güncelle
@@ -199,7 +196,7 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, C
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // 15. İlk yorum rozeti kontrolü
-        var userReviewCount = await _unitOfWork.Reviews.GetCountAsync(r => r.UserId == user.Id);
+        var userReviewCount = await _unitOfWork.Reviews.CountAsync(r => r.UserId == user.Id);
         if (userReviewCount == 1)
         {
             // TODO: Award first review badge
@@ -260,7 +257,7 @@ public class CreateReviewCommandValidator : AbstractValidator<CreateReviewComman
 
     private bool BeValidCommentType(string commentType)
     {
-        return CommentTypes.IsValid(commentType);
+        return Enum.TryParse<Domain.Enums.Review.CommentType>(commentType, out _);
     }
 
     private bool BeValidRating(decimal rating)

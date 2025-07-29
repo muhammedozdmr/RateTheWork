@@ -3,6 +3,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using RateTheWork.Application.Common.Mappings;
+using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Domain.Interfaces;
 
 namespace RateTheWork.Application.Features.Companies.Queries.SearchCompanies;
@@ -112,17 +113,20 @@ public class SearchCompaniesQueryHandler : IRequestHandler<SearchCompaniesQuery,
         // 2. Arama terimi filtresi
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            var searchTerm = request.SearchTerm.ToLower();
+            var searchTermLower = request.SearchTerm.ToLowerInvariant();
             query = query.Where(c => 
-                c.Name.ToLower().Contains(searchTerm) ||
-                c.Sector.ToLower().Contains(searchTerm) ||
-                c.Address.ToLower().Contains(searchTerm));
+                c.Name.ToLower().Contains(searchTermLower) ||
+                c.Sector.ToString().ToLower().Contains(searchTermLower) ||
+                (c.Address != null && c.Address.ToLower().Contains(searchTermLower)));
         }
 
         // 3. Sektör filtresi
         if (!string.IsNullOrWhiteSpace(request.Sector))
         {
-            query = query.Where(c => c.Sector == request.Sector);
+            if (Enum.TryParse<Domain.Enums.Company.CompanySector>(request.Sector, out var sectorEnum))
+            {
+                query = query.Where(c => c.Sector == sectorEnum);
+            }
         }
 
         // 4. Minimum puan filtresi
@@ -161,7 +165,7 @@ public class SearchCompaniesQueryHandler : IRequestHandler<SearchCompaniesQuery,
             {
                 CompanyId = c.Id,
                 Name = c.Name,
-                Sector = c.Sector,
+                Sector = c.Sector.ToString(),
                 LogoUrl = c.LogoUrl,
                 AverageRating = c.AverageRating,
                 TotalReviews = c.TotalReviews,
@@ -228,7 +232,7 @@ public class SearchCompaniesQueryValidator : AbstractValidator<SearchCompaniesQu
 
     private bool BeValidSector(string? sector)
     {
-        return sector != null && Domain.Enums.Sectors.GetAll().Contains(sector);
+        return sector != null && Domain.Enums.Company.Sectors.All.Contains(sector);
     }
 
     private bool BeValidSortField(string sortBy)

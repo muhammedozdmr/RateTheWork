@@ -92,12 +92,11 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
         }
 
         // 5. Yeni şifreyi hash'le ve güncelle
-        user.HashedPassword = _passwordHashingService.HashPassword(request.NewPassword);
-        user.ModifiedAt = DateTime.UtcNow;
-        user.ModifiedBy = _currentUserService.UserId;
+        var newHashedPassword = _passwordHashingService.HashPassword(request.NewPassword);
+        user.ChangePassword(newHashedPassword);
 
         // 6. Değişiklikleri kaydet
-        _unitOfWork.Users.Update(user);
+        await _unitOfWork.Users.UpdateAsync(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // 7. Güvenlik için tüm refresh token'ları iptal et (kullanıcı tüm cihazlardan çıkış yapsın)

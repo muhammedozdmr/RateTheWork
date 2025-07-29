@@ -34,6 +34,20 @@
         <PackageReference Include="Hangfire.SqlServer" Version="1.8.5"/>
         <PackageReference Include="Hangfire.AspNetCore" Version="1.8.5"/>
         <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.0"/>
+        
+        <!-- Entity Framework Core PostgreSQL -->
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11"/>
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10"/>
+        
+        <!-- Email Service -->
+        <PackageReference Include="SendGrid" Version="9.29.3"/>
+        
+        <!-- SMS Service -->
+        <PackageReference Include="Twilio" Version="7.8.0"/>
+        
+        <!-- Cloudflare KV Client -->
+        <PackageReference Include="RestSharp" Version="112.1.0"/>
     </ItemGroup>
 
     <ItemGroup>

@@ -52,6 +52,11 @@ public class HRPersonnel : AuditableBaseEntity
     public int TotalHiresMade { get; private set; }
     public decimal HiringSuccessRate { get; private set; } // İşe alım başarı oranı
     public decimal AverageTimeToHire { get; private set; } // Ortalama işe alım süresi (gün)
+    
+    // Application katmanı uyumluluğu için alias'lar
+    public int TotalJobPostings => TotalJobsPosted;
+    public int TotalHiredCandidates => TotalHiresMade;
+    public decimal AverageHiringDays => AverageTimeToHire;
 
     /// <summary>
     /// Yeni İK personeli oluşturur

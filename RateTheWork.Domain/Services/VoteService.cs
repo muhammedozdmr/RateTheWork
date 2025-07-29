@@ -146,17 +146,11 @@ public class VoteService : IVoteService
         if (review.Downvotes > 10 && review.Downvotes > review.Upvotes * 3)
         {
             var downvoteReport = Report.Create(
+                reportedEntityType: "Review",
+                reportedEntityId: reviewId,
                 reporterUserId: "SYSTEM",
-                targetType: "Review",
-                targetId: reviewId,
-                reportReason: ReportReasons.HighDownvoteRatio,
-                reportDetails:
-                $"Yorum {review.Downvotes} downvote aldı (upvote: {review.Upvotes}). Otomatik sistem raporu.",
-                metadata: new Dictionary<string, object>
-                {
-                    ["AutoDetected"] = true, ["DownvoteCount"] = review.Downvotes, ["UpvoteCount"] = review.Upvotes
-                    , ["DetectionType"] = "HighDownvoteRatio"
-                }
+                reason: ReportReason.Spam, // En yakın reason olarak Spam kullanıyoruz
+                description: $"Yorum {review.Downvotes} downvote aldı (upvote: {review.Upvotes}). Otomatik sistem raporu."
             );
 
             await _unitOfWork.Repository<Report>().AddAsync(downvoteReport);
@@ -169,16 +163,11 @@ public class VoteService : IVoteService
             if (isSuspicious)
             {
                 var manipulationReport = Report.Create(
+                    reportedEntityType: "Review",
+                    reportedEntityId: reviewId,
                     reporterUserId: "SYSTEM",
-                    targetType: "Review",
-                    targetId: reviewId,
-                    reportReason: ReportReasons.VoteManipulation,
-                    reportDetails: "Şüpheli oylama paterni tespit edildi. [Oy Manipülasyonu Şüphesi]",
-                    metadata: new Dictionary<string, object>
-                    {
-                        ["AutoDetected"] = true, ["UpvoteCount"] = review.Upvotes
-                        , ["DetectionType"] = "VoteManipulation", ["SuspicionLevel"] = "High"
-                    }
+                    reason: ReportReason.Other, // Vote manipulation için Other kullanıyoruz
+                    description: "Şüpheli oylama paterni tespit edildi. [Oy Manipülasyonu Şüphesi]"
                 );
 
                 await _unitOfWork.Repository<Report>().AddAsync(manipulationReport);

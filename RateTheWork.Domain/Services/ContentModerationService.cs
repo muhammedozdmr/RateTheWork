@@ -661,4 +661,10 @@ public class ContentModerationService : IContentModerationService
 
         return scores;
     }
+    
+    public async Task<ModerationResult> ModerateTextAsync(string text, string language = "tr")
+    {
+        // ModerateContentAsync'in alias'ı olarak çalışır
+        return await ModerateContentAsync(text, language);
+    }
 }

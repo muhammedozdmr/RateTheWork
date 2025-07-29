@@ -60,22 +60,17 @@ public class SubscriptionCreatedEventHandler : INotificationHandler<Subscription
             var emailTemplate = notification.Type switch
             {
                 SubscriptionType.Free => "subscription.welcome.free"
-                , SubscriptionType.Basic => "subscription.welcome.basic"
-                , SubscriptionType.Professional => "subscription.welcome.professional"
-                , SubscriptionType.Enterprise => "subscription.welcome.enterprise", _ => "subscription.welcome.default"
+                , SubscriptionType.CompanyBasic => "subscription.welcome.basic"
+                , SubscriptionType.CompanyProfessional => "subscription.welcome.professional"
+                , SubscriptionType.CompanyEnterprise => "subscription.welcome.enterprise"
+                , SubscriptionType.IndividualPremium => "subscription.welcome.individual", _ => "subscription.welcome.default"
             };
 
             await _emailService.SendEmailAsync(
                 to: user.Email,
                 subject: "RateTheWork'e Hoş Geldiniz!",
-                template: emailTemplate,
-                model: new
-                {
-                    UserName = user.AnonymousUsername, SubscriptionType = notification.Type.ToString()
-                    , Features = notification.Metadata?.GetValueOrDefault("features")
-                    , TrialEndDate = notification.TrialEndDate
-                },
-                cancellationToken);
+                body: $"Merhaba {user.AnonymousUsername},\n\nRateTheWork ailesine hoş geldiniz!",
+                cancellationToken: cancellationToken);
         }
         catch (Exception ex)
         {
@@ -91,13 +86,12 @@ public class SubscriptionCreatedEventHandler : INotificationHandler<Subscription
         {
             await _pushNotificationService.SendAsync(
                 userId: notification.UserId,
-                title: "Üyeliğiniz Başarıyla Oluşturuldu",
                 message: $"{notification.Type} üyeliğiniz aktif edildi. Tüm özelliklerin keyfini çıkarın!",
                 data: new Dictionary<string, string>
                 {
                     ["subscriptionId"] = notification.SubscriptionId, ["type"] = notification.Type.ToString()
                 },
-                cancellationToken);
+                cancellationToken: cancellationToken);
         }
         catch (Exception ex)
         {

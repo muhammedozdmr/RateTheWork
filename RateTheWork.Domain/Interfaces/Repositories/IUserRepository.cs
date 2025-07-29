@@ -89,4 +89,14 @@ public interface IUserRepository : IBaseRepository<User>
     /// <param name="username">Kontrol edilecek kullanıcı adı</param>
     /// <returns>Kullanıcı adı kullanımda mı?</returns>
     Task<bool> IsUsernameTakenAsync(string username);
+    
+    /// <summary>
+    /// Kullanıcıyı günceller
+    /// </summary>
+    Task UpdateAsync(User user);
+    
+    /// <summary>
+    /// Kullanıcıyı günceller (senkron)
+    /// </summary>
+    void Update(User user);
 }

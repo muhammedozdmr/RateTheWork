@@ -13,6 +13,7 @@ public class SubscriptionCreatedEvent : DomainEventBase
         , string userId
         , SubscriptionType type
         , DateTime startDate
+        , DateTime? trialEndDate = null
         , Dictionary<string, object>? metadata = null
     ) : base()
     {
@@ -20,6 +21,7 @@ public class SubscriptionCreatedEvent : DomainEventBase
         UserId = userId;
         Type = type;
         StartDate = startDate;
+        TrialEndDate = trialEndDate;
         Metadata = metadata;
     }
 
@@ -27,6 +29,7 @@ public class SubscriptionCreatedEvent : DomainEventBase
     public string UserId { get; }
     public SubscriptionType Type { get; }
     public DateTime StartDate { get; }
+    public DateTime? TrialEndDate { get; }
     public Dictionary<string, object>? Metadata { get; }
 }
 

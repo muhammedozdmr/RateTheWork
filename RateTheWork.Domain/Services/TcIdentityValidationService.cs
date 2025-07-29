@@ -95,6 +95,12 @@ public class TcIdentityValidationService : ITcIdentityValidationService
         // Sadece rakamlardan oluşmalı
         return identityNumber.All(char.IsDigit);
     }
+    
+    public async Task<bool> ValidateWithGovernmentServiceAsync(string tcIdentity, string firstName, string lastName, DateTime birthDate)
+    {
+        // ValidateWithMernisAsync ile aynı işlemi yapar
+        return await ValidateWithMernisAsync(tcIdentity, firstName, lastName, birthDate);
+    }
 }
 
 /// <summary>

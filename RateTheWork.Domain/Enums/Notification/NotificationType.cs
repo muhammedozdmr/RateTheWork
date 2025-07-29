@@ -152,9 +152,56 @@ public enum NotificationType
     CompanyVerified,
     
     /// <summary>
+    /// Şirket durumu değişti
+    /// </summary>
+    CompanyStatusChanged,
+    
+    /// <summary>
     /// Takip ettiğiniz şirkete yeni yorum
     /// </summary>
     CompanyNewReview,
+    
+    /// <summary>
+    /// Yeni yorum yapıldı
+    /// </summary>
+    NewReview,
+    
+    // ========== CV Application Notifications ==========
+    
+    /// <summary>
+    /// CV'niz görüntülendi
+    /// </summary>
+    CVViewed,
+    
+    /// <summary>
+    /// CV'niz indirildi
+    /// </summary>
+    CVDownloaded,
+    
+    /// <summary>
+    /// CV başvurunuza yanıt verildi
+    /// </summary>
+    CVResponded,
+    
+    /// <summary>
+    /// CV başvurunuzun süresi dolmak üzere
+    /// </summary>
+    CVExpiryWarning,
+    
+    /// <summary>
+    /// CV başvurunuzun süresi doldu
+    /// </summary>
+    CVExpired,
+    
+    /// <summary>
+    /// CV geri bildirim süresi uyarısı (şirket için)
+    /// </summary>
+    CVFeedbackDeadlineWarning,
+    
+    /// <summary>
+    /// CV geri bildirim süresi doldu (şirket için)
+    /// </summary>
+    CVFeedbackOverdue,
     
     // ========== System Notifications ==========
     

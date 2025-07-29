@@ -43,5 +43,15 @@ public enum CommentType
     /// <summary>
     /// İş-yaşam dengesi hakkında yorum
     /// </summary>
-    WorkLifeBalance
+    WorkLifeBalance,
+
+    /// <summary>
+    /// Müşteri/Danışman olarak yapılan yorum
+    /// </summary>
+    ClientReview,
+    
+    /// <summary>
+    /// Freelancer/Contractor olarak yapılan yorum
+    /// </summary>
+    ContractorReview
 }

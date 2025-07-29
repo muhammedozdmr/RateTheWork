@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
+using Microsoft.EntityFrameworkCore;
 using RateTheWork.Application.Common.Models;
 
 namespace RateTheWork.Application.Common.Extensions;
@@ -68,11 +69,16 @@ public static class QueryableExtensions
         if (property == null)
             return query;
 
-        var sortExpression = parameters.SortDirection == SortDirection.Ascending
-            ? $"{parameters.SortBy} ascending"
-            : $"{parameters.SortBy} descending";
+        var parameter = Expression.Parameter(typeof(T), "x");
+        var propertyAccess = Expression.Property(parameter, property);
+        var orderByExpression = Expression.Lambda(propertyAccess, parameter);
 
-        return query.OrderBy(sortExpression);
+        var methodName = parameters.SortDirection == SortDirection.Ascending ? "OrderBy" : "OrderByDescending";
+        var orderByMethod = typeof(Queryable).GetMethods()
+            .First(m => m.Name == methodName && m.GetGenericArguments().Length == 2)
+            .MakeGenericMethod(typeof(T), property.PropertyType);
+
+        return (IQueryable<T>)orderByMethod.Invoke(null, new object[] { query, orderByExpression });
     }
 
     /// <summary>

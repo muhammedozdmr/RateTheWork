@@ -22,6 +22,11 @@ public interface ICurrentUserService
     string? AnonymousUsername { get; }
     
     /// <summary>
+    /// Kullanıcının adı (AnonymousUsername veya FirstName LastName)
+    /// </summary>
+    string? UserName { get; }
+    
+    /// <summary>
     /// Kullanıcı oturum açmış mı?
     /// </summary>
     bool IsAuthenticated { get; }
@@ -30,4 +35,9 @@ public interface ICurrentUserService
     /// Kullanıcının rolleri (ileride admin paneli için)
     /// </summary>
     List<string> Roles { get; }
+    
+    /// <summary>
+    /// Kullanıcının IP adresi
+    /// </summary>
+    string? IpAddress { get; }
 }

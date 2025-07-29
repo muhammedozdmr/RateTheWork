@@ -4,6 +4,8 @@ using RateTheWork.Application.Common.Exceptions;
 using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Domain.Enums;
 using RateTheWork.Domain.Interfaces;
+using RateTheWork.Application.Common.Constants;
+using RateTheWork.Domain.Enums.Company;
 
 namespace RateTheWork.Application.Features.Companies.Commands.UpdateCompany;
 
@@ -126,8 +128,8 @@ public class UpdateCompanyCommandHandler : IRequestHandler<UpdateCompanyCommand,
         }
 
         // 2. Yetki kontrolü - Sadece şirketi ekleyen veya admin güncelleyebilir
-        var isAdmin = _currentUserService.Roles.Contains(AdminRoles.SuperAdmin) || 
-                     _currentUserService.Roles.Contains(AdminRoles.ContentManager);
+        var isAdmin = _currentUserService.Roles.Contains(RoleConstants.AdminRoles.SuperAdmin) || 
+                     _currentUserService.Roles.Contains(RoleConstants.AdminRoles.ContentManager);
         
         if (!isAdmin && company.CreatedBy != _currentUserService.UserId)
         {
@@ -137,47 +139,77 @@ public class UpdateCompanyCommandHandler : IRequestHandler<UpdateCompanyCommand,
         var updatedFieldsCount = 0;
         var requiresReApproval = false;
 
-        // 3. Şirket adı güncelleme (kritik değişiklik - yeniden onay gerektirir)
-        if (!string.IsNullOrWhiteSpace(request.Name) && request.Name != company.Name)
+        // 3. Enum dönüşümü
+        Domain.Enums.Company.CompanySector? newSector = null;
+        if (!string.IsNullOrWhiteSpace(request.Sector))
         {
-            company.Name = request.Name.Trim();
+            if (Enum.TryParse<Domain.Enums.Company.CompanySector>(request.Sector, out var sector))
+            {
+                newSector = sector;
+            }
+            else
+            {
+                throw new BusinessRuleException("INVALID_SECTOR", "Geçersiz sektör.");
+            }
+        }
+        
+        // 4. Temel bilgileri güncelle
+        var oldName = company.Name;
+        var oldSector = company.Sector;
+        var oldWebsite = company.WebsiteUrl;
+        
+        company.UpdateBasicInfo(
+            name: request.Name?.Trim(),
+            sector: newSector,
+            websiteUrl: request.WebsiteUrl?.Trim()
+        );
+        
+        if (oldName != company.Name)
+        {
             updatedFieldsCount++;
             requiresReApproval = !isAdmin; // Admin değilse yeniden onay gerekir
         }
-
-        // 4. Sektör güncelleme
-        if (!string.IsNullOrWhiteSpace(request.Sector) && request.Sector != company.Sector)
+        if (oldSector != company.Sector)
         {
-            company.Sector = request.Sector;
             updatedFieldsCount++;
         }
-
-        // 5. Adres güncelleme
-        if (!string.IsNullOrWhiteSpace(request.Address) && request.Address != company.Address)
+        if (oldWebsite != company.WebsiteUrl)
         {
-            company.Address = request.Address.Trim();
             updatedFieldsCount++;
         }
-
-        // 6. Telefon güncelleme
-        if (!string.IsNullOrWhiteSpace(request.PhoneNumber) && request.PhoneNumber != company.PhoneNumber)
+        
+        // 5. Adres ve iletişim bilgilerini güncelle
+        if (!string.IsNullOrWhiteSpace(request.Address) || !string.IsNullOrWhiteSpace(request.PhoneNumber) || !string.IsNullOrWhiteSpace(request.Email))
         {
-            company.PhoneNumber = request.PhoneNumber.Trim();
-            updatedFieldsCount++;
-        }
-
-        // 7. Email güncelleme
-        if (!string.IsNullOrWhiteSpace(request.Email) && request.Email != company.Email)
-        {
-            company.Email = request.Email.Trim().ToLowerInvariant();
-            updatedFieldsCount++;
-        }
-
-        // 8. Website güncelleme
-        if (!string.IsNullOrWhiteSpace(request.WebsiteUrl) && request.WebsiteUrl != company.WebsiteUrl)
-        {
-            company.WebsiteUrl = request.WebsiteUrl.Trim();
-            updatedFieldsCount++;
+            var oldAddress = company.Address;
+            var oldPhone = company.PhoneNumber;
+            var oldEmail = company.Email;
+            
+            company.UpdateContactInfo(
+                phoneNumber: request.PhoneNumber?.Trim() ?? company.PhoneNumber,
+                email: request.Email?.Trim().ToLowerInvariant() ?? company.Email
+            );
+            
+            if (!string.IsNullOrWhiteSpace(request.Address) && request.Address != oldAddress)
+            {
+                company.UpdateDetailedAddress(
+                    address: request.Address.Trim(),
+                    addressLine2: null,
+                    city: company.City,
+                    district: null,
+                    postalCode: null
+                );
+                updatedFieldsCount++;
+            }
+            
+            if (oldPhone != company.PhoneNumber)
+            {
+                updatedFieldsCount++;
+            }
+            if (oldEmail != company.Email)
+            {
+                updatedFieldsCount++;
+            }
         }
 
         // 9. Logo güncelleme
@@ -224,33 +256,26 @@ public class UpdateCompanyCommandHandler : IRequestHandler<UpdateCompanyCommand,
             };
         }
 
-        // 12. Güncelleme bilgilerini set et
-        company.ModifiedAt = DateTime.UtcNow;
-        company.ModifiedBy = _currentUserService.UserId;
+        // 12. Güncelleme bilgilerini set et (Domain entity içinde otomatik yapılıyor)
 
         // 13. Yeniden onay gerekiyorsa
         if (requiresReApproval)
         {
-            company.IsApproved = false;
-            company.ApprovedBy = null;
-            company.ApprovedAt = null;
-            company.ApprovalNotes = "Şirket bilgileri güncellendi, yeniden onay bekliyor.";
+            company.ResetApproval();
         }
 
         // 14. Değişiklikleri kaydet
-        _unitOfWork.Companies.Update(company);
+        await _unitOfWork.Companies.UpdateAsync(company);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // 15. Audit log oluştur
-        var auditLog = new Domain.Entities.AuditLog(
+        var auditLog = Domain.Entities.AuditLog.Create(
             adminUserId: _currentUserService.UserId!,
-            actionType: "CompanyUpdated",
+            actionType: Domain.Entities.AuditLog.ActionTypes.CompanyUpdated,
             entityType: "Company",
-            entityId: company.Id
-        )
-        {
-            Details = $"Güncellenen alan sayısı: {updatedFieldsCount}"
-        };
+            entityId: company.Id,
+            details: $"Güncellenen alan sayısı: {updatedFieldsCount}"
+        );
         
         await _unitOfWork.AuditLogs.AddAsync(auditLog);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -374,7 +399,7 @@ public class UpdateCompanyCommandValidator : AbstractValidator<UpdateCompanyComm
 
     private bool BeValidSector(string sector)
     {
-        return Sectors.GetAll().Contains(sector);
+        return Sectors.All.Contains(sector);
     }
 
     private bool BeAValidUrl(string? url)

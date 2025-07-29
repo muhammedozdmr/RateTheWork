@@ -4,6 +4,7 @@ using RateTheWork.Application.Common.Exceptions;
 using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Domain.Interfaces;
 using RateTheWork.Domain.Services;
+using RateTheWork.Domain.Events.User;
 
 namespace RateTheWork.Application.Features.Users.Commands.UpdateUserProfile;
 /// <summary>
@@ -15,11 +16,6 @@ public record UpdateUserProfileCommand : IRequest<UpdateUserProfileResult>
     /// Meslek bilgisi
     /// </summary>
     public string? Profession { get; init; }
-    
-    /// <summary>
-    /// Son çalışılan şirket
-    /// </summary>
-    public string? LastCompanyWorked { get; init; }
     
     /// <summary>
     /// Telefon numarası (şifrelenecek)
@@ -98,70 +94,52 @@ public class UpdateUserProfileCommandHandler : IRequestHandler<UpdateUserProfile
 
         // 2. Hangi alanlar güncellendi sayacı
         var updatedFieldsCount = 0;
-
-        // 3. Meslek güncelleme
-        if (!string.IsNullOrWhiteSpace(request.Profession) && user.Profession != request.Profession)
-        {
-            user.Profession = request.Profession;
-            updatedFieldsCount++;
-        }
-
-        // 4. Son çalışılan şirket güncelleme
-        if (!string.IsNullOrWhiteSpace(request.LastCompanyWorked) && user.LastCompanyWorked != request.LastCompanyWorked)
-        {
-            user.LastCompanyWorked = request.LastCompanyWorked;
-            updatedFieldsCount++;
-        }
-
-        // 5. Telefon numarası güncelleme (şifreli)
+        // 3. Telefon numarası güncelleme (şifreli)
+        var hasChanges = false;
         if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
         {
             var encryptedPhone = _encryptionService.Encrypt(request.PhoneNumber);
             if (user.EncryptedPhoneNumber != encryptedPhone)
             {
-                user.EncryptedPhoneNumber = encryptedPhone;
-                user.IsPhoneVerified = false; // Telefon değişince doğrulama sıfırlanır
-                user.PhoneVerificationCode = null;
-                user.PhoneVerificationCodeExpiry = null;
+                user.UpdatePhoneNumber(encryptedPhone);
+                hasChanges = true;
                 updatedFieldsCount++;
             }
         }
 
-        // 6. Adres güncelleme (şifreli)
-        if (!string.IsNullOrWhiteSpace(request.Address))
+        // 4. Profil bilgileri güncelleme
+        var encryptedAddress = !string.IsNullOrWhiteSpace(request.Address) 
+            ? _encryptionService.Encrypt(request.Address) 
+            : null;
+        var encryptedCity = !string.IsNullOrWhiteSpace(request.City) 
+            ? _encryptionService.Encrypt(request.City) 
+            : null;
+        var encryptedDistrict = !string.IsNullOrWhiteSpace(request.District) 
+            ? _encryptionService.Encrypt(request.District) 
+            : null;
+
+        // UpdateProfile metodunu çağır
+        user.UpdateProfile(
+            profession: request.Profession,
+            encryptedAddress: encryptedAddress,
+            encryptedCity: encryptedCity,
+            encryptedDistrict: encryptedDistrict
+        );
+
+        // Domain event'lerden değişiklik olup olmadığını kontrol et
+        if (user.DomainEvents.Any(e => e is UserProfileUpdatedEvent))
         {
-            var encryptedAddress = _encryptionService.Encrypt(request.Address);
-            if (user.EncryptedAddress != encryptedAddress)
+            hasChanges = true;
+            // UpdateProfile içinde kaç alan güncellendiğini sayabiliriz
+            var profileUpdatedEvent = user.DomainEvents.OfType<UserProfileUpdatedEvent>().FirstOrDefault();
+            if (profileUpdatedEvent != null && profileUpdatedEvent.UpdatedFields != null)
             {
-                user.EncryptedAddress = encryptedAddress;
-                updatedFieldsCount++;
+                updatedFieldsCount += profileUpdatedEvent.UpdatedFields.Length;
             }
         }
 
-        // 7. Şehir güncelleme (şifreli)
-        if (!string.IsNullOrWhiteSpace(request.City))
-        {
-            var encryptedCity = _encryptionService.Encrypt(request.City);
-            if (user.EncryptedCity != encryptedCity)
-            {
-                user.EncryptedCity = encryptedCity;
-                updatedFieldsCount++;
-            }
-        }
-
-        // 8. İlçe güncelleme (şifreli)
-        if (!string.IsNullOrWhiteSpace(request.District))
-        {
-            var encryptedDistrict = _encryptionService.Encrypt(request.District);
-            if (user.EncryptedDistrict != encryptedDistrict)
-            {
-                user.EncryptedDistrict = encryptedDistrict;
-                updatedFieldsCount++;
-            }
-        }
-
-        // 9. Eğer hiç değişiklik yoksa
-        if (updatedFieldsCount == 0)
+        // 5. Eğer hiç değişiklik yoksa
+        if (!hasChanges)
         {
             return new UpdateUserProfileResult
             {
@@ -171,11 +149,7 @@ public class UpdateUserProfileCommandHandler : IRequestHandler<UpdateUserProfile
             };
         }
 
-        // 10. Değişiklikleri kaydet
-        user.ModifiedAt = DateTime.UtcNow;
-        user.ModifiedBy = _currentUserService.UserId;
-
-        _unitOfWork.Users.Update(user);
+        await _unitOfWork.Users.UpdateAsync(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new UpdateUserProfileResult
@@ -197,7 +171,6 @@ public class UpdateUserProfileCommandValidator : AbstractValidator<UpdateUserPro
         // En az bir alan dolu olmalı
         RuleFor(x => x)
             .Must(x => !string.IsNullOrWhiteSpace(x.Profession) ||
-                      !string.IsNullOrWhiteSpace(x.LastCompanyWorked) ||
                       !string.IsNullOrWhiteSpace(x.PhoneNumber) ||
                       !string.IsNullOrWhiteSpace(x.Address) ||
                       !string.IsNullOrWhiteSpace(x.City) ||
@@ -209,13 +182,6 @@ public class UpdateUserProfileCommandValidator : AbstractValidator<UpdateUserPro
         {
             RuleFor(x => x.Profession)
                 .MaximumLength(100).WithMessage("Meslek bilgisi 100 karakterden uzun olamaz.");
-        });
-
-        // Şirket validation
-        When(x => !string.IsNullOrWhiteSpace(x.LastCompanyWorked), () =>
-        {
-            RuleFor(x => x.LastCompanyWorked)
-                .MaximumLength(200).WithMessage("Şirket adı 200 karakterden uzun olamaz.");
         });
 
         // Telefon validation

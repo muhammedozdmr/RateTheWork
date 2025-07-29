@@ -3,6 +3,7 @@ using MediatR;
 using RateTheWork.Application.Common.Exceptions;
 using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Domain.Enums;
+using RateTheWork.Domain.Enums.Admin;
 using RateTheWork.Domain.Interfaces;
 
 namespace RateTheWork.Application.Features.Companies.Commands.ApproveCompany;
@@ -71,9 +72,9 @@ public class ApproveCompanyCommandHandler : IRequestHandler<ApproveCompanyComman
     public async Task<ApproveCompanyResult> Handle(ApproveCompanyCommand request, CancellationToken cancellationToken)
     {
         // 1. Admin kontrolü
-        var isAdmin = _currentUserService.Roles.Contains(AdminRoles.SuperAdmin) || 
-                     _currentUserService.Roles.Contains(AdminRoles.ContentManager) ||
-                     _currentUserService.Roles.Contains(AdminRoles.Moderator);
+        var isAdmin = _currentUserService.Roles.Contains(AdminRole.SuperAdmin.ToString()) || 
+                     _currentUserService.Roles.Contains(AdminRole.ContentManager.ToString()) ||
+                     _currentUserService.Roles.Contains(AdminRole.Moderator.ToString());
         
         if (!isAdmin)
         {
@@ -107,25 +108,18 @@ public class ApproveCompanyCommandHandler : IRequestHandler<ApproveCompanyComman
         }
 
         // 5. Şirketi onayla
-        company.IsApproved = true;
-        company.ApprovedBy = _currentUserService.UserId;
-        company.ApprovedAt = DateTime.UtcNow;
-        company.ApprovalNotes = request.ApprovalNotes;
-        company.ModifiedAt = DateTime.UtcNow;
-        company.ModifiedBy = _currentUserService.UserId;
+        company.Approve(_currentUserService.UserId!, request.ApprovalNotes);
 
         _unitOfWork.Companies.Update(company);
 
         // 6. Audit log oluştur
-        var auditLog = new Domain.Entities.AuditLog(
+        var auditLog = Domain.Entities.AuditLog.Create(
             adminUserId: _currentUserService.UserId!,
             actionType: "CompanyApproved",
             entityType: "Company",
-            entityId: company.Id
-        )
-        {
-            Details = $"Şirket onaylandı: {company.Name}"
-        };
+            entityId: company.Id,
+            details: $"Şirket onaylandı: {company.Name}"
+        );
         
         await _unitOfWork.AuditLogs.AddAsync(auditLog);
 
@@ -138,15 +132,14 @@ public class ApproveCompanyCommandHandler : IRequestHandler<ApproveCompanyComman
             if (user != null)
             {
                 // Bildirim oluştur
-                var notification = new Domain.Entities.Notification(
+                var notification = Domain.Entities.Notification.Create(
                     userId: user.Id,
-                    type: "CompanyApproved",
-                    message: $"Eklediğiniz '{company.Name}' şirketi onaylandı ve yayınlandı!"
-                )
-                {
-                    RelatedEntityId = company.Id,
-                    RelatedEntityType = "Company"
-                };
+                    type: Domain.Enums.Notification.NotificationType.SystemAnnouncement,
+                    title: "Şirket Onaylandı",
+                    message: $"Eklediğiniz '{company.Name}' şirketi onaylandı ve yayınlandı!",
+                    relatedEntityType: "Company",
+                    relatedEntityId: company.Id
+                );
                 
                 await _unitOfWork.Notifications.AddAsync(notification);
 
