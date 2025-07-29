@@ -1,0 +1,24 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+.git/
+.gitignore
+*.user
+*.suo
+*.sln.DotSettings.user
+.DS_Store
+
+# Test projects - Railway doesn't need these
+*.Tests/
+*.E2E.Tests/
+*.Integration.Tests/
+*.Architecture.Tests/
+
+# Documentation
+*.md
+LICENSE
+
+# Local settings
+appsettings.Development.json
+appsettings.Local.json
