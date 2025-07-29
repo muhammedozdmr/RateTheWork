@@ -18,10 +18,10 @@ public abstract class BaseRepository<T> : IBaseRepository<T> where T : BaseEntit
 
     public virtual async Task<T?> GetByIdAsync(string? id)
     {
-        if (string.IsNullOrEmpty(id) || !Guid.TryParse(id, out var guidId))
+        if (string.IsNullOrEmpty(id))
             return null;
             
-        return await _dbSet.FindAsync(guidId);
+        return await _dbSet.FindAsync(id);
     }
 
     public virtual async Task<IReadOnlyList<T>> GetAllAsync()

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RateTheWork.Infrastructure.Persistence;
+using RateTheWork.Infrastructure.Persistence.Repositories;
 using RateTheWork.Infrastructure.Services;
 using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Domain.Interfaces.Repositories;
@@ -19,8 +20,7 @@ public static class DependencyInjection
         // Convert Railway DATABASE_URL to Npgsql format
         var builder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString)
         {
-            SslMode = Npgsql.SslMode.Require,
-            TrustServerCertificate = true
+            SslMode = Npgsql.SslMode.Require
         };
 
         services.AddDbContext<ApplicationDbContext>(options =>

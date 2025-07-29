@@ -19,62 +19,52 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.Email)
             .IsUnique();
             
-        builder.Property(u => u.UserName)
+        builder.Property(u => u.AnonymousUsername)
             .IsRequired()
             .HasMaxLength(256);
             
-        builder.HasIndex(u => u.UserName)
+        builder.HasIndex(u => u.AnonymousUsername)
             .IsUnique();
             
-        builder.Property(u => u.FirstName)
+        builder.Property(u => u.EncryptedFirstName)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(256);
             
-        builder.Property(u => u.LastName)
+        builder.Property(u => u.EncryptedLastName)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(256);
             
-        builder.Property(u => u.TCIdentityNumber)
-            .HasMaxLength(11)
-            .IsFixedLength();
+        builder.Property(u => u.EncryptedTcIdentityNumber)
+            .HasMaxLength(256);
             
-        builder.HasIndex(u => u.TCIdentityNumber)
+        builder.HasIndex(u => u.EncryptedTcIdentityNumber)
             .IsUnique()
-            .HasFilter("\"TCIdentityNumber\" IS NOT NULL");
+            .HasFilter("\"EncryptedTcIdentityNumber\" IS NOT NULL AND \"EncryptedTcIdentityNumber\" != ''");
             
-        builder.Property(u => u.PhoneNumber)
-            .HasMaxLength(20);
+        builder.Property(u => u.EncryptedPhoneNumber)
+            .HasMaxLength(256);
             
-        builder.Property(u => u.PasswordHash)
+        builder.Property(u => u.HashedPassword)
             .IsRequired();
             
-        builder.Property(u => u.SecurityStamp)
-            .IsRequired();
+        builder.Property(u => u.Profession)
+            .HasMaxLength(100);
             
-        builder.Property(u => u.ProfilePictureUrl)
+        builder.Property(u => u.EncryptedAddress)
             .HasMaxLength(500);
             
-        builder.Property(u => u.Bio)
-            .HasMaxLength(1000);
+        builder.Property(u => u.EncryptedCity)
+            .HasMaxLength(100);
             
-        builder.HasOne(u => u.Subscription)
-            .WithOne(s => s.User)
-            .HasForeignKey<Subscription>(s => s.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(u => u.EncryptedDistrict)
+            .HasMaxLength(100);
             
-        builder.HasMany(u => u.Reviews)
-            .WithOne(r => r.User)
-            .HasForeignKey(r => r.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(u => u.EncryptedBirthDate)
+            .HasMaxLength(100);
             
-        builder.HasMany(u => u.Warnings)
-            .WithOne(w => w.User)
-            .HasForeignKey(w => w.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
-            
-        builder.HasMany(u => u.Bans)
-            .WithOne(b => b.User)
-            .HasForeignKey(b => b.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // Enum property
+        builder.Property(u => u.Gender)
+            .HasConversion<string>()
+            .HasMaxLength(50);
     }
 }
