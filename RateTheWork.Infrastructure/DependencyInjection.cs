@@ -13,9 +13,11 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // Database
-        var connectionString = configuration["DATABASE_URL"] ?? 
-            throw new InvalidOperationException("DATABASE_URL not configured");
+        // Database - Try both DATABASE_URL and ConnectionStrings:DefaultConnection
+        var connectionString = configuration["DATABASE_URL"] 
+            ?? configuration.GetConnectionString("DefaultConnection")
+            ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+            ?? throw new InvalidOperationException("DATABASE_URL not configured");
             
         // Convert Railway DATABASE_URL to Npgsql format
         var builder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString)
