@@ -7,16 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Application", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Infrastructure", "RateTheWork.Infrastructure\RateTheWork.Infrastructure.csproj", "{AC3823CA-6E77-4769-9C9C-24127458072A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Application.Tests", "RateTheWork.Application.Tests\RateTheWork.Application.Tests.csproj", "{E67E0A11-ED0E-47D8-89B1-A25A12628D17}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Domain.Tests", "RateTheWork.Domain.Tests\RateTheWork.Domain.Tests.csproj", "{C6EECFF3-8241-4365-89FB-174ECE8A4248}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Architecture.Tests", "RateTheWork.Architecture.Tests\RateTheWork.Architecture.Tests.csproj", "{A1B2C3D4-E5F6-7890-AB12-34567890ABCD}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.Integration.Tests", "RateTheWork.Integration.Tests\RateTheWork.Integration.Tests.csproj", "{B2C3D4E5-F6A7-8901-BC23-45678901BCDE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.E2E.Tests", "RateTheWork.E2E.Tests\RateTheWork.E2E.Tests.csproj", "{C3D4E5F6-A7B8-9012-CD34-56789012CDEF}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateTheWork.API", "RateTheWork.API\RateTheWork.API.csproj", "{096ACFB9-D198-406B-825A-20C8E7578091}"
 EndProject
 Global
@@ -37,26 +27,6 @@ Global
 		{AC3823CA-6E77-4769-9C9C-24127458072A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AC3823CA-6E77-4769-9C9C-24127458072A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AC3823CA-6E77-4769-9C9C-24127458072A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E67E0A11-ED0E-47D8-89B1-A25A12628D17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E67E0A11-ED0E-47D8-89B1-A25A12628D17}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E67E0A11-ED0E-47D8-89B1-A25A12628D17}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E67E0A11-ED0E-47D8-89B1-A25A12628D17}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C6EECFF3-8241-4365-89FB-174ECE8A4248}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C6EECFF3-8241-4365-89FB-174ECE8A4248}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C6EECFF3-8241-4365-89FB-174ECE8A4248}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C6EECFF3-8241-4365-89FB-174ECE8A4248}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A1B2C3D4-E5F6-7890-AB12-34567890ABCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A1B2C3D4-E5F6-7890-AB12-34567890ABCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A1B2C3D4-E5F6-7890-AB12-34567890ABCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A1B2C3D4-E5F6-7890-AB12-34567890ABCD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B2C3D4E5-F6A7-8901-BC23-45678901BCDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B2C3D4E5-F6A7-8901-BC23-45678901BCDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B2C3D4E5-F6A7-8901-BC23-45678901BCDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B2C3D4E5-F6A7-8901-BC23-45678901BCDE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C3D4E5F6-A7B8-9012-CD34-56789012CDEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C3D4E5F6-A7B8-9012-CD34-56789012CDEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C3D4E5F6-A7B8-9012-CD34-56789012CDEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C3D4E5F6-A7B8-9012-CD34-56789012CDEF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{096ACFB9-D198-406B-825A-20C8E7578091}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{096ACFB9-D198-406B-825A-20C8E7578091}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{096ACFB9-D198-406B-825A-20C8E7578091}.Release|Any CPU.ActiveCfg = Release|Any CPU
