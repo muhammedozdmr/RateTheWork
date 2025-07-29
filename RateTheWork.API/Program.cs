@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using RateTheWork.Application;
 using RateTheWork.Infrastructure;
 
@@ -27,6 +28,22 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Apply migrations on startup
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<RateTheWork.Infrastructure.Persistence.ApplicationDbContext>();
+        dbContext.Database.Migrate();
+        Console.WriteLine("Database migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error applying migrations: {ex.Message}");
+        // Don't fail startup if migration fails - log and continue
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
