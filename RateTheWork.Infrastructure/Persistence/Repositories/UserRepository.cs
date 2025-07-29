@@ -115,6 +115,12 @@ public class UserRepository : BaseRepository<User>, IUserRepository
         _dbSet.Update(user);
     }
 
+    // Override to match IUserRepository interface
+    public new async Task UpdateAsync(User user)
+    {
+        await base.UpdateAsync(user);
+    }
+
     // Eski interface metodları için uyumluluk
     public async Task<User?> GetByUsernameAsync(string username)
     {

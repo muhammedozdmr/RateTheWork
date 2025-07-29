@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore.Storage;
-using RateTheWork.Application.Common.Interfaces;
+using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Interfaces.Repositories;
 
 namespace RateTheWork.Infrastructure.Persistence.Repositories;
 
-public class UnitOfWork : IUnitOfWork, Domain.Interfaces.Repositories.IUnitOfWork
+public class UnitOfWork : Application.Common.Interfaces.IUnitOfWork, Domain.Interfaces.Repositories.IUnitOfWork
 {
     private readonly ApplicationDbContext _context;
     private IDbContextTransaction? _currentTransaction;
@@ -38,6 +38,7 @@ public class UnitOfWork : IUnitOfWork, Domain.Interfaces.Repositories.IUnitOfWor
         return await _context.SaveChangesAsync(cancellationToken);
     }
 
+    // Application.Common.Interfaces.IUnitOfWork methods with CancellationToken
     public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
         _currentTransaction = await _context.Database.BeginTransactionAsync(cancellationToken);
@@ -81,8 +82,24 @@ public class UnitOfWork : IUnitOfWork, Domain.Interfaces.Repositories.IUnitOfWor
         }
     }
 
+    // Domain.Interfaces.Repositories.IUnitOfWork methods without CancellationToken
+    public async Task BeginTransactionAsync()
+    {
+        await BeginTransactionAsync(CancellationToken.None);
+    }
+
+    public async Task CommitTransactionAsync()
+    {
+        await CommitTransactionAsync(CancellationToken.None);
+    }
+
+    public async Task RollbackTransactionAsync()
+    {
+        await RollbackTransactionAsync(CancellationToken.None);
+    }
+
     // Domain.Interfaces.Repositories.IUnitOfWork implementation
-    public T Repository<T>() where T : class
+    public IRepository<T> Repository<T>() where T : BaseEntity
     {
         throw new NotImplementedException();
     }
