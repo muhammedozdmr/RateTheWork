@@ -65,26 +65,34 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Background job'ları zamanla
-RecurringJob.AddOrUpdate<DataCleanupJob>(
-    "cleanup-soft-deleted",
-    job => job.CleanupSoftDeletedRecordsAsync(90),
-    Cron.Daily(3, 0)); // Her gün saat 03:00'te
+// Hangfire server'ı başlat
+app.UseHangfireServer();
 
-RecurringJob.AddOrUpdate<DataCleanupJob>(
-    "cleanup-expired-verifications",
-    job => job.CleanupExpiredVerificationRequestsAsync(),
-    Cron.Hourly); // Her saat başı
+// Background job'ları zamanla - app build edildikten sonra
+using (var scope = app.Services.CreateScope())
+{
+    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+    
+    recurringJobManager.AddOrUpdate<DataCleanupJob>(
+        "cleanup-soft-deleted",
+        job => job.CleanupSoftDeletedRecordsAsync(90),
+        Cron.Daily(3, 0)); // Her gün saat 03:00'te
 
-RecurringJob.AddOrUpdate<DataCleanupJob>(
-    "close-expired-job-postings",
-    job => job.CloseExpiredJobPostingsAsync(),
-    Cron.Daily(0, 0)); // Her gün gece yarısı
+    recurringJobManager.AddOrUpdate<DataCleanupJob>(
+        "cleanup-expired-verifications",
+        job => job.CleanupExpiredVerificationRequestsAsync(),
+        Cron.Hourly); // Her saat başı
 
-RecurringJob.AddOrUpdate<ReportGenerationJob>(
-    "weekly-system-report",
-    job => job.GenerateWeeklySystemReportAsync(),
-    Cron.Weekly(DayOfWeek.Monday, 9, 0)); // Her pazartesi sabah 09:00'da
+    recurringJobManager.AddOrUpdate<DataCleanupJob>(
+        "close-expired-job-postings",
+        job => job.CloseExpiredJobPostingsAsync(),
+        Cron.Daily(0, 0)); // Her gün gece yarısı
+
+    recurringJobManager.AddOrUpdate<ReportGenerationJob>(
+        "weekly-system-report",
+        job => job.GenerateWeeklySystemReportAsync(),
+        Cron.Weekly(DayOfWeek.Monday, 9, 0)); // Her pazartesi sabah 09:00'da
+}
 
 // Apply migrations on startup
 using (var scope = app.Services.CreateScope())
