@@ -30,8 +30,7 @@ public class CompanyRepository : BaseRepository<Company>, ICompanyRepository
         (string searchTerm, string? sector = null, int page = 1, int pageSize = 20)
     {
         var query = _dbSet
-            .Where(c => c.Name.Contains(searchTerm) || c.Description.Contains(searchTerm))
-            .Include(c => c.Branches);
+            .Where(c => c.Name.Contains(searchTerm) || c.Description.Contains(searchTerm));
 
         if (!string.IsNullOrEmpty(sector) && Enum.TryParse<CompanySector>(sector, true, out var sectorEnum))
         {
@@ -65,7 +64,7 @@ public class CompanyRepository : BaseRepository<Company>, ICompanyRepository
             return new List<Review>();
 
         return await _context.Set<Review>()
-            .Where(r => r.CompanyId == companyGuid && r.IsActive && r.IsPublished)
+            .Where(r => r.CompanyId == companyId && r.IsActive && r.IsPublished)
             .Include(r => r.User)
             .Include(r => r.Branch)
             .OrderByDescending(r => r.CreatedAt)
@@ -77,7 +76,7 @@ public class CompanyRepository : BaseRepository<Company>, ICompanyRepository
     public async Task<List<Company>> GetPendingApprovalCompaniesAsync()
     {
         return await _dbSet
-            .Where(c => !c.IsApproved && c.ApprovalStatus == "Pending")
+            .Where(c => !c.IsApproved && c.ApprovalStatus == ApprovalStatus.Pending)
             .Include(c => c.Branches)
             .OrderBy(c => c.CreatedAt)
             .ToListAsync();
@@ -99,17 +98,17 @@ public class CompanyRepository : BaseRepository<Company>, ICompanyRepository
             return;
 
         var averageRating = await _context.Set<Review>()
-            .Where(r => r.CompanyId == companyGuid && r.IsActive && r.IsPublished)
-            .AverageAsync(r => (decimal?)r.Rating) ?? 0;
+            .Where(r => r.CompanyId == companyId && r.IsActive && r.IsPublished)
+            .AverageAsync(r => (decimal?)r.OverallRating) ?? 0;
 
         var reviewCount = await _context.Set<Review>()
-            .CountAsync(r => r.CompanyId == companyGuid && r.IsActive && r.IsPublished);
+            .CountAsync(r => r.CompanyId == companyId && r.IsActive && r.IsPublished);
 
-        var company = await _dbSet.FindAsync(companyGuid);
+        var company = await _dbSet.FindAsync(companyId);
         if (company != null)
         {
-            company.AverageRating = averageRating;
-            company.TotalReviews = reviewCount;
+            // Use the UpdateReviewStatistics method instead of direct property assignment
+            company.UpdateReviewStatistics(averageRating, reviewCount);
             await _context.SaveChangesAsync();
         }
     }
@@ -120,9 +119,9 @@ public class CompanyRepository : BaseRepository<Company>, ICompanyRepository
             return 0;
 
         var reviews = await _context.Set<Review>()
-            .Where(r => r.CompanyId == companyGuid && r.IsActive && r.IsPublished)
+            .Where(r => r.CompanyId == companyId && r.IsActive && r.IsPublished)
             .OrderByDescending(r => r.CreatedAt)
-            .Select(r => new { r.Rating, r.CreatedAt })
+            .Select(r => new { Rating = r.OverallRating, r.CreatedAt })
             .ToListAsync();
 
         if (!reviews.Any())
@@ -202,7 +201,7 @@ public class CompanyRepository : BaseRepository<Company>, ICompanyRepository
 
         if (excludeCompanyId.HasValue)
         {
-            query = query.Where(c => c.Id != excludeCompanyId.Value);
+            query = query.Where(c => c.Id != excludeCompanyId.Value.ToString());
         }
 
         return !await query.AnyAsync(cancellationToken);
@@ -212,7 +211,7 @@ public class CompanyRepository : BaseRepository<Company>, ICompanyRepository
     {
         return await _dbSet
             .Include(c => c.Branches)
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(c => c.Id == id.ToString(), cancellationToken);
     }
 
     public async Task<int> GetActiveJobPostingCountAsync(Guid companyId, CancellationToken cancellationToken = default)

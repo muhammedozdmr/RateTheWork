@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Enums.Badge;
 using RateTheWork.Domain.Events.Badge;
@@ -22,13 +23,21 @@ public class Badge : BaseEntity
     public string Description { get; private set; } = string.Empty;
     public string IconUrl { get; private set; } = string.Empty;
     public string? Criteria { get; private set; } = string.Empty;
+    public string Code { get; private set; } = string.Empty;
+    public string Category { get; private set; } = string.Empty;
     public BadgeType Type { get; private set; }
     public BadgeRarity Rarity { get; private set; }
     public int RequiredCount { get; private set; }
     public bool IsActive { get; private set; } = true;
+    public bool IsAutoAwardable { get; private set; } = false;
     public DateTime? AvailableFrom { get; private set; }
     public DateTime? AvailableUntil { get; private set; }
     public int Points { get; private set; }
+    public int Level { get; private set; } = 1;
+    public int SortOrder { get; private set; } = 0;
+
+    // Navigation Properties
+    public virtual ICollection<UserBadge> UserBadges { get; private set; } = new List<UserBadge>();
 
     /// <summary>
     /// Yeni rozet oluşturur (Factory method)
@@ -38,22 +47,29 @@ public class Badge : BaseEntity
         string name
         , string description
         , string iconUrl
+        , string code
+        , string category
         , string criteria
         , BadgeType type
         , BadgeRarity rarity
         , int requiredCount = 0
         , int points = 10
+        , int level = 1
+        , bool isAutoAwardable = false
     )
     {
         ValidateName(name);
         ValidateDescription(description);
         ValidateIconUrl(iconUrl);
+        ValidateCode(code);
+        ValidateCategory(category);
 
         var badge = new Badge
         {
-            Name = name, Description = description, IconUrl = iconUrl
+            Name = name, Description = description, IconUrl = iconUrl, Code = code, Category = category
             , Criteria = criteria ?? throw new ArgumentNullException(nameof(criteria)), Type = type, Rarity = rarity
-            , RequiredCount = requiredCount, Points = points > 0 ? points : 10, IsActive = true
+            , RequiredCount = requiredCount, Points = points > 0 ? points : 10, Level = level > 0 ? level : 1
+            , IsActive = true, IsAutoAwardable = isAutoAwardable
         };
 
         // Domain Event
@@ -189,5 +205,26 @@ public class Badge : BaseEntity
         {
             throw new BusinessRuleException("Geçersiz ikon URL'i.");
         }
+    }
+
+    private static void ValidateCode(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            throw new ArgumentNullException(nameof(code));
+
+        if (code.Length > 50)
+            throw new BusinessRuleException("Rozet kodu 50 karakterden uzun olamaz.");
+
+        if (!Regex.IsMatch(code, @"^[A-Z0-9_]+$"))
+            throw new BusinessRuleException("Rozet kodu sadece büyük harf, rakam ve alt çizgi içerebilir.");
+    }
+
+    private static void ValidateCategory(string category)
+    {
+        if (string.IsNullOrWhiteSpace(category))
+            throw new ArgumentNullException(nameof(category));
+
+        if (category.Length > 50)
+            throw new BusinessRuleException("Rozet kategorisi 50 karakterden uzun olamaz.");
     }
 }

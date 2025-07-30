@@ -20,8 +20,11 @@ public class AuditLog : BaseEntity
 
     // Properties
     public string AdminUserId { get; private set; } = string.Empty;
+    public string UserId => AdminUserId; // Alias for interface compatibility
     public string ActionType { get; private set; } = string.Empty;
+    public string Action => ActionType; // Alias for interface compatibility
     public string EntityType { get; private set; } = string.Empty;
+    public string EntityName => EntityType; // Alias for interface compatibility
     public string EntityId { get; private set; } = string.Empty;
     public DateTime PerformedAt { get; private set; }
     public string? OldValues { get; private set; }

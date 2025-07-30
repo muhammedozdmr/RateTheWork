@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Interfaces.Repositories;
 
@@ -15,62 +16,54 @@ public class AuditLogRepository : BaseRepository<AuditLog>, IAuditLogRepository
     /// <summary>
     /// Belirli bir entity için audit loglarını getirir
     /// </summary>
-    public async Task<IEnumerable<AuditLog>> GetByEntityAsync(string entityName, Guid entityId)
+    public async Task<List<AuditLog>> GetByEntityAsync
+        (string entityType, string entityId, int page = 1, int pageSize = 50)
     {
         return await _context.AuditLogs
-            .Where(a => a.EntityName == entityName && a.EntityId == entityId.ToString())
+            .Where(a => a.EntityName == entityType && a.EntityId == entityId)
             .OrderByDescending(a => a.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
     }
 
     /// <summary>
-    /// Belirli bir kullanıcının audit loglarını getirir
+    /// Belirli bir admin kullanıcısının audit loglarını getirir
     /// </summary>
-    public async Task<IEnumerable<AuditLog>> GetByUserAsync
-        (Guid userId, DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<List<AuditLog>> GetByAdminUserIdAsync(string adminUserId, int page = 1, int pageSize = 50)
     {
-        var query = _context.AuditLogs
-            .Where(a => a.UserId == userId);
-
-        if (startDate.HasValue)
-            query = query.Where(a => a.CreatedAt >= startDate.Value);
-
-        if (endDate.HasValue)
-            query = query.Where(a => a.CreatedAt <= endDate.Value);
-
-        return await query
+        return await _context.AuditLogs
+            .Where(a => a.UserId == adminUserId)
             .OrderByDescending(a => a.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
     }
 
     /// <summary>
-    /// Belirli bir aksiyon tipine göre audit loglarını getirir
+    /// Belirli bir aksiyon tipindeki audit loglarını getirir
     /// </summary>
-    public async Task<IEnumerable<AuditLog>> GetByActionAsync
-        (string action, DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<List<AuditLog>> GetByActionTypeAsync(string actionType, int page = 1, int pageSize = 50)
     {
-        var query = _context.AuditLogs
-            .Where(a => a.Action == action);
-
-        if (startDate.HasValue)
-            query = query.Where(a => a.CreatedAt >= startDate.Value);
-
-        if (endDate.HasValue)
-            query = query.Where(a => a.CreatedAt <= endDate.Value);
-
-        return await query
+        return await _context.AuditLogs
+            .Where(a => a.Action == actionType)
             .OrderByDescending(a => a.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
     }
 
     /// <summary>
-    /// Tarih aralığına göre audit loglarını getirir
+    /// Belirli bir tarih aralığındaki audit loglarını getirir
     /// </summary>
-    public async Task<IEnumerable<AuditLog>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
+    public async Task<List<AuditLog>> GetByDateRangeAsync
+        (DateTime startDate, DateTime endDate, int page = 1, int pageSize = 50)
     {
         return await _context.AuditLogs
             .Where(a => a.CreatedAt >= startDate && a.CreatedAt <= endDate)
             .OrderByDescending(a => a.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
     }
 }

@@ -1,6 +1,5 @@
 using RateTheWork.Domain.Common;
 using RateTheWork.Domain.Events;
-using RateTheWork.Domain.Events.Review;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Common;
 
@@ -21,76 +20,88 @@ public class ContractorReview : AuditableBaseEntity, IAggregateRoot
     // Properties
     public string CompanyId { get; private set; } = string.Empty;
     public string UserId { get; private set; } = string.Empty;
+    public string ReviewedById { get; private set; } = string.Empty; // Alias for UserId
+    public Guid? ContractorId { get; private set; } // Legacy property
+    public string Status { get; private set; } = "Approved"; // Status of the review
     public string ProjectDescription { get; private set; } = string.Empty;
     public decimal ProjectBudget { get; private set; }
     public string ProjectDuration { get; private set; } = string.Empty; // "1-3 ay", "3-6 ay", vb.
     public DateTime ProjectStartDate { get; private set; }
     public DateTime ProjectEndDate { get; private set; }
-    
+
     // Puanlama kriterleri (1-5 arası)
     public decimal PaymentTimelinessRating { get; private set; } // Ödeme zamanlaması
     public decimal CommunicationRating { get; private set; } // İletişim kalitesi
     public decimal ProjectManagementRating { get; private set; } // Proje yönetimi
     public decimal TechnicalCompetenceRating { get; private set; } // Teknik yeterlilik
     public decimal OverallRating { get; private set; } // Genel puan
-    
+
     public string ReviewText { get; private set; } = string.Empty;
     public bool WouldWorkAgain { get; private set; } // Tekrar çalışır mıydınız?
     public bool IsVerified { get; private set; } = false; // Sözleşme/fatura ile doğrulandı mı?
     public string? VerificationDocumentUrl { get; private set; }
     public bool IsAnonymous { get; private set; } = true;
     public bool IsActive { get; private set; } = true;
-    
+
     public int Upvotes { get; private set; } = 0;
     public int Downvotes { get; private set; } = 0;
     public decimal HelpfulnessScore { get; private set; } = 0;
-    
+
     // Navigation
     public virtual Company? Company { get; private set; }
+    public virtual Company? Contractor { get; private set; } // Legacy navigation
     public virtual User? User { get; private set; }
+    public virtual User? ReviewedBy { get; private set; } // Navigation via ReviewedById
+
+    /// <summary>
+    /// Puanı double olarak al (legacy uyumluluk)
+    /// </summary>
+    public double Rating => (double)OverallRating;
 
     /// <summary>
     /// Yeni contractor yorumu oluşturur
     /// </summary>
-    public static ContractorReview Create(
-        string companyId,
-        string userId,
-        string projectDescription,
-        decimal projectBudget,
-        string projectDuration,
-        DateTime projectStartDate,
-        DateTime projectEndDate,
-        decimal paymentTimelinessRating,
-        decimal communicationRating,
-        decimal projectManagementRating,
-        decimal technicalCompetenceRating,
-        string reviewText,
-        bool wouldWorkAgain,
-        bool isAnonymous = true,
-        string? verificationDocumentUrl = null)
+    public static ContractorReview Create
+    (
+        string companyId
+        , string userId
+        , string projectDescription
+        , decimal projectBudget
+        , string projectDuration
+        , DateTime projectStartDate
+        , DateTime projectEndDate
+        , decimal paymentTimelinessRating
+        , decimal communicationRating
+        , decimal projectManagementRating
+        , decimal technicalCompetenceRating
+        , string reviewText
+        , bool wouldWorkAgain
+        , bool isAnonymous = true
+        , string? verificationDocumentUrl = null
+    )
     {
         // Validations
         if (string.IsNullOrWhiteSpace(companyId))
             throw new ArgumentNullException(nameof(companyId));
-            
+
         if (string.IsNullOrWhiteSpace(userId))
             throw new ArgumentNullException(nameof(userId));
-            
+
         if (string.IsNullOrWhiteSpace(projectDescription))
             throw new ArgumentNullException(nameof(projectDescription));
-            
+
         if (projectBudget < 0)
             throw new BusinessRuleException("Proje bütçesi negatif olamaz.");
-            
+
         if (projectEndDate < projectStartDate)
             throw new BusinessRuleException("Proje bitiş tarihi başlangıç tarihinden önce olamaz.");
-            
+
         if (string.IsNullOrWhiteSpace(reviewText))
             throw new ArgumentNullException(nameof(reviewText));
-            
+
         if (reviewText.Length < 50)
             throw new BusinessRuleException("Yorum en az 50 karakter olmalıdır.");
-            
+
         if (reviewText.Length > 2000)
             throw new BusinessRuleException("Yorum 2000 karakteri aşamaz.");
 
@@ -101,29 +112,20 @@ public class ContractorReview : AuditableBaseEntity, IAggregateRoot
         ValidateRating(technicalCompetenceRating, nameof(technicalCompetenceRating));
 
         // Calculate overall rating
-        var overallRating = (paymentTimelinessRating + communicationRating + 
-                           projectManagementRating + technicalCompetenceRating) / 4;
+        var overallRating = (paymentTimelinessRating + communicationRating +
+                             projectManagementRating + technicalCompetenceRating) / 4;
 
         var review = new ContractorReview
         {
-            CompanyId = companyId,
-            UserId = userId,
-            ProjectDescription = projectDescription.Trim(),
-            ProjectBudget = projectBudget,
-            ProjectDuration = projectDuration,
-            ProjectStartDate = projectStartDate,
-            ProjectEndDate = projectEndDate,
-            PaymentTimelinessRating = paymentTimelinessRating,
-            CommunicationRating = communicationRating,
-            ProjectManagementRating = projectManagementRating,
-            TechnicalCompetenceRating = technicalCompetenceRating,
-            OverallRating = Math.Round(overallRating, 1),
-            ReviewText = reviewText.Trim(),
-            WouldWorkAgain = wouldWorkAgain,
-            IsAnonymous = isAnonymous,
-            VerificationDocumentUrl = verificationDocumentUrl,
-            IsVerified = !string.IsNullOrWhiteSpace(verificationDocumentUrl),
-            IsActive = true
+            CompanyId = companyId, UserId = userId, ReviewedById = userId, // Set ReviewedById same as UserId
+            ProjectDescription = projectDescription.Trim()
+            , ProjectBudget = projectBudget, ProjectDuration = projectDuration, ProjectStartDate = projectStartDate
+            , ProjectEndDate = projectEndDate, PaymentTimelinessRating = paymentTimelinessRating
+            , CommunicationRating = communicationRating, ProjectManagementRating = projectManagementRating
+            , TechnicalCompetenceRating = technicalCompetenceRating, OverallRating = Math.Round(overallRating, 1)
+            , ReviewText = reviewText.Trim(), WouldWorkAgain = wouldWorkAgain, IsAnonymous = isAnonymous
+            , VerificationDocumentUrl = verificationDocumentUrl
+            , IsVerified = !string.IsNullOrWhiteSpace(verificationDocumentUrl), IsActive = true, Status = "Approved"
         };
 
         // Domain Event
@@ -221,13 +223,15 @@ public class ContractorReview : AuditableBaseEntity, IAggregateRoot
 /// </summary>
 public class ContractorReviewCreatedEvent : DomainEventBase
 {
-    public ContractorReviewCreatedEvent(
-        string reviewId,
-        string companyId,
-        string userId,
-        decimal overallRating,
-        bool isAnonymous,
-        DateTime createdAt) : base()
+    public ContractorReviewCreatedEvent
+    (
+        string reviewId
+        , string companyId
+        , string userId
+        , decimal overallRating
+        , bool isAnonymous
+        , DateTime createdAt
+    ) : base()
     {
         ReviewId = reviewId;
         CompanyId = companyId;
@@ -250,10 +254,12 @@ public class ContractorReviewCreatedEvent : DomainEventBase
 /// </summary>
 public class ContractorReviewVerifiedEvent : DomainEventBase
 {
-    public ContractorReviewVerifiedEvent(
-        string reviewId,
-        string companyId,
-        DateTime verifiedAt) : base()
+    public ContractorReviewVerifiedEvent
+    (
+        string reviewId
+        , string companyId
+        , DateTime verifiedAt
+    ) : base()
     {
         ReviewId = reviewId;
         CompanyId = companyId;
@@ -270,11 +276,13 @@ public class ContractorReviewVerifiedEvent : DomainEventBase
 /// </summary>
 public class ContractorReviewDeactivatedEvent : DomainEventBase
 {
-    public ContractorReviewDeactivatedEvent(
-        string reviewId,
-        string companyId,
-        string reason,
-        DateTime deactivatedAt) : base()
+    public ContractorReviewDeactivatedEvent
+    (
+        string reviewId
+        , string companyId
+        , string reason
+        , DateTime deactivatedAt
+    ) : base()
     {
         ReviewId = reviewId;
         CompanyId = companyId;

@@ -28,19 +28,6 @@ public interface IRateLimitService
 }
 
 /// <summary>
-/// Rate limit result
-/// </summary>
-public class RateLimitResult
-{
-    public bool IsAllowed { get; set; }
-    public int Limit { get; set; }
-    public int Remaining { get; set; }
-    public DateTime ResetsAt { get; set; }
-    public string? RetryAfter { get; set; }
-    public string? Message { get; set; }
-}
-
-/// <summary>
 /// Rate limit options
 /// </summary>
 public class RateLimitOptions

@@ -6,7 +6,6 @@ using RateTheWork.Application.Common.Exceptions;
 using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Application.Common.Mappings;
 using RateTheWork.Domain.Entities;
-using RateTheWork.Domain.Interfaces;
 
 namespace RateTheWork.Application.Features.Reviews.Queries.GetReportedReviews;
 
@@ -19,32 +18,32 @@ public record GetReportedReviewsQuery : PaginatedRequest, IRequest<PagedList<Rep
     /// Şikayet durumu filtresi
     /// </summary>
     public string? Status { get; init; } // Pending, Reviewed, ActionTaken, Dismissed
-    
+
     /// <summary>
     /// Minimum şikayet sayısı filtresi
     /// </summary>
     public int? MinReportCount { get; init; }
-    
+
     /// <summary>
     /// Belirli bir şirket için mi?
     /// </summary>
     public string? CompanyId { get; init; }
-    
+
     /// <summary>
     /// Tarih aralığı - başlangıç
     /// </summary>
     public DateTime? StartDate { get; init; }
-    
+
     /// <summary>
     /// Tarih aralığı - bitiş
     /// </summary>
     public DateTime? EndDate { get; init; }
-    
+
     /// <summary>
     /// Sıralama kriteri
     /// </summary>
     public string SortBy { get; init; } = "ReportCount"; // ReportCount, Date, LastReportDate
-    
+
     /// <summary>
     /// Sıralama yönü
     /// </summary>
@@ -60,27 +59,27 @@ public record ReportedReviewDto
     /// Yorum ID'si
     /// </summary>
     public string? ReviewId { get; init; } = string.Empty;
-    
+
     /// <summary>
     /// Şirket bilgileri
     /// </summary>
     public CompanyInfo Company { get; init; } = new();
-    
+
     /// <summary>
     /// Yorumu yapan kullanıcı bilgileri
     /// </summary>
     public ReviewerInfo Reviewer { get; init; } = new();
-    
+
     /// <summary>
     /// Yorum detayları
     /// </summary>
     public ReviewContent Content { get; init; } = new();
-    
+
     /// <summary>
     /// Şikayet bilgileri
     /// </summary>
     public ReportInfo Reports { get; init; } = new();
-    
+
     /// <summary>
     /// Admin aksiyonları
     /// </summary>
@@ -186,26 +185,29 @@ public static class GetReportedReviewsExtensions
 /// </summary>
 public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviewsQuery, PagedList<ReportedReviewDto>>
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IMapper _mapper;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GetReportedReviewsQueryHandler(
-        IUnitOfWork unitOfWork,
-        IMapper mapper,
-        ICurrentUserService currentUserService)
+    public GetReportedReviewsQueryHandler
+    (
+        IUnitOfWork unitOfWork
+        , IMapper mapper
+        , ICurrentUserService currentUserService
+    )
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _currentUserService = currentUserService;
     }
 
-    public async Task<PagedList<ReportedReviewDto>> Handle(GetReportedReviewsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedList<ReportedReviewDto>> Handle
+        (GetReportedReviewsQuery request, CancellationToken cancellationToken)
     {
         // 1. Yetki kontrolü - sadece admin erişebilir
-        var isAdmin = _currentUserService.Roles.Contains("SuperAdmin") || 
-                     _currentUserService.Roles.Contains("Moderator");
-        
+        var isAdmin = _currentUserService.Roles.Contains("SuperAdmin") ||
+                      _currentUserService.Roles.Contains("Moderator");
+
         if (!isAdmin)
         {
             throw new ForbiddenAccessException("Bu sayfaya erişim yetkiniz yok.");
@@ -225,7 +227,7 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
         {
             reportsQuery = reportsQuery.Where(r => r.ReportedAt >= request.StartDate.Value);
         }
-        
+
         if (request.EndDate.HasValue)
         {
             var endOfDay = request.EndDate.Value.Date.AddDays(1).AddTicks(-1);
@@ -237,11 +239,8 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
             .GroupBy(r => r.ReviewId)
             .Select(g => new
             {
-                ReviewId = g.Key,
-                ReportCount = g.Count(),
-                FirstReportDate = g.Min(r => r.ReportedAt),
-                LastReportDate = g.Max(r => r.ReportedAt),
-                Reports = g.ToList()
+                ReviewId = g.Key, ReportCount = g.Count(), FirstReportDate = g.Min(r => r.ReportedAt)
+                , LastReportDate = g.Max(r => r.ReportedAt), Reports = g.ToList()
             })
             .ToListAsync(cancellationToken);
 
@@ -262,31 +261,32 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
         if (!string.IsNullOrWhiteSpace(request.CompanyId))
         {
             reviewReportGroups = reviewReportGroups
-                .Where(g => reviewDict.ContainsKey(g.ReviewId) && 
-                           reviewDict[g.ReviewId].CompanyId == request.CompanyId)
+                .Where(g => reviewDict.ContainsKey(g.ReviewId) &&
+                            reviewDict[g.ReviewId].CompanyId == request.CompanyId)
                 .ToList();
         }
 
         // 9. Sıralama
         reviewReportGroups = request.SortBy?.ToLower() switch
         {
-            "date" => request.IsDescending 
-                ? reviewReportGroups.OrderByDescending(g => reviewDict.ContainsKey(g.ReviewId) ? reviewDict[g.ReviewId].CreatedAt : DateTime.MinValue).ToList()
-                : reviewReportGroups.OrderBy(g => reviewDict.ContainsKey(g.ReviewId) ? reviewDict[g.ReviewId].CreatedAt : DateTime.MinValue).ToList(),
-            
-            "lastreportdate" => request.IsDescending 
+            "date" => request.IsDescending
+                ? reviewReportGroups.OrderByDescending(g =>
+                    reviewDict.ContainsKey(g.ReviewId) ? reviewDict[g.ReviewId].CreatedAt : DateTime.MinValue).ToList()
+                : reviewReportGroups.OrderBy(g =>
+                    reviewDict.ContainsKey(g.ReviewId) ? reviewDict[g.ReviewId].CreatedAt : DateTime.MinValue).ToList()
+            , "lastreportdate" => request.IsDescending
                 ? reviewReportGroups.OrderByDescending(g => g.LastReportDate).ToList()
-                : reviewReportGroups.OrderBy(g => g.LastReportDate).ToList(),
-            
-            _ => request.IsDescending // ReportCount
-                ? reviewReportGroups.OrderByDescending(g => g.ReportCount).ThenByDescending(g => g.LastReportDate).ToList()
+                : reviewReportGroups.OrderBy(g => g.LastReportDate).ToList()
+            , _ => request.IsDescending // ReportCount
+                ? reviewReportGroups.OrderByDescending(g => g.ReportCount).ThenByDescending(g => g.LastReportDate)
+                    .ToList()
                 : reviewReportGroups.OrderBy(g => g.ReportCount).ThenByDescending(g => g.LastReportDate).ToList()
         };
 
         // 10. Sayfalama
         var (pageNumber, pageSize) = request.GetValidatedPaginationParams();
         var totalCount = reviewReportGroups.Count;
-        
+
         var pagedGroups = reviewReportGroups
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
@@ -305,6 +305,7 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
                 userIds.Add(review.UserId);
                 companyIds.Add(review.CompanyId);
             }
+
             reporterIds.AddRange(group.Reports.Select(r => r.ReporterUserId));
         }
 
@@ -315,7 +316,7 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
         var companyDict = companies.ToDictionary(c => c.Id);
 
         var reporters = await _unitOfWork.Users.GetAsync(u => reporterIds.Distinct().Contains(u.Id));
-        Dictionary<string?, User> reporterDict = reporters.ToDictionary(u => u.Id);
+        Dictionary<string, User> reporterDict = reporters.ToDictionary(u => u.Id ?? string.Empty);
 
         // 12. Kullanıcı istatistikleri
         var userReviewStats = await GetUserReviewStats(userIds.Distinct().ToList(), cancellationToken);
@@ -346,61 +347,48 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
                 .Take(10) // Son 10 şikayet
                 .Select(report => new ReportDetail
                 {
-                    ReportId = report.Id,
-                    ReporterUsername = reporterDict.TryGetValue(report.ReporterUserId, out var reporter) 
-                        ? reporter.AnonymousUsername 
-                        : "Bilinmeyen Kullanıcı",
-                    ReportReason = report.ReportReason,
-                    ReportDetails = report.ReportDetails,
-                    ReportedAt = report.ReportedAt,
-                    Status = report.Status.ToString()
+                    ReportId = report.Id, ReporterUsername =
+                        reporterDict.TryGetValue(report.ReporterUserId ?? string.Empty, out var reporter)
+                            ? reporter.AnonymousUsername
+                            : "Bilinmeyen Kullanıcı"
+                    , ReportReason = report.ReportReason, ReportDetails = report.ReportDetails
+                    , ReportedAt = report.ReportedAt, Status = report.Status.ToString()
                 })
                 .ToList();
 
             // Kullanıcı istatistiklerini al
-            var hasStats = userReviewStats.TryGetValue(user.Id, out var stats);
+            var hasStats = userReviewStats.TryGetValue(user.Id ?? string.Empty, out var stats);
             var totalReviews = hasStats ? stats.TotalReviews : 0;
             var reportedReviews = hasStats ? stats.ReportedReviews : 0;
 
             var dto = new ReportedReviewDto
             {
-                ReviewId = review.Id,
-                Company = new CompanyInfo
+                ReviewId = review.Id, Company = new CompanyInfo
                 {
-                    CompanyId = company.Id,
-                    CompanyName = company.Name
-                },
-                Reviewer = new ReviewerInfo
+                    CompanyId = company.Id, CompanyName = company.Name
+                }
+                , Reviewer = new ReviewerInfo
                 {
-                    UserId = user.Id,
-                    Username = user.AnonymousUsername,
-                    Email = user.Email, // Admin görebilir
-                    TotalReviews = totalReviews,
-                    ReportedReviews = reportedReviews
-                },
-                Content = new ReviewContent
+                    UserId = user.Id, Username = user.AnonymousUsername, Email = user.Email, // Admin görebilir
+                    TotalReviews = totalReviews
+                    , ReportedReviews = reportedReviews
+                }
+                , Content = new ReviewContent
                 {
-                    CommentType = review.CommentType.ToString(),
-                    OverallRating = review.OverallRating,
-                    CommentText = review.CommentText,
-                    PostedDate = review.CreatedAt,
-                    IsActive = review.IsActive,
-                    IsDocumentVerified = review.IsDocumentVerified
-                },
-                Reports = new ReportInfo
+                    CommentType = review.CommentType.ToString(), OverallRating = review.OverallRating
+                    , CommentText = review.CommentText, PostedDate = review.CreatedAt, IsActive = review.IsActive
+                    , IsDocumentVerified = review.IsDocumentVerified
+                }
+                , Reports = new ReportInfo
                 {
-                    TotalReportCount = group.ReportCount,
-                    FirstReportDate = group.FirstReportDate,
-                    LastReportDate = group.LastReportDate,
-                    ReportDetails = reportDetails,
-                    ReportReasonBreakdown = reasonBreakdown
-                },
-                Actions = new AdminActions
+                    TotalReportCount = group.ReportCount, FirstReportDate = group.FirstReportDate
+                    , LastReportDate = group.LastReportDate, ReportDetails = reportDetails
+                    , ReportReasonBreakdown = reasonBreakdown
+                }
+                , Actions = new AdminActions
                 {
-                    CanHide = review.IsActive,
-                    CanDelete = true,
-                    CanBanUser = !user.IsBanned,
-                    PreviousActions = new List<PreviousAction>() // TODO: Admin log tablosundan çekilebilir
+                    CanHide = review.IsActive, CanDelete = true, CanBanUser = !user.IsBanned
+                    , PreviousActions = new List<PreviousAction>() // TODO: Admin log tablosundan çekilebilir
                 }
             };
 
@@ -413,26 +401,29 @@ public class GetReportedReviewsQueryHandler : IRequestHandler<GetReportedReviews
     /// <summary>
     /// Kullanıcıların yorum istatistiklerini getirir
     /// </summary>
-    private async Task<Dictionary<string?, (int TotalReviews, int ReportedReviews)>> GetUserReviewStats(
-        List<string?> userIds, 
-        CancellationToken cancellationToken)
+    private async Task<Dictionary<string, (int TotalReviews, int ReportedReviews)>> GetUserReviewStats
+    (
+        List<string?> userIds
+        , CancellationToken cancellationToken
+    )
     {
-        var stats = new Dictionary<string?, (int TotalReviews, int ReportedReviews)>();
+        var stats = new Dictionary<string, (int TotalReviews, int ReportedReviews)>();
 
         var userReviewCounts = await _unitOfWork.Reviews.GetQueryable()
             .Where(r => userIds.Contains(r.UserId))
             .GroupBy(r => r.UserId)
             .Select(g => new
             {
-                UserId = g.Key,
-                TotalCount = g.Count(),
-                ReportedCount = g.Count(r => r.ReportCount > 0)
+                UserId = g.Key, TotalCount = g.Count(), ReportedCount = g.Count(r => r.ReportCount > 0)
             })
             .ToListAsync(cancellationToken);
 
         foreach (var stat in userReviewCounts)
         {
-            stats[stat.UserId] = (TotalReviews: stat.TotalCount, ReportedReviews: stat.ReportedCount);
+            if (!string.IsNullOrEmpty(stat.UserId))
+            {
+                stats[stat.UserId] = (TotalReviews: stat.TotalCount, ReportedReviews: stat.ReportedCount);
+            }
         }
 
         return stats;

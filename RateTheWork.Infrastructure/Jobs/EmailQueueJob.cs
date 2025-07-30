@@ -46,19 +46,15 @@ public class EmailQueueJob
                 <p>Saygılarımızla,<br>RateTheWork Ekibi</p>
             ";
 
-            var result = await _emailService.SendEmailAsync(email, subject, body, true);
+            await _emailService.SendEmailAsync(email, subject, body, true);
 
-            if (result.IsSuccess)
+            // Email başarıyla gönderildi
             {
                 _metricsService.IncrementCounter("email_sent", new Dictionary<string, object?>
                 {
                     { "type", "welcome" }
                 });
                 _logger.LogInformation("Hoşgeldin emaili başarıyla gönderildi: {Email}", email);
-            }
-            else
-            {
-                throw new Exception($"Email gönderilemedi: {result.ErrorMessage}");
             }
         }
         catch (Exception ex)
@@ -93,18 +89,14 @@ public class EmailQueueJob
                 <p>Saygılarımızla,<br>RateTheWork Ekibi</p>
             ";
 
-            var result = await _emailService.SendEmailAsync(email, subject, body, true);
+            await _emailService.SendEmailAsync(email, subject, body, true);
 
-            if (result.IsSuccess)
+            // Email başarıyla gönderildi
             {
                 _metricsService.IncrementCounter("email_sent", new Dictionary<string, object?>
                 {
                     { "type", "password_reset" }
                 });
-            }
-            else
-            {
-                throw new Exception($"Email gönderilemedi: {result.ErrorMessage}");
             }
         }
         catch (Exception ex)
@@ -135,9 +127,9 @@ public class EmailQueueJob
                 <p>Saygılarımızla,<br>RateTheWork Ekibi</p>
             ";
 
-            var result = await _emailService.SendEmailAsync(email, subject, body, true);
+            await _emailService.SendEmailAsync(email, subject, body, true);
 
-            if (result.IsSuccess)
+            // Email başarıyla gönderildi
             {
                 _metricsService.IncrementCounter("email_sent", new Dictionary<string, object?>
                 {
@@ -184,9 +176,9 @@ public class EmailQueueJob
                 <p>Saygılarımızla,<br>RateTheWork Ekibi</p>
             ";
 
-            var result = await _emailService.SendEmailAsync(email, subject, body, true);
+            await _emailService.SendEmailAsync(email, subject, body, true);
 
-            if (result.IsSuccess)
+            // Email başarıyla gönderildi
             {
                 _metricsService.IncrementCounter("email_sent", new Dictionary<string, object?>
                 {

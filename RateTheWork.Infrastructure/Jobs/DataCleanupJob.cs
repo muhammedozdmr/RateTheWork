@@ -2,6 +2,7 @@ using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using RateTheWork.Application.Common.Interfaces;
+using RateTheWork.Domain.Enums.VerificationRequest;
 using RateTheWork.Infrastructure.Persistence;
 
 namespace RateTheWork.Infrastructure.Jobs;
@@ -109,20 +110,20 @@ public class DataCleanupJob
             _logger.LogInformation("Süresi dolmuş doğrulama talepleri temizleniyor");
 
             var expiredRequests = await _context.VerificationRequests
-                .Where(vr => vr.ExpiresAt < DateTime.UtcNow && vr.Status == "Pending")
+                .Where(vr => vr.ExpiresAt < DateTime.UtcNow && vr.Status == VerificationRequestStatus.Pending)
                 .ToListAsync();
 
             if (expiredRequests.Any())
             {
                 foreach (var request in expiredRequests)
                 {
-                    request.Status = "Expired";
+                    request.Reject("SYSTEM", "Süre dolduğu için otomatik olarak iptal edildi");
                 }
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("{Count} adet süresi dolmuş doğrulama talebi güncellendi"
-                    , expiredRequests.Count);
+                _logger.LogInformation("{Count} adet süresi dolmuş doğrulama talebi güncellendi",
+                    expiredRequests.Count);
                 _metricsService.RecordCustomMetric("cleanup_expired_verifications", expiredRequests.Count, "requests");
             }
         }
@@ -209,14 +210,15 @@ public class DataCleanupJob
             _logger.LogInformation("Süresi dolmuş iş ilanları kapatılıyor");
 
             var expiredPostings = await _context.JobPostings
-                .Where(j => j.ApplicationDeadline < DateTime.UtcNow && j.IsActive)
+                .Where(j => j.ApplicationDeadline < DateTime.UtcNow && !j.IsDeleted)
                 .ToListAsync();
 
             if (expiredPostings.Any())
             {
+                // JobPosting entity'sinde IsActive property'si yok, soft delete yapalım
                 foreach (var posting in expiredPostings)
                 {
-                    posting.IsActive = false;
+                    posting.SoftDelete("SYSTEM"); // Soft delete
                 }
 
                 await _context.SaveChangesAsync();

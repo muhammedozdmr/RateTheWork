@@ -1,6 +1,8 @@
 using Hangfire;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using RateTheWork.Infrastructure.Persistence;
 
 namespace RateTheWork.Infrastructure.Jobs;
 
@@ -147,7 +149,7 @@ public class MonthlyReportSchedulerJob
         {
             // Her şirket için ayrı job oluştur
             BackgroundJob.Enqueue<ReportGenerationJob>(
-                job => job.GenerateMonthlyCompanyReportAsync(companyId));
+                job => job.GenerateMonthlyCompanyReportAsync(Guid.Parse(companyId)));
         }
 
         _logger.LogInformation("{Count} adet şirket için aylık rapor zamanlandı", activeCompanies.Count);

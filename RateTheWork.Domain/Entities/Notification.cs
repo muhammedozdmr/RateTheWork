@@ -21,6 +21,7 @@ public class Notification : BaseEntity
     // Properties
     public string UserId { get; private set; } = string.Empty;
     public NotificationType Type { get; private set; }
+    public string TypeString => Type.ToString();
     public string Title { get; private set; } = string.Empty;
     public string Message { get; private set; } = string.Empty;
     public bool IsRead { get; private set; } = false;

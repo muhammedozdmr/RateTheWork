@@ -14,6 +14,48 @@ public class DepartmentRepository : BaseRepository<Department>, IDepartmentRepos
     }
 
     /// <summary>
+    /// Şirkete ait departmanları getirir
+    /// </summary>
+    public async Task<List<Department>> GetByCompanyIdAsync(string companyId)
+    {
+        return await _context.Departments
+            .Where(d => d.CompanyId == companyId)
+            .OrderBy(d => d.Name)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Şirkete ait aktif departmanları getirir
+    /// </summary>
+    public async Task<List<Department>> GetActiveByCompanyIdAsync(string companyId)
+    {
+        return await _context.Departments
+            .Where(d => d.CompanyId == companyId && d.IsActive)
+            .OrderBy(d => d.Name)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// İsme göre departman arar
+    /// </summary>
+    public async Task<Department?> GetByNameAsync(string companyId, string name)
+    {
+        return await _context.Departments
+            .FirstOrDefaultAsync(d => d.CompanyId == companyId && d.Name == name);
+    }
+
+    /// <summary>
+    /// Manager'a göre departmanları getirir
+    /// </summary>
+    public async Task<List<Department>> GetByManagerIdAsync(string managerId)
+    {
+        return await _context.Departments
+            .Where(d => d.ManagerId == managerId)
+            .OrderBy(d => d.Name)
+            .ToListAsync();
+    }
+
+    /// <summary>
     /// Aktif departmanları getirir
     /// </summary>
     public async Task<IEnumerable<Department>> GetActiveDepartmentsAsync()
@@ -42,17 +84,6 @@ public class DepartmentRepository : BaseRepository<Department>, IDepartmentRepos
     {
         return await _context.Departments
             .FirstOrDefaultAsync(d => d.Code == code);
-    }
-
-    /// <summary>
-    /// Yöneticiye göre departmanları getirir
-    /// </summary>
-    public async Task<IEnumerable<Department>> GetByManagerIdAsync(Guid managerId)
-    {
-        return await _context.Departments
-            .Where(d => d.ManagerId == managerId)
-            .OrderBy(d => d.Name)
-            .ToListAsync();
     }
 
     /// <summary>

@@ -34,6 +34,26 @@ public class CompanyBranch : BaseEntity
     public bool IsActive { get; private set; } = true;
 
     /// <summary>
+    /// Enlem (latitude) koordinatı
+    /// </summary>
+    public double Latitude { get; private set; }
+
+    /// <summary>
+    /// Boylam (longitude) koordinatı
+    /// </summary>
+    public double Longitude { get; private set; }
+
+    /// <summary>
+    /// Şirket navigation property'si
+    /// </summary>
+    public Company? Company { get; private set; }
+
+    /// <summary>
+    /// İş ilanları navigation property'si
+    /// </summary>
+    public virtual ICollection<JobPosting> JobPostings { get; private set; } = new List<JobPosting>();
+
+    /// <summary>
     /// Yeni şube oluşturur
     /// </summary>
     public static CompanyBranch Create
@@ -50,6 +70,8 @@ public class CompanyBranch : BaseEntity
         , string? postalCode = null
         , string branchType = "Branch"
         , string? country = "Türkiye"
+        , double latitude = 0.0
+        , double longitude = 0.0
     )
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -69,7 +91,7 @@ public class CompanyBranch : BaseEntity
             CompanyId = companyId, Name = name, City = city, District = district, Address = address
             , PhoneNumber = phoneNumber, Email = email?.ToLowerInvariant(), EmployeeCount = employeeCount
             , IsHeadquarters = isHeadquarters, PostalCode = postalCode, BranchType = branchType, Country = country
-            , IsActive = true
+            , IsActive = true, Latitude = latitude, Longitude = longitude
         };
 
         // Domain Event
@@ -107,6 +129,8 @@ public class CompanyBranch : BaseEntity
         , string? email = null
         , int? employeeCount = null
         , string? postalCode = null
+        , double latitude = 0.0
+        , double longitude = 0.0
     )
     {
         return Create(
@@ -120,7 +144,10 @@ public class CompanyBranch : BaseEntity
             email,
             employeeCount,
             postalCode,
-            "Headquarters"
+            "Headquarters",
+            "Türkiye",
+            latitude,
+            longitude
         );
     }
 
@@ -136,6 +163,8 @@ public class CompanyBranch : BaseEntity
         , string? district = null
         , string? phoneNumber = null
         , string? email = null
+        , double latitude = 0.0
+        , double longitude = 0.0
     )
     {
         return Create(
@@ -149,7 +178,10 @@ public class CompanyBranch : BaseEntity
             email,
             null,
             null,
-            "Store"
+            "Store",
+            "Türkiye",
+            latitude,
+            longitude
         );
     }
 
@@ -164,6 +196,8 @@ public class CompanyBranch : BaseEntity
         , string address
         , string? postalCode = null
         , int? capacity = null
+        , double latitude = 0.0
+        , double longitude = 0.0
     )
     {
         return Create(
@@ -177,7 +211,10 @@ public class CompanyBranch : BaseEntity
             null,
             capacity,
             postalCode,
-            "Warehouse"
+            "Warehouse",
+            "Türkiye",
+            latitude,
+            longitude
         );
     }
 
@@ -193,6 +230,8 @@ public class CompanyBranch : BaseEntity
         , string? phoneNumber = null
         , string? email = null
         , int? employeeCount = null
+        , double? latitude = null
+        , double? longitude = null
     )
     {
         if (!string.IsNullOrWhiteSpace(name))
@@ -220,6 +259,12 @@ public class CompanyBranch : BaseEntity
             EmployeeCount = employeeCount;
         }
 
+        if (latitude.HasValue)
+            Latitude = latitude.Value;
+
+        if (longitude.HasValue)
+            Longitude = longitude.Value;
+
         SetModifiedDate();
 
         // Domain Event
@@ -231,6 +276,8 @@ public class CompanyBranch : BaseEntity
         if (phoneNumber != null) updatedFields.Add("PhoneNumber");
         if (email != null) updatedFields.Add("Email");
         if (employeeCount.HasValue) updatedFields.Add("EmployeeCount");
+        if (latitude.HasValue) updatedFields.Add("Latitude");
+        if (longitude.HasValue) updatedFields.Add("Longitude");
 
         if (updatedFields.Any())
         {

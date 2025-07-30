@@ -30,52 +30,56 @@ public class Report : BaseEntity
     public ReportResolution? Resolution { get; private set; }
     public List<string> EvidenceUrls { get; private set; } = new();
     public bool IsAnonymous { get; private set; }
-    
+
     // Eski kodlarla uyumluluk için alias'lar
+    public string EntityType => ReportedEntityType;
+    public string EntityId => ReportedEntityId;
     public string TargetType => ReportedEntityType;
     public string TargetId => ReportedEntityId;
     public string ReviewId => ReportedEntityType == "Review" ? ReportedEntityId : string.Empty;
     public string ReportReason => Reason.ToString();
     public string ReportDetails => Description;
     public DateTime ReportedAt => CreatedAt;
-    public int Priority => Reason switch 
+
+    public int Priority => Reason switch
     {
-        Domain.Enums.Report.ReportReason.HateSpeech or Domain.Enums.Report.ReportReason.Harassment => 5,
-        Domain.Enums.Report.ReportReason.OffensiveContent => 4,
-        Domain.Enums.Report.ReportReason.Misinformation => 3,
-        Domain.Enums.Report.ReportReason.Spam => 2,
-        _ => 1
+        Enums.Report.ReportReason.HateSpeech or Enums.Report.ReportReason.Harassment => 5
+        , Enums.Report.ReportReason.OffensiveContent => 4, Enums.Report.ReportReason.Misinformation => 3
+        , Enums.Report.ReportReason.Spam => 2, _ => 1
     };
+
     public bool RequiresUrgentAction => Priority >= 4;
 
     /// <summary>
     /// Yeni şikayet oluşturur (Factory method)
     /// </summary>
-    public static Report Create(
-        string reportedEntityType,
-        string reportedEntityId,
-        string reporterUserId,
-        ReportReason reason,
-        string description,
-        bool isAnonymous = false,
-        List<string>? evidenceUrls = null)
+    public static Report Create
+    (
+        string reportedEntityType
+        , string reportedEntityId
+        , string reporterUserId
+        , ReportReason reason
+        , string description
+        , bool isAnonymous = false
+        , List<string>? evidenceUrls = null
+    )
     {
         // Validasyonlar
         if (string.IsNullOrWhiteSpace(reportedEntityType))
             throw new ArgumentNullException(nameof(reportedEntityType));
-            
+
         if (string.IsNullOrWhiteSpace(reportedEntityId))
             throw new ArgumentNullException(nameof(reportedEntityId));
-            
+
         if (string.IsNullOrWhiteSpace(reporterUserId))
             throw new ArgumentNullException(nameof(reporterUserId));
-            
+
         if (string.IsNullOrWhiteSpace(description))
             throw new ArgumentNullException(nameof(description));
-            
+
         if (description.Length < 10)
             throw new BusinessRuleException("Şikayet açıklaması en az 10 karakter olmalıdır.");
-            
+
         if (description.Length > 1000)
             throw new BusinessRuleException("Şikayet açıklaması 1000 karakterden uzun olamaz.");
 
@@ -85,13 +89,9 @@ public class Report : BaseEntity
 
         var report = new Report
         {
-            ReportedEntityType = reportedEntityType,
-            ReportedEntityId = reportedEntityId,
-            ReporterUserId = reporterUserId,
-            Reason = reason,
-            Description = description,
-            IsAnonymous = isAnonymous,
-            EvidenceUrls = evidenceUrls ?? new List<string>()
+            ReportedEntityType = reportedEntityType, ReportedEntityId = reportedEntityId
+            , ReporterUserId = reporterUserId, Reason = reason, Description = description, IsAnonymous = isAnonymous
+            , EvidenceUrls = evidenceUrls ?? new List<string>()
         };
 
         // Domain event
@@ -101,7 +101,7 @@ public class Report : BaseEntity
             reporterUserId,
             reason.ToString(),
             isAnonymous,
-            reason == Domain.Enums.Report.ReportReason.HateSpeech || reason == Domain.Enums.Report.ReportReason.Harassment ? 1 : 2,
+            reason == Enums.Report.ReportReason.HateSpeech || reason == Enums.Report.ReportReason.Harassment ? 1 : 2,
             report.CreatedAt
         ));
 
@@ -120,13 +120,11 @@ public class Report : BaseEntity
         ReviewedAt = DateTime.UtcNow;
         Resolution = resolution;
         ReviewerNotes = notes;
-        
+
         Status = resolution switch
         {
-            ReportResolution.Approved => ReportStatus.Resolved,
-            ReportResolution.Rejected => ReportStatus.Rejected,
-            ReportResolution.NeedsMoreInfo => ReportStatus.InReview,
-            _ => ReportStatus.Resolved
+            ReportResolution.Approved => ReportStatus.Resolved, ReportResolution.Rejected => ReportStatus.Rejected
+            , ReportResolution.NeedsMoreInfo => ReportStatus.InReview, _ => ReportStatus.Resolved
         };
 
         SetModifiedDate();

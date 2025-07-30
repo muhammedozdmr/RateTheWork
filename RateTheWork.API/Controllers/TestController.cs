@@ -28,18 +28,13 @@ public class TestController : ControllerBase
     {
         try
         {
-            var result = await _emailService.SendEmailAsync(
+            await _emailService.SendEmailAsync(
                 request.To,
                 request.Subject,
                 request.Body,
                 request.IsHtml);
 
-            if (result.IsSuccess)
-            {
-                return Ok(new { message = "Email sent successfully", data = result.Data });
-            }
-
-            return BadRequest(new { error = result.ErrorMessage });
+            return Ok(new { message = "Email sent successfully" });
         }
         catch (Exception ex)
         {
@@ -55,12 +50,12 @@ public class TestController : ControllerBase
         {
             var result = await _smsService.SendSmsAsync(request.To, request.Message);
 
-            if (result.IsSuccess)
+            if (result)
             {
-                return Ok(new { message = "SMS sent successfully", messageId = result.Data });
+                return Ok(new { message = "SMS sent successfully" });
             }
 
-            return BadRequest(new { error = result.ErrorMessage });
+            return BadRequest(new { error = "Failed to send SMS" });
         }
         catch (Exception ex)
         {

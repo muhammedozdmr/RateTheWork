@@ -214,29 +214,3 @@ public class RateLimitingService : IRateLimitingService
         return await CheckRateLimitAsync($"user:{userId}:{action}", limit, period, cancellationToken);
     }
 }
-
-/// <summary>
-/// Rate limit sonucu
-/// </summary>
-public class RateLimitResult
-{
-    /// <summary>
-    /// İzin verildi mi?
-    /// </summary>
-    public bool IsAllowed { get; set; }
-
-    /// <summary>
-    /// Limit değeri
-    /// </summary>
-    public int Limit { get; set; }
-
-    /// <summary>
-    /// Kalan kullanım hakkı
-    /// </summary>
-    public int Remaining { get; set; }
-
-    /// <summary>
-    /// Limit sıfırlanma zamanı
-    /// </summary>
-    public DateTimeOffset ResetAt { get; set; }
-}

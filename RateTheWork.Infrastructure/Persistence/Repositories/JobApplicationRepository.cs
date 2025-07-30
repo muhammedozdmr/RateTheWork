@@ -64,8 +64,7 @@ public class JobApplicationRepository : BaseRepository<JobApplication>, IJobAppl
             return new List<JobApplication>();
 
         return await _dbSet
-            .Where(ja => ja.JobPosting.CompanyId == companyGuid)
-            .ThenInclude(jp => jp.Branch)
+            .Where(ja => ja.CompanyId == companyId)
             .OrderByDescending(ja => ja.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -150,7 +149,6 @@ public class JobApplicationRepository : BaseRepository<JobApplication>, IJobAppl
     public async Task<JobApplication?> GetWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .ThenInclude(ca => ca.Review)
             .FirstOrDefaultAsync(ja => ja.Id == id.ToString(), cancellationToken);
     }
 

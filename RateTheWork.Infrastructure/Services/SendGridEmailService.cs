@@ -45,7 +45,9 @@ public class SendGridEmailService : IEmailService
         {
             var msg = new SendGridMessage
             {
-                From = new EmailAddress(message.From ?? _fromEmail, _fromName), Subject = message.Subject
+                From = new EmailAddress(message.From ?? _emailOptions.SendGrid.FromEmail
+                    , _emailOptions.SendGrid.FromName)
+                , Subject = message.Subject
             };
 
             msg.AddTo(new EmailAddress(message.To));
@@ -127,7 +129,7 @@ public class SendGridEmailService : IEmailService
 
     public async Task SendTemplatedEmailAsync(string to, string templateName, object templateData)
     {
-        var templateId = _configuration[$"SENDGRID_TEMPLATES:{templateName}"] ??
+        var templateId = _emailOptions.SendGrid.Templates?.GetValueOrDefault(templateName) ??
                          throw new InvalidOperationException($"Template {templateName} not configured");
 
         var data = templateData.GetType()

@@ -13,21 +13,28 @@ public enum VerificationRequestStatus
     ,
 
     /// <summary>
+    /// İşleniyor
+    /// </summary>
+    Processing = 1
+
+    ,
+
+    /// <summary>
     /// Onaylandı
     /// </summary>
-    Approved = 1
+    Approved = 2
 
     ,
 
     /// <summary>
     /// Reddedildi
     /// </summary>
-    Rejected = 2
+    Rejected = 3
 
     ,
 
     /// <summary>
     /// İptal edildi
     /// </summary>
-    Cancelled = 3
+    Cancelled = 4
 }

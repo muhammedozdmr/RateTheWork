@@ -14,41 +14,130 @@ public class ReviewVoteRepository : BaseRepository<ReviewVote>, IReviewVoteRepos
     }
 
     /// <summary>
+    /// Kullanıcının bir inceleme için verdiği oyu getirir
+    /// </summary>
+    public async Task<ReviewVote?> GetUserVoteForReviewAsync(string userId, string? reviewId)
+    {
+        if (reviewId == null)
+            return null;
+
+        return await _context.ReviewVotes
+            .FirstOrDefaultAsync(rv => rv.UserId == userId && rv.ReviewId == reviewId);
+    }
+
+    /// <summary>
     /// İnceleme için oyları getirir
     /// </summary>
-    public async Task<IEnumerable<ReviewVote>> GetByReviewIdAsync(Guid reviewId)
+    public async Task<List<ReviewVote>> GetVotesForReviewAsync(string? reviewId)
+    {
+        if (reviewId == null)
+            return new List<ReviewVote>();
+
+        return await _context.ReviewVotes
+            .Where(rv => rv.ReviewId == reviewId)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Upvote sayısını getirir
+    /// </summary>
+    public async Task<int> GetUpvoteCountAsync(string reviewId)
+    {
+        return await _context.ReviewVotes
+            .CountAsync(rv => rv.ReviewId == reviewId && rv.IsUpvote);
+    }
+
+    /// <summary>
+    /// Downvote sayısını getirir
+    /// </summary>
+    public async Task<int> GetDownvoteCountAsync(string reviewId)
+    {
+        return await _context.ReviewVotes
+            .CountAsync(rv => rv.ReviewId == reviewId && !rv.IsUpvote);
+    }
+
+    /// <summary>
+    /// Kullanıcının oy verip vermediğini kontrol eder
+    /// </summary>
+    public async Task<bool> HasUserVotedAsync(string userId, string reviewId)
+    {
+        return await _context.ReviewVotes
+            .AnyAsync(rv => rv.UserId == userId && rv.ReviewId == reviewId);
+    }
+
+    /// <summary>
+    /// Kullanıcının birden fazla inceleme için oylarını getirir
+    /// </summary>
+    public async Task<Dictionary<string, bool>> GetUserVotesForReviewsAsync(string userId, List<string> reviewIds)
+    {
+        var votes = await _context.ReviewVotes
+            .Where(rv => rv.UserId == userId && reviewIds.Contains(rv.ReviewId))
+            .ToListAsync();
+
+        return votes.ToDictionary(v => v.ReviewId, v => v.IsUpvote);
+    }
+
+    /// <summary>
+    /// Oyu günceller
+    /// </summary>
+    public new async Task UpdateAsync(ReviewVote vote)
+    {
+        _context.ReviewVotes.Update(vote);
+        await _context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Oyu günceller (senkron)
+    /// </summary>
+    public void Update(ReviewVote vote)
+    {
+        _context.ReviewVotes.Update(vote);
+    }
+
+    /// <summary>
+    /// Oyu siler
+    /// </summary>
+    public new async Task DeleteAsync(ReviewVote vote)
+    {
+        _context.ReviewVotes.Remove(vote);
+        await _context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Oyu siler (senkron)
+    /// </summary>
+    public void Delete(ReviewVote vote)
+    {
+        _context.ReviewVotes.Remove(vote);
+    }
+
+    /// <summary>
+    /// İnceleme için oyları getirir
+    /// </summary>
+    public async Task<IEnumerable<ReviewVote>> GetByReviewIdAsync(string reviewId)
     {
         return await _context.ReviewVotes
             .Where(rv => rv.ReviewId == reviewId)
-            .Include(rv => rv.User)
+            // .Include(rv => rv.User) // Navigation property not available
             .ToListAsync();
     }
 
     /// <summary>
     /// Kullanıcının verdiği oyları getirir
     /// </summary>
-    public async Task<IEnumerable<ReviewVote>> GetByUserIdAsync(Guid userId)
+    public async Task<IEnumerable<ReviewVote>> GetByUserIdAsync(string userId)
     {
         return await _context.ReviewVotes
             .Where(rv => rv.UserId == userId)
-            .Include(rv => rv.Review)
+            // .Include(rv => rv.Review) // Navigation property not available
             .OrderByDescending(rv => rv.CreatedAt)
             .ToListAsync();
     }
 
     /// <summary>
-    /// Kullanıcının bir inceleme için verdiği oyu getirir
-    /// </summary>
-    public async Task<ReviewVote?> GetUserVoteForReviewAsync(Guid userId, Guid reviewId)
-    {
-        return await _context.ReviewVotes
-            .FirstOrDefaultAsync(rv => rv.UserId == userId && rv.ReviewId == reviewId);
-    }
-
-    /// <summary>
     /// İnceleme için oy istatistiklerini hesaplar
     /// </summary>
-    public async Task<ReviewVoteStats> GetVoteStatsAsync(Guid reviewId)
+    public async Task<ReviewVoteStats> GetVoteStatsAsync(string reviewId)
     {
         var votes = await _context.ReviewVotes
             .Where(rv => rv.ReviewId == reviewId)
@@ -63,7 +152,7 @@ public class ReviewVoteRepository : BaseRepository<ReviewVote>, IReviewVoteRepos
     /// <summary>
     /// Kullanıcının oyunu günceller veya ekler
     /// </summary>
-    public async Task<ReviewVote> AddOrUpdateVoteAsync(Guid userId, Guid reviewId, bool isUpvote)
+    public async Task<ReviewVote> AddOrUpdateVoteAsync(string userId, string reviewId, bool isUpvote)
     {
         var existingVote = await GetUserVoteForReviewAsync(userId, reviewId);
 
@@ -76,10 +165,7 @@ public class ReviewVoteRepository : BaseRepository<ReviewVote>, IReviewVoteRepos
         }
         else
         {
-            var newVote = new ReviewVote
-            {
-                UserId = userId, ReviewId = reviewId, IsUpvote = isUpvote
-            };
+            var newVote = ReviewVote.Create(userId, reviewId, isUpvote);
 
             await _context.ReviewVotes.AddAsync(newVote);
             await _context.SaveChangesAsync();

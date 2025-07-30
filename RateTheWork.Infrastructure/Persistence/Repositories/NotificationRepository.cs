@@ -14,63 +14,79 @@ public class NotificationRepository : BaseRepository<Notification>, INotificatio
     }
 
     /// <summary>
-    /// Kullanıcının bildirimlerini getirir
+    /// Kullanıcının okunmamış bildirimlerini getirir
     /// </summary>
-    public async Task<IEnumerable<Notification>> GetByUserIdAsync(Guid userId, bool includeRead = false)
+    public async Task<IReadOnlyList<Notification>> GetUnreadNotificationsByUserIdAsync(string userId)
     {
-        var query = _context.Notifications
-            .Where(n => n.UserId == userId);
-
-        if (!includeRead)
-            query = query.Where(n => !n.IsRead);
-
-        return await query
+        return await _context.Notifications
+            .Where(n => n.UserId == userId && !n.IsRead)
             .OrderByDescending(n => n.CreatedAt)
             .ToListAsync();
     }
 
     /// <summary>
-    /// Okunmamış bildirim sayısını getirir
+    /// Kullanıcının bildirimlerini sayfalı olarak getirir
     /// </summary>
-    public async Task<int> GetUnreadCountAsync(Guid userId)
+    public async Task<(IReadOnlyList<Notification> items, int totalCount)> GetUserNotificationsPagedAsync
+    (
+        string userId
+        , int pageNumber
+        , int pageSize
+        , bool? isRead = null
+    )
+    {
+        var query = _context.Notifications
+            .Where(n => n.UserId == userId);
+
+        if (isRead.HasValue)
+        {
+            query = query.Where(n => n.IsRead == isRead.Value);
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(n => n.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
+    /// <summary>
+    /// Kullanıcının okunmamış bildirim sayısını getirir
+    /// </summary>
+    public async Task<int> GetUnreadCountByUserIdAsync(string userId)
     {
         return await _context.Notifications
             .CountAsync(n => n.UserId == userId && !n.IsRead);
     }
 
     /// <summary>
-    /// Bildirim tipine göre bildirimleri getirir
+    /// Belirli tipteki bildirimleri getirir
     /// </summary>
-    public async Task<IEnumerable<Notification>> GetByTypeAsync(Guid userId, string type)
+    public async Task<IReadOnlyList<Notification>> GetNotificationsByTypeAsync(string userId, string notificationType)
     {
         return await _context.Notifications
-            .Where(n => n.UserId == userId && n.Type == type)
+            .Where(n => n.UserId == userId && n.TypeString == notificationType)
             .OrderByDescending(n => n.CreatedAt)
             .ToListAsync();
     }
 
     /// <summary>
-    /// Bildirimleri okundu olarak işaretler
+    /// Toplu bildirim oluşturur
     /// </summary>
-    public async Task MarkAsReadAsync(Guid userId, List<Guid> notificationIds)
+    public async Task CreateBulkNotificationsAsync(IEnumerable<Notification> notifications)
     {
-        var notifications = await _context.Notifications
-            .Where(n => n.UserId == userId && notificationIds.Contains(n.Id))
-            .ToListAsync();
-
-        foreach (var notification in notifications)
-        {
-            notification.IsRead = true;
-            notification.ReadAt = DateTime.UtcNow;
-        }
-
+        await _context.Notifications.AddRangeAsync(notifications);
         await _context.SaveChangesAsync();
     }
 
     /// <summary>
-    /// Tüm bildirimleri okundu olarak işaretler
+    /// Kullanıcının tüm bildirimlerini okundu olarak işaretler
     /// </summary>
-    public async Task MarkAllAsReadAsync(Guid userId)
+    public async Task MarkAllAsReadAsync(string userId)
     {
         var notifications = await _context.Notifications
             .Where(n => n.UserId == userId && !n.IsRead)
@@ -78,8 +94,24 @@ public class NotificationRepository : BaseRepository<Notification>, INotificatio
 
         foreach (var notification in notifications)
         {
-            notification.IsRead = true;
-            notification.ReadAt = DateTime.UtcNow;
+            notification.MarkAsRead();
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Bildirimleri okundu olarak işaretler
+    /// </summary>
+    public async Task MarkAsReadAsync(string userId, List<string> notificationIds)
+    {
+        var notifications = await _context.Notifications
+            .Where(n => n.UserId == userId && notificationIds.Contains(n.Id))
+            .ToListAsync();
+
+        foreach (var notification in notifications)
+        {
+            notification.MarkAsRead();
         }
 
         await _context.SaveChangesAsync();

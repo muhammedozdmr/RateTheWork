@@ -114,16 +114,8 @@ public static class OpenTelemetryConfiguration
             options.SetResourceBuilder(ResourceBuilder.CreateDefault()
                 .AddService("RateTheWork.API", "1.0.0"));
 
-            // Production'da OTLP exporter ekle
-            if (Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT") != null)
-            {
-                options.AddOtlpExporter();
-            }
-            else
-            {
-                // Development'ta console exporter kullan
-                options.AddConsoleExporter();
-            }
+            // Logging için OTLP export konfigürasyonu OpenTelemetry.Instrumentation.Extensions ile yapılır
+            // Şimdilik basit yapılandırma ile devam edelim
         });
 
         return logging;

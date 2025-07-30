@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using RateTheWork.Domain.Entities;
+using RateTheWork.Domain.Enums.Report;
 using RateTheWork.Domain.Interfaces.Repositories;
 
 namespace RateTheWork.Infrastructure.Persistence.Repositories;
 
 /// <summary>
-/// Raporlama işlemleri için repository implementasyonu
+/// Şikayet işlemleri için repository implementasyonu
 /// </summary>
 public class ReportRepository : BaseRepository<Report>, IReportRepository
 {
@@ -14,69 +15,90 @@ public class ReportRepository : BaseRepository<Report>, IReportRepository
     }
 
     /// <summary>
-    /// Rapor tipine göre raporları getirir
+    /// Queryable interface sağlar
     /// </summary>
-    public async Task<IEnumerable<Report>> GetByTypeAsync(string reportType)
+    public IQueryable<Report> GetQueryable()
+    {
+        return _context.Reports.AsQueryable();
+    }
+
+    /// <summary>
+    /// Belirli bir entity'ye yapılan şikayetleri getirir
+    /// </summary>
+    public async Task<List<Report>> GetReportsByEntityAsync(string entityType, string entityId)
     {
         return await _context.Reports
-            .Where(r => r.Type == reportType)
-            .OrderByDescending(r => r.CreatedAt)
+            .Where(r => r.EntityType == entityType && r.EntityId == entityId)
+            .OrderByDescending(r => r.ReportedAt)
             .ToListAsync();
     }
 
     /// <summary>
-    /// Kullanıcının oluşturduğu raporları getirir
+    /// Kullanıcının yaptığı şikayetleri getirir
     /// </summary>
-    public async Task<IEnumerable<Report>> GetByCreatedByAsync(Guid userId)
+    public async Task<List<Report>> GetReportsByUserAsync(string userId)
     {
         return await _context.Reports
-            .Where(r => r.CreatedById == userId)
-            .OrderByDescending(r => r.CreatedAt)
+            .Where(r => r.ReporterUserId == userId)
+            .OrderByDescending(r => r.ReportedAt)
             .ToListAsync();
     }
 
     /// <summary>
-    /// Tarih aralığına göre raporları getirir
+    /// Bekleyen şikayetleri getirir
     /// </summary>
-    public async Task<IEnumerable<Report>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
+    public async Task<List<Report>> GetPendingReportsAsync()
     {
         return await _context.Reports
-            .Where(r => r.CreatedAt >= startDate && r.CreatedAt <= endDate)
-            .OrderByDescending(r => r.CreatedAt)
+            .Where(r => r.Status == ReportStatus.Pending)
+            .OrderBy(r => r.ReportedAt)
             .ToListAsync();
     }
 
     /// <summary>
-    /// Durum bazında raporları getirir
+    /// Belirli durumdaki şikayetleri getirir
     /// </summary>
-    public async Task<IEnumerable<Report>> GetByStatusAsync(string status)
+    public async Task<List<Report>> GetReportsByStatusAsync(ReportStatus status)
     {
         return await _context.Reports
             .Where(r => r.Status == status)
-            .OrderByDescending(r => r.CreatedAt)
+            .OrderByDescending(r => r.ReportedAt)
             .ToListAsync();
     }
 
     /// <summary>
-    /// Zamanlanmış raporları getirir
+    /// Kullanıcının belirli bir entity'ye daha önce şikayet yapıp yapmadığını kontrol eder
     /// </summary>
-    public async Task<IEnumerable<Report>> GetScheduledReportsAsync()
+    public async Task<bool> HasUserReportedEntityAsync(string userId, string entityType, string entityId)
     {
         return await _context.Reports
-            .Where(r => r.IsScheduled && r.NextRunDate != null)
-            .OrderBy(r => r.NextRunDate)
+            .AnyAsync(r => r.ReporterUserId == userId &&
+                           r.EntityType == entityType &&
+                           r.EntityId == entityId);
+    }
+
+    /// <summary>
+    /// Belirli bir tarih aralığındaki şikayetleri getirir
+    /// </summary>
+    public async Task<List<Report>> GetReportsByDateRangeAsync(DateTime startDate, DateTime endDate)
+    {
+        return await _context.Reports
+            .Where(r => r.ReportedAt >= startDate && r.ReportedAt <= endDate)
+            .OrderByDescending(r => r.ReportedAt)
             .ToListAsync();
     }
 
     /// <summary>
-    /// Çalıştırılması gereken raporları getirir
+    /// En çok şikayet edilen entity'leri getirir
     /// </summary>
-    public async Task<IEnumerable<Report>> GetReportsToRunAsync()
+    public async Task<Dictionary<string, int>> GetMostReportedEntitiesAsync(string entityType, int topCount = 10)
     {
-        var now = DateTime.UtcNow;
         return await _context.Reports
-            .Where(r => r.IsScheduled && r.NextRunDate <= now && r.Status == "Active")
-            .OrderBy(r => r.NextRunDate)
-            .ToListAsync();
+            .Where(r => r.EntityType == entityType)
+            .GroupBy(r => r.EntityId)
+            .Select(g => new { EntityId = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
+            .Take(topCount)
+            .ToDictionaryAsync(x => x.EntityId, x => x.Count);
     }
 }

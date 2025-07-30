@@ -155,7 +155,7 @@ public class ReviewRepository : BaseRepository<Review>, IReviewRepository
     public async Task<Review?> GetWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(r => r.Id == id.ToString(), cancellationToken);
     }
 
     public async Task<IEnumerable<Review>> GetByBranchAsync

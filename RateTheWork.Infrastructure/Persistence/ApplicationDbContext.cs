@@ -24,6 +24,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<ReviewVote> ReviewVotes => Set<ReviewVote>();
     public DbSet<Report> Reports => Set<Report>();
+    public DbSet<SystemReport> SystemReports => Set<SystemReport>();
     public DbSet<Warning> Warnings => Set<Warning>();
     public DbSet<Ban> Bans => Set<Ban>();
     public DbSet<JobPosting> JobPostings => Set<JobPosting>();
@@ -37,6 +38,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<JobApplication> JobApplications => Set<JobApplication>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<UserBadge> UserBadges => Set<UserBadge>();
+    public DbSet<Badge> Badges => Set<Badge>();
+    public DbSet<VerificationRequest> VerificationRequests => Set<VerificationRequest>();
+    public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

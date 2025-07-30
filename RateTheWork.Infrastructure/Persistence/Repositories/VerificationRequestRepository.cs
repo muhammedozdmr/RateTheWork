@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using RateTheWork.Domain.Entities;
+using RateTheWork.Domain.Enums.VerificationRequest;
 using RateTheWork.Domain.Interfaces.Repositories;
 
 namespace RateTheWork.Infrastructure.Persistence.Repositories;
@@ -15,7 +17,7 @@ public class VerificationRequestRepository : BaseRepository<VerificationRequest>
     /// <summary>
     /// Kullanıcının doğrulama taleplerini getirir
     /// </summary>
-    public async Task<IEnumerable<VerificationRequest>> GetByUserIdAsync(Guid userId)
+    public async Task<List<VerificationRequest>> GetRequestsByUserAsync(string userId)
     {
         return await _context.VerificationRequests
             .Where(vr => vr.UserId == userId)
@@ -24,13 +26,37 @@ public class VerificationRequestRepository : BaseRepository<VerificationRequest>
     }
 
     /// <summary>
-    /// Bekleyen doğrulama taleplerini getirir
+    /// İncelemeye ait doğrulama taleplerini getirir
     /// </summary>
-    public async Task<IEnumerable<VerificationRequest>> GetPendingRequestsAsync()
+    public async Task<List<VerificationRequest>> GetRequestsByReviewAsync(string reviewId)
     {
         return await _context.VerificationRequests
-            .Where(vr => vr.Status == "Pending")
-            .Include(vr => vr.User)
+            .Where(vr => vr.ReviewId == reviewId)
+            .OrderByDescending(vr => vr.CreatedAt)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// İnceleme için aktif doğrulama talebini getirir
+    /// </summary>
+    public async Task<VerificationRequest?> GetActiveRequestByReviewAsync(string reviewId)
+    {
+        return await _context.VerificationRequests
+            .Where(vr => vr.ReviewId == reviewId &&
+                         (vr.Status == VerificationRequestStatus.Pending ||
+                          vr.Status == VerificationRequestStatus.Processing))
+            .OrderByDescending(vr => vr.CreatedAt)
+            .FirstOrDefaultAsync();
+    }
+
+    /// <summary>
+    /// Bekleyen doğrulama taleplerini getirir
+    /// </summary>
+    public async Task<List<VerificationRequest>> GetPendingRequestsAsync()
+    {
+        return await _context.VerificationRequests
+            .Where(vr => vr.Status == VerificationRequestStatus.Pending)
+            // .Include(vr => vr.User) // Navigation property not available
             .OrderBy(vr => vr.CreatedAt)
             .ToListAsync();
     }
@@ -41,8 +67,8 @@ public class VerificationRequestRepository : BaseRepository<VerificationRequest>
     public async Task<IEnumerable<VerificationRequest>> GetByTypeAsync(string verificationType)
     {
         return await _context.VerificationRequests
-            .Where(vr => vr.Type == verificationType)
-            .Include(vr => vr.User)
+            .Where(vr => vr.Type.ToString() == verificationType)
+            // .Include(vr => vr.User) // Navigation property not available
             .OrderByDescending(vr => vr.CreatedAt)
             .ToListAsync();
     }
@@ -53,8 +79,8 @@ public class VerificationRequestRepository : BaseRepository<VerificationRequest>
     public async Task<IEnumerable<VerificationRequest>> GetByStatusAsync(string status)
     {
         return await _context.VerificationRequests
-            .Where(vr => vr.Status == status)
-            .Include(vr => vr.User)
+            .Where(vr => vr.Status.ToString() == status)
+            // .Include(vr => vr.User) // Navigation property not available
             .OrderByDescending(vr => vr.CreatedAt)
             .ToListAsync();
     }
@@ -62,12 +88,13 @@ public class VerificationRequestRepository : BaseRepository<VerificationRequest>
     /// <summary>
     /// Kullanıcının aktif doğrulama talebini getirir
     /// </summary>
-    public async Task<VerificationRequest?> GetActiveRequestAsync(Guid userId, string verificationType)
+    public async Task<VerificationRequest?> GetActiveRequestAsync(string userId, string verificationType)
     {
         return await _context.VerificationRequests
             .Where(vr => vr.UserId == userId &&
-                         vr.Type == verificationType &&
-                         (vr.Status == "Pending" || vr.Status == "InProgress"))
+                         vr.Type.ToString() == verificationType &&
+                         (vr.Status == VerificationRequestStatus.Pending ||
+                          vr.Status == VerificationRequestStatus.Processing))
             .OrderByDescending(vr => vr.CreatedAt)
             .FirstOrDefaultAsync();
     }
@@ -78,7 +105,7 @@ public class VerificationRequestRepository : BaseRepository<VerificationRequest>
     public async Task<VerificationRequest?> GetByCodeAsync(string verificationCode)
     {
         return await _context.VerificationRequests
-            .Include(vr => vr.User)
+            // .Include(vr => vr.User) // Navigation property not available
             .FirstOrDefaultAsync(vr => vr.VerificationCode == verificationCode);
     }
 
@@ -89,7 +116,7 @@ public class VerificationRequestRepository : BaseRepository<VerificationRequest>
     {
         var now = DateTime.UtcNow;
         return await _context.VerificationRequests
-            .Where(vr => vr.ExpiresAt < now && vr.Status == "Pending")
+            .Where(vr => vr.ExpiresAt < now && vr.Status == VerificationRequestStatus.Pending)
             .ToListAsync();
     }
 }

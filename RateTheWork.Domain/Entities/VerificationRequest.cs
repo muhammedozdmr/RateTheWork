@@ -30,6 +30,8 @@ public class VerificationRequest : ApprovableBaseEntity
     public VerificationType Type { get; private set; }
     public DateTime RequestedAt { get; private set; }
     public VerificationRequestStatus Status { get; private set; } = VerificationRequestStatus.Pending;
+    public string VerificationCode { get; private set; } = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
+    public DateTime ExpiresAt { get; private set; } = DateTime.UtcNow.AddDays(7);
     public DateTime? ProcessedAt { get; private set; }
     public string? ProcessingNotes { get; private set; }
     public bool IsUrgent { get; private set; } = false;
@@ -343,6 +345,8 @@ public class VerificationRequest : ApprovableBaseEntity
             DateTime.UtcNow
         ));
     }
+
+    // Public helper properties for interface compatibility
 
     // Private helper methods
     private static bool DetermineUrgency(string documentType)

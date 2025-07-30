@@ -14,7 +14,7 @@ public class JobPostingRepository : BaseRepository<JobPosting>, IJobPostingRepos
     public async Task<List<JobPosting>> GetByCompanyIdAsync(string companyId, int page = 1, int pageSize = 20)
     {
         return await _dbSet
-            .Where(jp => jp.CompanyId == companyId)
+            .Where(jp => jp.CompanyId == companyId.ToString())
             .OrderByDescending(jp => jp.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -186,7 +186,7 @@ public class JobPostingRepository : BaseRepository<JobPosting>, IJobPostingRepos
 
         if (excludeJobId.HasValue)
         {
-            query = query.Where(jp => jp.Id != excludeJobId.Value);
+            query = query.Where(jp => jp.Id != excludeJobId.Value.ToString());
         }
 
         return !await query.AnyAsync(cancellationToken);
@@ -213,6 +213,6 @@ public class JobPostingRepository : BaseRepository<JobPosting>, IJobPostingRepos
     public async Task<JobPosting?> GetWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .FirstOrDefaultAsync(jp => jp.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(jp => jp.Id == id.ToString(), cancellationToken);
     }
 }

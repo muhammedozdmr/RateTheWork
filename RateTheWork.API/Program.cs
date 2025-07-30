@@ -14,7 +14,7 @@ using RateTheWork.Infrastructure.Persistence;
 var builder = WebApplication.CreateBuilder(args);
 
 // Serilog yapılandırması
-builder.Host.UseSerilog(SerilogConfiguration.Configure);
+builder.Host.ConfigureSerilog();
 
 // Add environment variables to configuration
 builder.Configuration.AddEnvironmentVariables();

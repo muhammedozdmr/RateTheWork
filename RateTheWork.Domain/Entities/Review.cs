@@ -42,6 +42,16 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     public string? TargetId { get; private set; } // Hedef ID'si
 
     /// <summary>
+    /// Kullanıcı navigation property'si
+    /// </summary>
+    public User? User { get; private set; }
+
+    /// <summary>
+    /// Şube navigation property'si
+    /// </summary>
+    public CompanyBranch? Branch { get; private set; }
+
+    /// <summary>
     /// Yeni yorum oluşturur (Factory method)
     /// </summary>
     public static Review Create
@@ -253,14 +263,14 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     public void UpdateRating(decimal newRating)
     {
         ValidateRating(newRating);
-        
+
         if (OverallRating == newRating)
             return; // Değişiklik yok
-            
+
         var oldRating = OverallRating;
         OverallRating = newRating;
         SetModifiedDate();
-        
+
         // Domain Event - ReviewUpdatedEvent kullan
         AddDomainEvent(new ReviewUpdatedEvent(
             Id,
@@ -470,7 +480,7 @@ public class Review : AuditableBaseEntity, IAggregateRoot
         if (editReason.Length < 10)
             throw new BusinessRuleException("Düzenleme nedeni en az 10 karakter olmalıdır.");
     }
-    
+
     /// <summary>
     /// Yorumu deaktive et
     /// </summary>
@@ -479,7 +489,7 @@ public class Review : AuditableBaseEntity, IAggregateRoot
         IsActive = false;
         SetModifiedDate();
     }
-    
+
     /// <summary>
     /// Yorumu aktive et
     /// </summary>
