@@ -13,5 +13,6 @@ public sealed class UserBlockchainIdentityDto
     public string PublicKey { get; set; } = string.Empty;
     public string? ContractAddress { get; set; }
     public bool IsActive { get; set; }
+    public bool IsVerified { get; set; }
     public DateTime CreatedAt { get; set; }
 }

@@ -92,6 +92,27 @@ using (var scope = app.Services.CreateScope())
         "weekly-system-report",
         job => job.GenerateWeeklySystemReportAsync(),
         Cron.Weekly(DayOfWeek.Monday, 9, 0)); // Her pazartesi sabah 09:00'da
+
+    // Blockchain sync jobs
+    recurringJobManager.AddOrUpdate<BlockchainSyncJob>(
+        "sync-pending-reviews",
+        job => job.SyncPendingReviewsAsync(),
+        Cron.Hourly); // Her saat başı
+
+    recurringJobManager.AddOrUpdate<BlockchainSyncJob>(
+        "create-blockchain-identities",
+        job => job.CreateMissingBlockchainIdentitiesAsync(),
+        Cron.Daily(2, 0)); // Her gün saat 02:00'de
+
+    recurringJobManager.AddOrUpdate<BlockchainSyncJob>(
+        "verify-blockchain-integrity",
+        job => job.VerifyBlockchainIntegrityAsync(),
+        Cron.Daily(4, 0)); // Her gün saat 04:00'te
+
+    recurringJobManager.AddOrUpdate<BlockchainSyncJob>(
+        "update-blockchain-statistics",
+        job => job.UpdateBlockchainStatisticsAsync(),
+        "*/30 * * * *"); // Her 30 dakikada bir
 }
 
 // Apply migrations on startup

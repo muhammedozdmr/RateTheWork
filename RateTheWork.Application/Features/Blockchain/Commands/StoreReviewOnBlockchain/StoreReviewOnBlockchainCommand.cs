@@ -15,6 +15,7 @@ public sealed class BlockchainTransactionDto
     public string ToAddress { get; set; } = string.Empty;
     public string DataHash { get; set; } = string.Empty;
     public string ContractAddress { get; set; } = string.Empty;
+    public long BlockNumber { get; set; }
     public DateTime Timestamp { get; set; }
     public string Status { get; set; } = string.Empty;
 }
