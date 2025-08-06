@@ -13,4 +13,11 @@ public interface IReviewRepository : IGenericRepository<Review>
     Task<Review?> GetUserReviewForCompanyAsync(string userId, string companyId, string commentType);
     Task<decimal> GetAverageRatingForCompanyAsync(string companyId);
     Task<Dictionary<string, decimal>> GetRatingDistributionAsync(string companyId);
+    
+    // Blockchain metodları
+    Task<List<Review>> GetReviewsNotOnBlockchainAsync(int skip = 0, int take = 100);
+    Task<List<Review>> GetReviewsOnBlockchainAsync(int skip = 0, int take = 100);
+    Task<int> CountReviewsOnBlockchainAsync();
+    Task<Review?> GetByBlockchainTransactionHashAsync(string transactionHash);
+    Task<List<Review>> GetUserReviewsOnBlockchainAsync(string userId);
 }

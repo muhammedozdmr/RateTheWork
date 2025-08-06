@@ -55,6 +55,10 @@ public static class DependencyInjection
         services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
         services.AddScoped<IHRPersonnelService, HRPersonnelService>();
         services.AddScoped<IJobApplicationService, JobApplicationService>();
+        services.AddScoped<IBlockchainApplicationService, BlockchainApplicationService>();
+        
+        // Blockchain Domain Service
+        services.AddScoped<Domain.Services.BlockchainDomainService>();
 
         return services;
     }

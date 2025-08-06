@@ -15,4 +15,10 @@ public interface IUserRepository : IGenericRepository<User>
     Task<User?> GetByPasswordResetTokenAsync(string token);
     Task<int> GetActiveUserCountAsync();
     Task<bool> HasUserReviewedCompanyAsync(string userId, string companyId, string commentType);
+    
+    // Blockchain metodları
+    Task<User?> GetByBlockchainWalletAddressAsync(string walletAddress);
+    Task<List<User>> GetUsersWithBlockchainIdentityAsync(int skip = 0, int take = 100);
+    Task<int> CountUsersWithBlockchainIdentityAsync();
+    Task<bool> IsBlockchainWalletAddressUniqueAsync(string walletAddress, string? excludeUserId = null);
 }
