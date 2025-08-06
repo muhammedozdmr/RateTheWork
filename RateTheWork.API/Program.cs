@@ -113,10 +113,10 @@ if (!disableHangfire)
         job => job.VerifyBlockchainIntegrityAsync(),
         Cron.Daily(4, 0)); // Her gün saat 04:00'te
 
-        recurringJobManager.AddOrUpdate<BlockchainSyncJob>(
-            "update-blockchain-statistics",
-            job => job.UpdateBlockchainStatisticsAsync(),
-            "*/30 * * * *"); // Her 30 dakikada bir
+    recurringJobManager.AddOrUpdate<BlockchainSyncJob>(
+        "update-blockchain-statistics",
+        job => job.UpdateBlockchainStatisticsAsync(),
+        "*/30 * * * *"); // Her 30 dakikada bir
     }
 }
 
