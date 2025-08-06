@@ -166,4 +166,41 @@ public class ReviewRepository : BaseRepository<Review>, IReviewRepository
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync(cancellationToken);
     }
+
+    // Blockchain metodları
+    public async Task<List<Review>> GetBlockchainStoredReviewsAsync(int page = 1, int pageSize = 10)
+    {
+        return await _dbSet
+            .Where(r => r.IsStoredOnBlockchain)
+            .OrderByDescending(r => r.BlockchainStoredAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    public async Task<List<Review>> GetPendingBlockchainStorageAsync(int limit = 100)
+    {
+        return await _dbSet
+            .Where(r => r.IsActive && r.IsPublished && !r.IsStoredOnBlockchain)
+            .OrderBy(r => r.CreatedAt)
+            .Take(limit)
+            .ToListAsync();
+    }
+
+    public async Task<Review?> GetByBlockchainTransactionHashAsync(string transactionHash)
+    {
+        return await _dbSet
+            .FirstOrDefaultAsync(r => r.BlockchainTransactionHash == transactionHash);
+    }
+
+    public async Task<bool> VerifyReviewBlockchainIntegrityAsync(string reviewId, string expectedHash)
+    {
+        var review = await _dbSet.FirstOrDefaultAsync(r => r.Id == reviewId);
+        return review != null && review.BlockchainDataHash == expectedHash;
+    }
+
+    public async Task<int> CountAsync(System.Linq.Expressions.Expression<Func<Review, bool>> predicate)
+    {
+        return await _dbSet.CountAsync(predicate);
+    }
 }

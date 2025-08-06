@@ -207,6 +207,71 @@ public class MetricsService : IMetricsService
     }
 
     /// <summary>
+    /// Sayacı artırır (async versiyonu)
+    /// </summary>
+    public async Task IncrementCounterAsync(string name, int value = 1, Dictionary<string, object?>? tags = null)
+    {
+        await Task.Run(() => 
+        {
+            var tagList = CreateTagList(tags);
+            
+            switch (name.ToLowerInvariant())
+            {
+                case "request":
+                    _requestCounter.Add(value, tagList.ToArray());
+                    break;
+                case "error":
+                    _errorCounter.Add(value, tagList.ToArray());
+                    break;
+                case "login":
+                    _loginCounter.Add(value, tagList.ToArray());
+                    break;
+                case "registration":
+                    _registrationCounter.Add(value, tagList.ToArray());
+                    break;
+                case "email_sent":
+                    _emailSentCounter.Add(value, tagList.ToArray());
+                    break;
+                case "sms_sent":
+                    _smsSentCounter.Add(value, tagList.ToArray());
+                    break;
+                default:
+                    _logger.LogWarning("Unknown counter name: {CounterName}", name);
+                    break;
+            }
+        });
+    }
+
+    /// <summary>
+    /// Blockchain operasyonu metriğini kaydeder
+    /// </summary>
+    public async Task RecordBlockchainOperationAsync(string operationType, bool success, double durationMs)
+    {
+        await Task.Run(() => 
+        {
+            var tags = new Dictionary<string, object?>
+            {
+                ["operation"] = operationType,
+                ["success"] = success
+            };
+
+            RecordDuration("blockchain_operation", durationMs / 1000.0, tags);
+            
+            if (!success)
+            {
+                IncrementCounter("error", new Dictionary<string, object?> 
+                { 
+                    ["type"] = "blockchain",
+                    ["operation"] = operationType 
+                });
+            }
+
+            _logger.LogInformation("Blockchain operation metric recorded: {Operation} Success: {Success} Duration: {Duration}ms",
+                operationType, success, durationMs);
+        });
+    }
+
+    /// <summary>
     /// Etiket listesi oluşturur
     /// </summary>
     private List<KeyValuePair<string, object?>> CreateTagList(Dictionary<string, object?>? tags)

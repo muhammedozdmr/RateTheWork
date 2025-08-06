@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.Interfaces.Repositories;
+using RateTheWork.Domain.ValueObjects.Blockchain;
 
 namespace RateTheWork.Infrastructure.Persistence.Repositories;
 
@@ -133,5 +134,38 @@ public class UserRepository : BaseRepository<User>, IUserRepository
         // TODO: Include related entities when properly configured
         return await _dbSet
             .FirstOrDefaultAsync(u => u.Id == userId.ToString());
+    }
+
+    // Blockchain metodları
+    public async Task<User?> GetByBlockchainAddressAsync(string walletAddress)
+    {
+        return await _dbSet
+            .FirstOrDefaultAsync(u => u.BlockchainWalletAddress == walletAddress);
+    }
+
+    public async Task<List<User>> GetBlockchainVerifiedUsersAsync(int page = 1, int pageSize = 10)
+    {
+        return await _dbSet
+            .Where(u => u.IsBlockchainVerified)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    public async Task<bool> IsBlockchainAddressUniqueAsync(string walletAddress, Guid? excludeUserId = null)
+    {
+        var query = _dbSet.Where(u => u.BlockchainWalletAddress == walletAddress);
+        
+        if (excludeUserId.HasValue)
+        {
+            query = query.Where(u => u.Id != excludeUserId.Value.ToString());
+        }
+
+        return !await query.AnyAsync();
+    }
+
+    public async Task<int> CountAsync(System.Linq.Expressions.Expression<Func<User, bool>> predicate)
+    {
+        return await _dbSet.CountAsync(predicate);
     }
 }

@@ -54,6 +54,12 @@
         
         <!-- Cloudflare KV Client -->
         <PackageReference Include="RestSharp" Version="112.1.0"/>
+        
+        <!-- Blockchain -->
+        <PackageReference Include="Nethereum.Web3" Version="4.19.0"/>
+        <PackageReference Include="Nethereum.Contracts" Version="4.19.0"/>
+        <PackageReference Include="Nethereum.ABI" Version="4.19.0"/>
+        <PackageReference Include="NBitcoin" Version="7.0.34"/>
 
         <!-- OpenTelemetry -->
         <PackageReference Include="OpenTelemetry" Version="1.7.0"/>

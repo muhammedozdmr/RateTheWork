@@ -13,6 +13,8 @@ using RateTheWork.Infrastructure.Persistence;
 using RateTheWork.Infrastructure.Persistence.Interceptors;
 using RateTheWork.Infrastructure.Persistence.Repositories;
 using RateTheWork.Infrastructure.Services;
+using RateTheWork.Infrastructure.Services.Blockchain;
+using RateTheWork.Domain.Interfaces.Blockchain;
 using IUnitOfWork = RateTheWork.Application.Common.Interfaces.IUnitOfWork;
 
 namespace RateTheWork.Infrastructure;
@@ -32,6 +34,7 @@ public static class DependencyInjection
         services.Configure<StorageOptions>(configuration.GetSection(StorageOptions.SectionName));
         services.Configure<CacheOptions>(configuration.GetSection(CacheOptions.SectionName));
         services.Configure<SecurityOptions>(configuration.GetSection(SecurityOptions.SectionName));
+        services.Configure<BlockchainConfiguration>(configuration.GetSection(BlockchainConfiguration.SectionName));
         // Veritabanı - Hem DATABASE_URL hem de ConnectionStrings:DefaultConnection dene
         var connectionString = configuration["DATABASE_URL"]
                                ?? configuration.GetConnectionString("DefaultConnection")
@@ -171,6 +174,10 @@ public static class DependencyInjection
 
         // Cache Invalidator
         services.AddScoped<CacheInvalidator>();
+
+        // Blockchain Servisleri
+        services.AddScoped<IBlockchainService, BlockchainService>();
+        services.AddScoped<ISmartContractService, SmartContractService>();
 
         return services;
     }

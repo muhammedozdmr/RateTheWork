@@ -220,4 +220,38 @@ public class CompanyRepository : BaseRepository<Company>, ICompanyRepository
             .CountAsync(jp => jp.CompanyId == companyId.ToString() && jp.Status == JobPostingStatus.Active
                 , cancellationToken);
     }
+
+    // Blockchain metodları
+    public async Task<List<Company>> GetBlockchainVerifiedCompaniesAsync(int page = 1, int pageSize = 20)
+    {
+        return await _dbSet
+            .Where(c => c.IsVerifiedOnBlockchain)
+            .OrderBy(c => c.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    public async Task<Company?> GetByBlockchainContractAddressAsync(string contractAddress)
+    {
+        return await _dbSet
+            .FirstOrDefaultAsync(c => c.BlockchainContractAddress == contractAddress);
+    }
+
+    public async Task<bool> IsBlockchainContractAddressUniqueAsync(string contractAddress, Guid? excludeCompanyId = null)
+    {
+        var query = _dbSet.Where(c => c.BlockchainContractAddress == contractAddress);
+        
+        if (excludeCompanyId.HasValue)
+        {
+            query = query.Where(c => c.Id != excludeCompanyId.Value.ToString());
+        }
+
+        return !await query.AnyAsync();
+    }
+
+    public async Task<int> CountAsync(System.Linq.Expressions.Expression<Func<Company, bool>> predicate)
+    {
+        return await _dbSet.CountAsync(predicate);
+    }
 }
