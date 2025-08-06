@@ -10,23 +10,20 @@ namespace RateTheWork.Api.Middleware;
 public class RateLimitingMiddleware
 {
     private readonly IConfiguration _configuration;
-    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<RateLimitingMiddleware> _logger;
     private readonly RequestDelegate _next;
-    private readonly IRateLimitingService _rateLimitingService;
+    private readonly IServiceProvider _serviceProvider;
 
     public RateLimitingMiddleware
     (
         RequestDelegate next
-        , IRateLimitingService rateLimitingService
-        , ICurrentUserService currentUserService
+        , IServiceProvider serviceProvider
         , ILogger<RateLimitingMiddleware> logger
         , IConfiguration configuration
     )
     {
         _next = next;
-        _rateLimitingService = rateLimitingService;
-        _currentUserService = currentUserService;
+        _serviceProvider = serviceProvider;
         _logger = logger;
         _configuration = configuration;
     }
@@ -41,13 +38,17 @@ public class RateLimitingMiddleware
             return;
         }
 
+        using var scope = _serviceProvider.CreateScope();
+        var rateLimitingService = scope.ServiceProvider.GetRequiredService<IRateLimitingService>();
+        var currentUserService = scope.ServiceProvider.GetRequiredService<ICurrentUserService>();
+
         var ipAddress = GetIpAddress(context);
         var endpoint = context.Request.Path.Value ?? "unknown";
         var method = context.Request.Method;
 
         // IP bazlı rate limiting
         var ipLimit = _configuration.GetValue<int>("RateLimiting:PerIpPerMinute", 60);
-        var ipResult = await _rateLimitingService.CheckIpRateLimitAsync(
+        var ipResult = await rateLimitingService.CheckIpRateLimitAsync(
             ipAddress,
             ipLimit,
             TimeSpan.FromMinutes(1));
@@ -59,11 +60,11 @@ public class RateLimitingMiddleware
         }
 
         // Kullanıcı bazlı rate limiting (giriş yapmış kullanıcılar için)
-        var userId = _currentUserService.UserId;
+        var userId = currentUserService.UserId;
         if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out var userGuid))
         {
             var userLimit = _configuration.GetValue<int>("RateLimiting:PerUserPerMinute", 100);
-            var userResult = await _rateLimitingService.CheckUserRateLimitAsync(
+            var userResult = await rateLimitingService.CheckUserRateLimitAsync(
                 userGuid,
                 "api",
                 userLimit,
@@ -88,7 +89,7 @@ public class RateLimitingMiddleware
         if (endpoint.Contains("/login", StringComparison.OrdinalIgnoreCase))
         {
             var loginLimit = _configuration.GetValue<int>("RateLimiting:LoginAttemptsPerHour", 5);
-            var loginResult = await _rateLimitingService.CheckRateLimitAsync(
+            var loginResult = await rateLimitingService.CheckRateLimitAsync(
                 $"login:{ipAddress}",
                 loginLimit,
                 TimeSpan.FromHours(1));
@@ -104,7 +105,7 @@ public class RateLimitingMiddleware
         else if (endpoint.Contains("/password-reset", StringComparison.OrdinalIgnoreCase))
         {
             var resetLimit = _configuration.GetValue<int>("RateLimiting:PasswordResetPerDay", 3);
-            var resetResult = await _rateLimitingService.CheckRateLimitAsync(
+            var resetResult = await rateLimitingService.CheckRateLimitAsync(
                 $"password-reset:{ipAddress}",
                 resetLimit,
                 TimeSpan.FromDays(1));

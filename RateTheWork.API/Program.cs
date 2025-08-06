@@ -65,18 +65,22 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Hangfire server'ı başlat
-app.UseHangfireServer();
-
-// Background job'ları zamanla - app build edildikten sonra
-using (var scope = app.Services.CreateScope())
+// Hangfire configuration (only if not disabled)
+var disableHangfire = builder.Configuration.GetValue<bool>("DisableHangfire");
+if (!disableHangfire)
 {
-    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
-    
-    recurringJobManager.AddOrUpdate<DataCleanupJob>(
-        "cleanup-soft-deleted",
-        job => job.CleanupSoftDeletedRecordsAsync(90),
-        Cron.Daily(3, 0)); // Her gün saat 03:00'te
+    // Hangfire server'ı başlat
+    app.UseHangfireServer();
+
+    // Background job'ları zamanla - app build edildikten sonra
+    using (var scope = app.Services.CreateScope())
+    {
+        var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+        
+        recurringJobManager.AddOrUpdate<DataCleanupJob>(
+            "cleanup-soft-deleted",
+            job => job.CleanupSoftDeletedRecordsAsync(90),
+            Cron.Daily(3, 0)); // Her gün saat 03:00'te
 
     recurringJobManager.AddOrUpdate<DataCleanupJob>(
         "cleanup-expired-verifications",
@@ -92,6 +96,28 @@ using (var scope = app.Services.CreateScope())
         "weekly-system-report",
         job => job.GenerateWeeklySystemReportAsync(),
         Cron.Weekly(DayOfWeek.Monday, 9, 0)); // Her pazartesi sabah 09:00'da
+
+    // Blockchain sync jobs
+    recurringJobManager.AddOrUpdate<BlockchainSyncJob>(
+        "sync-pending-reviews",
+        job => job.SyncPendingReviewsAsync(),
+        Cron.Hourly); // Her saat başı
+
+    recurringJobManager.AddOrUpdate<BlockchainSyncJob>(
+        "create-blockchain-identities",
+        job => job.CreateMissingBlockchainIdentitiesAsync(),
+        Cron.Daily(2, 0)); // Her gün saat 02:00'de
+
+    recurringJobManager.AddOrUpdate<BlockchainSyncJob>(
+        "verify-blockchain-integrity",
+        job => job.VerifyBlockchainIntegrityAsync(),
+        Cron.Daily(4, 0)); // Her gün saat 04:00'te
+
+        recurringJobManager.AddOrUpdate<BlockchainSyncJob>(
+            "update-blockchain-statistics",
+            job => job.UpdateBlockchainStatisticsAsync(),
+            "*/30 * * * *"); // Her 30 dakikada bir
+    }
 }
 
 // Apply migrations on startup
@@ -130,11 +156,15 @@ app.UseMiddleware<RateLimitingMiddleware>();
 
 app.UseAuthorization();
 
-// Hangfire Dashboard
-app.UseHangfireDashboard("/hangfire", new DashboardOptions
+// Hangfire Dashboard (only if not disabled)
+if (!disableHangfire)
 {
-    DashboardTitle = "RateTheWork Background Jobs", Authorization = new[] { new HangfireAuthorizationFilter() }
-});
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        DashboardTitle = "RateTheWork Background Jobs", 
+        Authorization = new[] { new HangfireAuthorizationFilter() }
+    });
+}
 
 app.MapControllers();
 

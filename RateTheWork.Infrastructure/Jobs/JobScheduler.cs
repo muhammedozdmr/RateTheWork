@@ -1,5 +1,6 @@
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RateTheWork.Infrastructure.Persistence;
@@ -13,16 +14,26 @@ public class JobScheduler : IHostedService
 {
     private readonly ILogger<JobScheduler> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IConfiguration _configuration;
 
-    public JobScheduler(IServiceProvider serviceProvider, ILogger<JobScheduler> logger)
+    public JobScheduler(IServiceProvider serviceProvider, ILogger<JobScheduler> logger, IConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Job zamanlayıcı başlatılıyor...");
+
+        // Hangfire devre dışıysa job'ları zamanlamayı atla
+        var disableHangfire = _configuration.GetValue<bool>("DisableHangfire");
+        if (disableHangfire)
+        {
+            _logger.LogInformation("Hangfire devre dışı, job'lar zamanlanmıyor");
+            return Task.CompletedTask;
+        }
 
         // Tekrarlayan job'ları zamanla
         ScheduleRecurringJobs();

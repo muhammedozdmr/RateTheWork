@@ -63,9 +63,24 @@ public static class DependencyInjection
         services.AddScoped<SoftDeleteInterceptor>();
         services.AddScoped<PerformanceInterceptor>();
 
+        // Database configuration based on environment
+        var useSQLite = configuration.GetValue<bool>("UseSQLite");
+        var useInMemoryDatabase = configuration.GetValue<bool>("UseInMemoryDatabase");
+
         services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
         {
-            options.UseNpgsql(npgsqlConnectionString);
+            if (useInMemoryDatabase)
+            {
+                options.UseInMemoryDatabase("RateTheWorkDb");
+            }
+            else if (useSQLite)
+            {
+                options.UseSqlite(connectionString);
+            }
+            else
+            {
+                options.UseNpgsql(npgsqlConnectionString);
+            }
 
             // Yakalayıcıları ekle
             options.AddInterceptors(
@@ -145,20 +160,29 @@ public static class DependencyInjection
         services.AddHttpClient();
 
         // Arka Plan İşleri (Hangfire)
-        services.AddHangfire(config => config
-            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-            .UseSimpleAssemblyNameTypeSerializer()
-            .UseRecommendedSerializerSettings()
-            .UsePostgreSqlStorage(npgsqlConnectionString));
-
-        services.AddHangfireServer(options =>
+        var disableHangfire = configuration.GetValue<bool>("DisableHangfire");
+        if (!disableHangfire)
         {
-            options.ServerName = $"RateTheWork-{Environment.MachineName}";
-            options.WorkerCount = Environment.ProcessorCount * 2;
-            options.Queues = new[] { "critical", "default", "low" };
-        });
+            services.AddHangfire(config => config
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UsePostgreSqlStorage(npgsqlConnectionString));
 
-        services.AddScoped<IBackgroundJobService, HangfireBackgroundJobService>();
+            services.AddHangfireServer(options =>
+            {
+                options.ServerName = $"RateTheWork-{Environment.MachineName}";
+                options.WorkerCount = Environment.ProcessorCount * 2;
+                options.Queues = new[] { "critical", "default", "low" };
+            });
+
+            services.AddScoped<IBackgroundJobService, HangfireBackgroundJobService>();
+        }
+        else
+        {
+            // Use in-memory background job service for development
+            services.AddScoped<IBackgroundJobService, InMemoryBackgroundJobService>();
+        }
 
         // Dağıtık Servisler
         services.AddSingleton<IDistributedLockService, DistributedLockService>();
@@ -178,6 +202,13 @@ public static class DependencyInjection
         // Blockchain Servisleri
         services.AddScoped<IBlockchainService, BlockchainService>();
         services.AddScoped<ISmartContractService, SmartContractService>();
+
+        // Content Moderation ve AI Servisleri
+        services.AddScoped<Domain.Interfaces.Services.IContentModerationService, ContentModerationService>();
+        services.AddScoped<Application.Common.Interfaces.IAICVAnalysisService, AICVAnalysisService>();
+        
+        // ApplicationDbContext as IApplicationDbContext
+        services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
 
         return services;
     }

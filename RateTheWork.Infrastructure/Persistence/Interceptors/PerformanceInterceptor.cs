@@ -2,7 +2,7 @@ using System.Data.Common;
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
-using RateTheWork.Infrastructure.Interfaces;
+using RateTheWork.Application.Common.Interfaces;
 
 namespace RateTheWork.Infrastructure.Persistence.Interceptors;
 
@@ -127,12 +127,13 @@ public class PerformanceInterceptor : DbCommandInterceptor
         }
 
         // Metrikleri kaydet
-        var tags = new Dictionary<string, string>
+        var tags = new Dictionary<string, object?>
         {
-            ["command_type"] = command.CommandType.ToString(), ["has_error"] = (eventData.Result == null).ToString()
+            ["command_type"] = command.CommandType.ToString(),
+            ["has_error"] = (eventData.Result == null).ToString()
         };
 
-        _metricsService.RecordHistogram("database_query_duration_ms", elapsedMilliseconds, tags);
         _metricsService.IncrementCounter("database_queries_total", tags);
+        _metricsService.RecordDuration("database_query_duration", elapsedMilliseconds / 1000.0, tags);
     }
 }

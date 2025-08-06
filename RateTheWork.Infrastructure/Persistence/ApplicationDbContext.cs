@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using RateTheWork.Application.Common.Interfaces;
 using RateTheWork.Domain.Entities;
 using RateTheWork.Domain.ValueObjects.Common;
 using RateTheWork.Domain.ValueObjects.Company;
@@ -11,7 +12,7 @@ using RateTheWork.Domain.ValueObjects.User;
 
 namespace RateTheWork.Infrastructure.Persistence;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -42,6 +43,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<VerificationRequest> VerificationRequests => Set<VerificationRequest>();
     public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
+    public bool HasActiveTransaction => Database.CurrentTransaction != null;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
