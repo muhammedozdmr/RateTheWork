@@ -5,6 +5,7 @@ using RateTheWork.Domain.Events.Company;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Common;
 using RateTheWork.Domain.ValueObjects.Company;
+using RateTheWork.Domain.ValueObjects.Blockchain;
 
 namespace RateTheWork.Domain.Entities;
 
@@ -98,6 +99,15 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
     public string? LogoUrl { get; set; }
     public string? CoverImageUrl { get; private set; }
     public List<string> GalleryImages { get; private set; } = new();
+    
+    // ========== BLOCKCHAIN BİLGİLERİ ==========
+    
+    public string? BlockchainWalletAddress { get; private set; }
+    public string? BlockchainContractAddress { get; private set; }
+    public string? BlockchainDataHash { get; private set; }
+    public bool IsVerifiedOnBlockchain { get; private set; } = false;
+    public DateTime? BlockchainVerifiedAt { get; private set; }
+    public List<string> BlockchainTransactionHashes { get; private set; } = new();
     public string? CompanyVideo { get; private set; }
 
     // ========== ÇALIŞMA BİLGİLERİ ==========
@@ -530,6 +540,79 @@ public class Company : ApprovableBaseEntity, IAggregateRoot
             SubsidiaryIds.Add(subsidiaryId);
             SetModifiedDate();
         }
+    }
+    
+    /// <summary>
+    /// Şirketi blockchain'de doğrula
+    /// </summary>
+    public void VerifyOnBlockchain(string walletAddress, string contractAddress, string dataHash)
+    {
+        if (IsVerifiedOnBlockchain)
+            throw new BusinessRuleException("Şirket zaten blockchain'de doğrulanmış.");
+            
+        if (string.IsNullOrWhiteSpace(walletAddress))
+            throw new ArgumentNullException(nameof(walletAddress));
+            
+        if (string.IsNullOrWhiteSpace(contractAddress))
+            throw new ArgumentNullException(nameof(contractAddress));
+            
+        if (string.IsNullOrWhiteSpace(dataHash))
+            throw new ArgumentNullException(nameof(dataHash));
+            
+        BlockchainWalletAddress = walletAddress;
+        BlockchainContractAddress = contractAddress;
+        BlockchainDataHash = dataHash;
+        IsVerifiedOnBlockchain = true;
+        BlockchainVerifiedAt = DateTime.UtcNow;
+        SetModifiedDate();
+        
+        // Domain Event
+        AddDomainEvent(new CompanyVerifiedOnBlockchainEvent(
+            Id,
+            walletAddress,
+            contractAddress,
+            dataHash,
+            DateTime.UtcNow
+        ));
+    }
+    
+    /// <summary>
+    /// Blockchain işlem hash'i ekle
+    /// </summary>
+    public void AddBlockchainTransaction(string transactionHash)
+    {
+        if (string.IsNullOrWhiteSpace(transactionHash))
+            throw new ArgumentNullException(nameof(transactionHash));
+            
+        if (!BlockchainTransactionHashes.Contains(transactionHash))
+        {
+            BlockchainTransactionHashes.Add(transactionHash);
+            SetModifiedDate();
+        }
+    }
+    
+    /// <summary>
+    /// Blockchain veri hash'ini güncelle
+    /// </summary>
+    public void UpdateBlockchainDataHash(string newDataHash)
+    {
+        if (!IsVerifiedOnBlockchain)
+            throw new BusinessRuleException("Şirket henüz blockchain'de doğrulanmamış.");
+            
+        if (string.IsNullOrWhiteSpace(newDataHash))
+            throw new ArgumentNullException(nameof(newDataHash));
+            
+        var oldHash = BlockchainDataHash;
+        BlockchainDataHash = newDataHash;
+        SetModifiedDate();
+        
+        // Domain Event
+        AddDomainEvent(new CompanyBlockchainDataUpdatedEvent(
+            Id,
+            oldHash!,
+            newDataHash,
+            DateTime.UtcNow
+        ));
     }
 
     // Private helper methods

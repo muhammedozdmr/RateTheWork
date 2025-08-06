@@ -4,6 +4,7 @@ using RateTheWork.Domain.Enums.Review;
 using RateTheWork.Domain.Events.Review;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Common;
+using RateTheWork.Domain.ValueObjects.Blockchain;
 
 namespace RateTheWork.Domain.Entities;
 
@@ -40,6 +41,13 @@ public class Review : AuditableBaseEntity, IAggregateRoot
     public DateTime? UpdatedAt { get; private set; } // Güncelleme zamanı
     public string? TargetType { get; private set; } // Hedef tipi (örn: "Company", "Branch")
     public string? TargetId { get; private set; } // Hedef ID'si
+    
+    // Blockchain Properties
+    public string? BlockchainTransactionHash { get; private set; }
+    public string? BlockchainDataHash { get; private set; }
+    public bool IsStoredOnBlockchain { get; private set; } = false;
+    public DateTime? BlockchainStoredAt { get; private set; }
+    public string? BlockchainContractAddress { get; private set; }
 
     /// <summary>
     /// Kullanıcı navigation property'si
@@ -284,6 +292,77 @@ public class Review : AuditableBaseEntity, IAggregateRoot
         ));
     }
 
+    /// <summary>
+    /// Yorumu blockchain'e kaydet
+    /// </summary>
+    public void StoreOnBlockchain(string transactionHash, string dataHash, string contractAddress)
+    {
+        if (IsStoredOnBlockchain)
+            throw new BusinessRuleException("Bu yorum zaten blockchain'de saklanıyor.");
+            
+        if (string.IsNullOrWhiteSpace(transactionHash))
+            throw new ArgumentNullException(nameof(transactionHash));
+            
+        if (string.IsNullOrWhiteSpace(dataHash))
+            throw new ArgumentNullException(nameof(dataHash));
+            
+        if (string.IsNullOrWhiteSpace(contractAddress))
+            throw new ArgumentNullException(nameof(contractAddress));
+            
+        BlockchainTransactionHash = transactionHash;
+        BlockchainDataHash = dataHash;
+        BlockchainContractAddress = contractAddress;
+        IsStoredOnBlockchain = true;
+        BlockchainStoredAt = DateTime.UtcNow;
+        SetModifiedDate();
+        
+        // Domain Event
+        AddDomainEvent(new ReviewStoredOnBlockchainEvent(
+            Id,
+            UserId,
+            CompanyId,
+            transactionHash,
+            dataHash,
+            contractAddress,
+            DateTime.UtcNow
+        ));
+    }
+    
+    /// <summary>
+    /// Blockchain hash'ini güncelle
+    /// </summary>
+    public void UpdateBlockchainHash(string newDataHash)
+    {
+        if (!IsStoredOnBlockchain)
+            throw new BusinessRuleException("Bu yorum henüz blockchain'de saklanmıyor.");
+            
+        if (string.IsNullOrWhiteSpace(newDataHash))
+            throw new ArgumentNullException(nameof(newDataHash));
+            
+        var oldHash = BlockchainDataHash;
+        BlockchainDataHash = newDataHash;
+        SetModifiedDate();
+        
+        // Domain Event
+        AddDomainEvent(new ReviewBlockchainHashUpdatedEvent(
+            Id,
+            oldHash!,
+            newDataHash,
+            DateTime.UtcNow
+        ));
+    }
+    
+    /// <summary>
+    /// Yorumun blockchain verisiyle tutarlı olup olmadığını kontrol et
+    /// </summary>
+    public bool VerifyBlockchainIntegrity(string currentDataHash)
+    {
+        if (!IsStoredOnBlockchain)
+            return false;
+            
+        return BlockchainDataHash == currentDataHash;
+    }
+    
     /// <summary>
     /// Belgeyi doğrula
     /// </summary>

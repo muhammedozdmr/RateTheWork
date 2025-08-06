@@ -6,6 +6,7 @@ using RateTheWork.Domain.Enums.User;
 using RateTheWork.Domain.Events.User;
 using RateTheWork.Domain.Exceptions;
 using RateTheWork.Domain.Interfaces.Common;
+using RateTheWork.Domain.ValueObjects.Blockchain;
 
 namespace RateTheWork.Domain.Entities;
 
@@ -59,7 +60,7 @@ public class User : AuditableBaseEntity, IAggregateRoot
     public string? TcIdentityVerificationDocumentUrl { get; private set; }
 
     // Computed property - en az bir doğrulama yapılmış mı?
-    public bool IsVerified => IsEmailVerified || IsPhoneVerified || IsTcIdentityVerified;
+    public bool IsVerified => IsEmailVerified || IsPhoneVerified || IsTcIdentityVerified || IsBlockchainVerified;
 
     // Properties - Platform Verileri
     public int WarningCount { get; private set; } = 0;
@@ -75,6 +76,14 @@ public class User : AuditableBaseEntity, IAggregateRoot
     // Properties - Arama İndeksleri
     public string? EmailHash { get; private set; }
     public string? TcIdentityHash { get; private set; }
+    
+    // Properties - Blockchain
+    public string? BlockchainWalletAddress { get; private set; }
+    public string? EncryptedBlockchainPrivateKey { get; private set; }
+    public string? BlockchainPublicKey { get; private set; }
+    public string? BlockchainIdentityContractAddress { get; private set; }
+    public bool IsBlockchainVerified { get; private set; } = false;
+    public DateTime? BlockchainVerifiedAt { get; private set; }
     
     // Application katmanı uyumluluğu için ek property'ler
     public List<string> Roles { get; private set; } = new List<string> { "User" };
@@ -121,6 +130,7 @@ public class User : AuditableBaseEntity, IAggregateRoot
             , EncryptedPhoneNumber = encryptedPhoneNumber, Gender = genderEnum, EncryptedBirthDate = encryptedBirthDate
             , EmailHash = GenerateHash(email.ToLowerInvariant())
             , TcIdentityHash = GenerateHash(encryptedTcIdentityNumber)
+            , IsBlockchainVerified = false
         };
 
         // Domain Event
@@ -286,6 +296,84 @@ public class User : AuditableBaseEntity, IAggregateRoot
             documentUrl,
             DateTime.UtcNow
         ));
+    }
+    
+    /// <summary>
+    /// Blockchain kimlik bilgilerini ayarlar
+    /// </summary>
+    public void SetBlockchainIdentity(UserBlockchainIdentity blockchainIdentity)
+    {
+        if (blockchainIdentity == null)
+            throw new ArgumentNullException(nameof(blockchainIdentity));
+            
+        if (IsBlockchainVerified)
+            throw new BusinessRuleException("Blockchain kimliği zaten doğrulanmış.");
+            
+        BlockchainWalletAddress = blockchainIdentity.WalletAddress.Value;
+        EncryptedBlockchainPrivateKey = blockchainIdentity.EncryptedPrivateKey;
+        BlockchainPublicKey = blockchainIdentity.PublicKey;
+        BlockchainIdentityContractAddress = blockchainIdentity.IdentityContractAddress;
+        IsBlockchainVerified = true;
+        BlockchainVerifiedAt = DateTime.UtcNow;
+        SetModifiedDate();
+        
+        // Domain Event
+        AddDomainEvent(new UserBlockchainIdentityCreatedEvent(
+            Id,
+            BlockchainWalletAddress,
+            BlockchainPublicKey,
+            DateTime.UtcNow
+        ));
+    }
+    
+    /// <summary>
+    /// Blockchain kimlik sözleşme adresini günceller
+    /// </summary>
+    public void UpdateBlockchainContractAddress(string contractAddress)
+    {
+        if (string.IsNullOrWhiteSpace(contractAddress))
+            throw new ArgumentNullException(nameof(contractAddress));
+            
+        if (!IsBlockchainVerified)
+            throw new BusinessRuleException("Blockchain kimliği henüz oluşturulmamış.");
+            
+        BlockchainIdentityContractAddress = contractAddress;
+        SetModifiedDate();
+        
+        // Domain Event
+        AddDomainEvent(new UserBlockchainContractDeployedEvent(
+            Id,
+            contractAddress,
+            DateTime.UtcNow
+        ));
+    }
+    
+    /// <summary>
+    /// Blockchain kimliğini doğrular
+    /// </summary>
+    public void VerifyBlockchainIdentity()
+    {
+        if (!IsBlockchainVerified)
+            throw new BusinessRuleException("Blockchain kimliği henüz oluşturulmamış.");
+            
+        BlockchainVerifiedAt = DateTime.UtcNow;
+        SetModifiedDate();
+        
+        // Domain Event
+        AddDomainEvent(new UserBlockchainIdentityVerifiedEvent(
+            Id,
+            BlockchainWalletAddress!,
+            DateTime.UtcNow
+        ));
+    }
+    
+    /// <summary>
+    /// Kullanıcının blockchain kimliği olup olmadığını kontrol eder
+    /// </summary>
+    public bool HasBlockchainIdentity()
+    {
+        return !string.IsNullOrWhiteSpace(BlockchainWalletAddress) 
+            && !string.IsNullOrWhiteSpace(EncryptedBlockchainPrivateKey);
     }
 
     /// <summary>
